@@ -44,51 +44,56 @@ router.post('/login',
   ],
   validate,
   async (req, res) => {
+    console.log('🔵 LOGIN REQUEST:', req.body.username);
     try {
       const { username, password } = req.body;
 
       const user = await User.findOne({ username });
+      console.log('🔵 Usuario encontrado:', !!user);
 
       if (!user || !user.isActive) {
-        await audit(req, {
+        audit(req, {
           event: 'auth.login.fail',
           level: 'warn',
           result: { success: false, reason: 'Invalid credentials' },
           metadata: { username }
-        });
+        }).catch(err => logger.error({ err }, 'Audit error'));
         
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
       // Verificar si es guest expirado
       if (user.role === 'guest' && user.isGuestExpired()) {
-        await audit(req, {
+        audit(req, {
           event: 'auth.login.fail',
           level: 'warn',
           result: { success: false, reason: 'Guest expired' },
           metadata: { username, guestExpiresAt: user.guestExpiresAt }
-        });
+        }).catch(err => logger.error({ err }, 'Audit error'));
         
         return res.status(401).json({ message: 'Cuenta de invitado expirada' });
       }
 
       const isMatch = await user.comparePassword(password);
+      console.log('🔵 Password match:', isMatch);
 
       if (!isMatch) {
-        await audit(req, {
+        audit(req, {
           event: 'auth.login.fail',
           level: 'warn',
           result: { success: false, reason: 'Invalid password' },
           metadata: { username }
-        });
+        }).catch(err => logger.error({ err }, 'Audit error'));
         
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
       const token = generateToken(user._id, user.role);
+      console.log('🔵 Token generado, enviando respuesta...');
       
-      // Auditar login exitoso
-      await audit(req, {
+      // ⚠️ TEMPORAL: Audit deshabilitado para debugging
+      /*
+      audit(req, {
         event: 'auth.login.success',
         level: 'info',
         result: { success: true, reason: 'Login successful' },
@@ -98,7 +103,8 @@ router.post('/login',
           role: user.role,
           isGuest: user.role === 'guest'
         }
-      });
+      }).catch(err => logger.error({ err }, 'Audit error'));
+      */
 
       res.json({
         token,

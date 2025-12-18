@@ -49,9 +49,13 @@ export class LoginComponent implements OnInit {
       this.router.navigate(['/']);
     }
 
+    // ⚠️ DESARROLLO: Credenciales por defecto (borrar en producción)
+    const devUsername = 'admin';
+    const devPassword = 'Admin123!';
+
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      username: [devUsername, [Validators.required, Validators.minLength(3)]],
+      password: [devPassword, [Validators.required, Validators.minLength(6)]]
     });
   }
 
@@ -64,10 +68,11 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(this.loginForm.value).subscribe({
       next: (response) => {
+        this.loading = false;
         this.snackBar.open(`¡Bienvenido, ${response.user.fullName}!`, 'Cerrar', {
           duration: 3000
         });
-        this.router.navigate(['/']);
+        this.router.navigate(['/main/entries']);
       },
       error: (error) => {
         this.loading = false;
