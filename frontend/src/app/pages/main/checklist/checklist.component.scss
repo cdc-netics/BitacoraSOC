@@ -1,0 +1,161 @@
+.checklist-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+
+  h1 {
+    margin-bottom: 24px;
+    color: var(--text-primary);
+  }
+}
+
+.status-card {
+  margin-bottom: 24px;
+  background-color: var(--surface-color);
+
+  .status-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+
+    mat-icon {
+      color: var(--primary-color);
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+
+    p {
+      margin: 4px 0;
+    }
+
+    small {
+      color: var(--text-secondary);
+    }
+  }
+}
+
+.checklist-form-card {
+  background-color: var(--surface-color);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.services-list,
+.services-accordion {
+  margin-top: 24px;
+
+  h3 {
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+
+  .hint {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  mat-accordion {
+    display: block;
+  }
+
+  mat-expansion-panel {
+    margin-bottom: 8px;
+    background-color: var(--surface-color);
+    
+    mat-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-primary);
+      font-weight: 500;
+
+      mat-icon {
+        &.status-verde {
+          color: #4caf50;
+        }
+        &.status-rojo {
+          color: #f44336;
+        }
+        &.status-pending {
+          color: var(--text-secondary);
+        }
+      }
+    }
+
+    mat-panel-description {
+      color: var(--text-secondary);
+    }
+  }
+}
+
+.service-card {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+
+  .service-header {
+    margin-bottom: 16px;
+
+    h4 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 500;
+    }
+  }
+
+  .status-selector {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+
+    mat-radio-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .status-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+
+        &.verde {
+          color: #4caf50;
+        }
+
+        &.rojo {
+          color: #f44336;
+        }
+      }
+    }
+  }
+}
+
+.form-actions {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+
+  .submit-button {
+    min-width: 200px;
+    height: 48px;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.writer-below {
+  margin-top: 32px;
+}
+
+.loading-spinner {
+  margin-right: 4px;
+}

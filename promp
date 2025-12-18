@@ -1,0 +1,447 @@
+Perfecto. **Aquí tienes el PROMPT FINAL, limpio, completo y coherente**, integrando **todo lo hablado**, sin contradicciones y listo para pegar **tal cual** en Copilot / ChatGPT / repo / issue de desarrollo.
+
+No te agrego nada extra, solo lo que definiste y lo que es técnicamente correcto para un SOC.
+
+---
+
+# PROMPT FINAL — Bitácora SOC
+
+**Angular (frontend) + Express (backend) + MongoDB**
+*(sin Docker, ejecución por IP, enfoque desktop)*
+
+Actúa como **desarrollador senior full-stack**. Construye una aplicación web tipo **Bitácora SOC** para analistas, con gestión de entradas, clasificación de incidentes, checklist de turno configurable, notas, temas, reportes y notificaciones por correo.
+Entrega **código funcional**, estructura de proyecto, modelos, endpoints, frontend completo y **documentación total de la API**.
+
+---
+
+## 0) Restricciones obligatorias
+
+* **NO usar Docker**
+* Proyecto separado en:
+
+  * `frontend/` → Angular
+  * `backend/` → Express
+* Backend **Express** (no NestJS).
+* Responsive **prioridad desktop**.
+* UI con **Angular Material** + animaciones a discreción (anime.js permitido).
+* Timezone oficial: **America/Santiago (Chile)**.
+* **Debe correr por IP, no localhost**:
+
+  * Backend escuchando en `0.0.0.0`
+  * Angular con `ng serve --host 0.0.0.0`
+  * CORS configurado por IP
+  * `API_BASE_URL` configurable en Angular
+* Documentación **completa** de la API:
+
+  * Swagger / OpenAPI
+  * README con ejemplos curl y reglas de negocio
+
+---
+
+## 1) Roles y autenticación
+
+Roles:
+
+* `admin`
+* `user`
+* `guest`
+
+### 1.1 Usuarios
+
+* **NO existe registro público**
+* **Solo el admin crea usuarios** desde “Admin usuarios”
+* Autenticación JWT (access token; refresh opcional)
+
+### 1.2 Modo invitado (guest)
+
+* Configurable **solo por admin**:
+
+  * Switch: “Habilitar modo invitado”
+  * Duración máxima: **2 días**
+* Guest expira automáticamente (token inválido / sesión cerrada)
+* Guest puede:
+
+  * Escribir entradas
+  * Ver “🌍 Ver todas”
+* Guest NO puede:
+
+  * Admin
+  * Configuraciones
+  * Reportes
+* Las entradas guest deben quedar marcadas como tal
+
+---
+
+## 2) Menú lateral (exacto)
+
+### Admin
+
+1. Escribir
+2. Mis entradas
+3. 🌍 Ver todas
+4. 👤 Mi Perfil
+5. Admin usuarios
+6. Tags
+7. Reportes
+8. Logo
+9. Backup
+10. Salir
+
+### Usuario común
+
+1. Escribir
+2. 🌍 Ver todas
+3. 👤 Mi Perfil
+4. Salir
+
+> El usuario común **NO** tiene “Mis entradas”.
+
+---
+
+## 3) Pantalla principal: **Escribir (Nueva entrada)** ⭐
+
+Esta vista es **siempre visible** y es la **principal del sistema**.
+
+UI (como la imagen):
+
+* Título: **Nueva entrada**
+* Campos superiores:
+
+  * Fecha (date picker, precargada con fecha Chile)
+  * Hora (time picker, precargada con hora Chile)
+* Área de texto grande:
+
+  * Placeholder:
+    `Escribe aquí. Usa # para tags (ej: #Trellix #hunting)`
+* Botón: **Subir**
+* La entrada **NO depende** del checklist de turno
+
+### 3.1 Clasificación de la entrada (OBLIGATORIA)
+
+Al costado del cajón de texto debe existir un selector visible:
+
+* (●) **Entrada operativa** *(default)*
+* ( ) **Incidente**
+
+Reglas:
+
+* Toda entrada **debe** tener tipo
+* Solo una opción activa
+* Visible siempre
+
+Backend:
+
+```js
+entryType: 'operativa' | 'incidente'
+```
+
+---
+
+## 4) Entradas (modelo y lógica)
+
+Entidad: `Entry`
+
+Campos mínimos:
+
+* content
+* entryType (`operativa` | `incidente`)
+* entryDate
+* entryTime
+* tags (array lowercase)
+* createdBy (user / guest)
+* createdAt
+
+Funcionalidad:
+
+* Hashtags automáticos (`#tag`)
+* Autocomplete de tags (`GET /tags/suggest`)
+* “🌍 Ver todas” con:
+
+  * paginación server-side
+  * filtros por texto, tags, fechas, tipo
+* Autosave en edición (debounce + dirty-check)
+
+Índices:
+
+* text index en `content`
+* index en `tags`
+* index en `entryType`
+* index en `createdAt`
+
+---
+
+## 5) Notas Duales (sidebar derecho fijo)
+
+Siempre visibles.
+
+### 5.1 Notas del Administrador
+
+* Globales
+* Admin escribe
+* Todos ven
+* Autosave
+
+### 5.2 Notas Personales
+
+* Privadas por usuario
+* Autosave
+
+---
+
+## 6) Sistema de Temas
+
+* Light / Dark / Sepia / Pastel
+* CSS variables
+* Persistencia en localStorage (+ opcional perfil)
+
+---
+
+## 7) Checklist de Turno (Acordeón bajo el menú) ⭐
+
+Acordeón colapsable **independiente de las entradas**.
+
+### 7.1 Configuración (solo admin)
+
+El admin define el **catálogo de servicios**:
+
+* Agregar / eliminar servicios
+* Editar **título visible**
+* Ordenar
+* Activar / desactivar
+
+Ejemplo:
+
+```
+[ ] QRadar
+[ ] Zabbix
+[ ] Wazuh
+```
+
+---
+
+### 7.2 Uso por el analista
+
+Selector:
+
+* Inicio de turno
+* Cierre de turno
+
+Por cada servicio:
+
+```
+[ Verde / Rojo ] QRadar
+[ Observación ............ ]
+
+[ Verde / Rojo ] Zabbix
+[ Observación ............ ]
+```
+
+Reglas:
+
+* Todos los servicios **deben** tener estado
+* Si está rojo:
+
+  * Observación **obligatoria**
+  * Máx **1000 caracteres**
+* Validar frontend y backend
+
+---
+
+### 7.3 Regla anti-spam (NO por día)
+
+NO existen turnos fijos.
+
+Implementar:
+
+* **No permitir acciones iguales consecutivas**
+
+  * Inicio → debe venir Cierre
+  * Cierre → debe venir Inicio
+* **Cooldown en horas configurable por admin**
+
+  * Default: 4 horas
+  * Campo: `shiftCheckCooldownHours`
+* Bloquear registros antes del cooldown
+
+Auditoría:
+
+* userId
+* tipo (inicio / cierre)
+* timestamp Chile
+* servicios + estado + observación
+* IP / userAgent (opcional)
+
+---
+
+### 7.4 Indicador visual del acordeón (CORRECTO)
+
+Mostrar estado del **último check real**, no “hecho hoy”:
+
+* Inicio:
+
+  * ✅ OK → sin servicios en rojo
+  * ⛔ Con problemas → al menos un rojo
+* Cierre:
+
+  * ✅ OK
+  * ⛔ Con problemas
+* Si no existe: “— sin registro”
+
+---
+
+## 8) SMTP / Correo (UI tipo Passbolt) ⭐
+
+Pantalla **Servidor de correo electrónico** como las imágenes.
+
+### 8.1 Configuración SMTP
+
+Campos:
+
+* Proveedor:
+
+  * Office 365
+  * AWS SES
+  * ElasticEmail
+  * Google Mail
+  * Google Workspace
+  * MailGun
+  * Custom
+* Método autenticación:
+
+  * Usuario / contraseña
+* Usuario
+* Contraseña (nunca visible)
+* Configuración avanzada:
+
+  * Host SMTP
+  * TLS (Sí/No)
+  * Puerto
+  * Cliente SMTP (hostname/IP)
+
+### 8.2 Remitente
+
+* Nombre del remitente
+* Correo del remitente
+
+### 8.3 Destinatarios
+
+* Lista dinámica (N correos)
+* Toggle:
+
+  * Enviar solo si hay rojos
+  * Enviar siempre
+
+### 8.4 Funcionalidad
+
+* Botón **Probar configuración**
+* Al registrar check:
+
+  * Enviar correo según reglas
+
+Seguridad:
+
+* Password SMTP cifrada en backend
+* Nunca retornarla al frontend
+
+---
+
+## 9) Backup / Logo / Tags
+
+* Logo:
+
+  * Admin puede cambiar logo (png/svg o URL)
+* Backup:
+
+  * Export CSV
+  * Backup + restore Mongo (mongodump / mongorestore)
+  * Auditoría
+* Tags:
+
+  * métricas y normalización
+
+---
+
+## 10) Reportes
+
+KPIs:
+
+* Entradas operativas vs incidentes
+* Incidentes por analista
+* Top tags
+* Checks con rojos por servicio
+* Tendencias 30 días
+
+Dashboard visual.
+
+---
+
+## 11) Backend Express
+
+* JWT + RBAC
+* Validaciones DTO
+* CORS por IP
+* Rate-limit login
+* Modelos:
+
+  * User
+  * Entry
+  * AdminNote
+  * PersonalNote
+  * ServiceCatalog
+  * ShiftCheck
+  * SmtpConfig
+  * AppConfig
+
+---
+
+## 12) Frontend Angular
+
+* Layout desktop:
+
+  * Sidebar izquierda + acordeón
+  * Contenido central
+  * Sidebar derecha fijo
+* Angular Material + anime.js
+* Autosave RxJS
+* Guards por rol
+* Environments con IP
+
+---
+
+## 13) Ejecución por IP (OBLIGATORIO)
+
+README con pasos exactos:
+
+```bash
+# Backend
+HOST=0.0.0.0 PORT=3000 npm run dev
+
+# Frontend
+ng serve --host 0.0.0.0 --port 4200
+```
+
+Ejemplo `API_BASE_URL`:
+
+```
+http://10.0.101.150:3000/api
+```
+
+---
+
+## Output esperado
+
+* Código funcional completo
+* Scripts npm
+* `.env.example`
+* Swagger + README API
+* Supuestos documentados
+
+---
+
+### Opinión directa (como pediste)
+
+Este diseño **está correcto**, es **SOC real**, auditable, escalable y usable en turnos.
+No hay nada “sobrado” ni inventado.
+
+Si quieres, el siguiente paso lógico es:
+👉 **definir exactamente los endpoints y esquemas Mongo** y después **dibujar el layout Angular** píxel a píxel.

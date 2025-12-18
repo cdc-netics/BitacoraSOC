@@ -1,0 +1,139 @@
+<mat-sidenav-container class="main-container">
+  <!-- LEFT SIDEBAR - Solo Menú -->
+  <mat-sidenav
+    mode="side"
+    [opened]="leftSidebarOpened"
+    position="start"
+    class="left-sidebar">
+    
+    <mat-toolbar color="primary">
+      <span>Bitácora SOC</span>
+    </mat-toolbar>
+
+    <!-- Menú de navegación -->
+    <mat-nav-list>
+      <a mat-list-item
+         *ngFor="let item of getVisibleMenuItems()"
+         [routerLink]="item.route"
+         routerLinkActive="active-link">
+        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+        <span matListItemTitle>{{ item.label }}</span>
+      </a>
+
+      <mat-divider></mat-divider>
+
+      <a mat-list-item (click)="logout()">
+        <mat-icon matListItemIcon>exit_to_app</mat-icon>
+        <span matListItemTitle>Cerrar Sesión</span>
+      </a>
+    </mat-nav-list>
+
+    <!-- Info usuario -->
+    <div class="user-info">
+      <p><strong>{{ currentUser?.fullName }}</strong></p>
+      <p class="role-badge">{{ currentUser?.role }}</p>
+    </div>
+  </mat-sidenav>
+
+  <!-- RIGHT SIDEBAR - Notes (always visible, NO accordions) -->
+  <mat-sidenav
+    mode="side"
+    [opened]="rightSidebarOpened"
+    position="end"
+    class="right-sidebar">
+    
+    <mat-toolbar color="primary">
+      <span>Notas</span>
+    </mat-toolbar>
+
+    <div class="notes-container" *ngIf="!isGuest">
+      <!-- Nota del Administrador (global) -->
+      <div class="note-section">
+        <h3>
+          <mat-icon>info</mat-icon>
+          Nota del Administrador
+        </h3>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contenido</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="adminNote.content"
+            (ngModelChange)="onAdminNoteChange($event)"
+            rows="8"
+            [disabled]="!isAdmin"
+            placeholder="Nota visible para todos los usuarios..."></textarea>
+          <mat-hint *ngIf="isAdmin">Autosave activado</mat-hint>
+          <mat-hint *ngIf="!isAdmin">Solo lectura</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Nota Personal (privada) -->
+      <div class="note-section">
+        <h3>
+          <mat-icon>note</mat-icon>
+          Mi Nota Personal
+        </h3>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contenido</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="personalNote.content"
+            (ngModelChange)="onPersonalNoteChange($event)"
+            rows="8"
+            placeholder="Notas privadas..."></textarea>
+          <mat-hint>Autosave activado</mat-hint>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <p *ngIf="isGuest" class="guest-notice">
+      <mat-icon>info</mat-icon>
+      Las notas no están disponibles para invitados.
+    </p>
+  </mat-sidenav>
+
+  <!-- MAIN CONTENT -->
+  <mat-sidenav-content class="main-content">
+    <mat-toolbar color="accent" class="top-toolbar">
+      <button mat-icon-button (click)="toggleLeftSidebar()">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="spacer"></span>
+
+      <button mat-icon-button [matMenuTriggerFor]="themeMenu">
+        <mat-icon>palette</mat-icon>
+      </button>
+      <mat-menu #themeMenu="matMenu">
+        <button mat-menu-item (click)="changeTheme('light')">
+          <mat-icon>wb_sunny</mat-icon>
+          Light
+        </button>
+        <button mat-menu-item (click)="changeTheme('dark')">
+          <mat-icon>nightlight</mat-icon>
+          Dark
+        </button>
+        <button mat-menu-item (click)="changeTheme('sepia')">
+          <mat-icon>auto_stories</mat-icon>
+          Sepia
+        </button>
+        <button mat-menu-item (click)="changeTheme('pastel')">
+          <mat-icon>gradient</mat-icon>
+          Pastel
+        </button>
+      </mat-menu>
+
+      <button mat-icon-button (click)="toggleRightSidebar()">
+        <mat-icon>notes</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,100 @@
+<div class="backup-container">
+  <h1>💾 Backup y Exportación</h1>
+  <p class="subtitle">Gestiona las copias de seguridad del sistema</p>
+
+  <div class="backup-grid">
+    <!-- Exportar CSV -->
+    <mat-card class="backup-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>download</mat-icon>
+          Exportar a CSV
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>Descarga los datos en formato CSV para análisis externo.</p>
+        <div class="button-group">
+          <button mat-stroked-button (click)="exportCSV('entries')" [disabled]="isExporting">
+            <mat-icon>article</mat-icon>
+            Entradas
+          </button>
+          <button mat-stroked-button (click)="exportCSV('checks')" [disabled]="isExporting">
+            <mat-icon>checklist</mat-icon>
+            Checklists
+          </button>
+          <button mat-raised-button color="primary" (click)="exportCSV('all')" [disabled]="isExporting">
+            <mat-spinner *ngIf="isExporting" diameter="20"></mat-spinner>
+            <mat-icon *ngIf="!isExporting">archive</mat-icon>
+            <span *ngIf="!isExporting">Todo</span>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Backup completo -->
+    <mat-card class="backup-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>backup</mat-icon>
+          Backup MongoDB
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>Crea una copia de seguridad completa de la base de datos.</p>
+        <button mat-raised-button color="accent" (click)="createBackup()" [disabled]="isExporting">
+          <mat-spinner *ngIf="isExporting" diameter="20"></mat-spinner>
+          <mat-icon *ngIf="!isExporting">save</mat-icon>
+          <span *ngIf="!isExporting">Crear Backup</span>
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Historial de backups -->
+  <mat-card class="history-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>history</mat-icon>
+        Historial de Backups
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="backupHistory" class="backup-table" *ngIf="backupHistory.length > 0">
+        <ng-container matColumnDef="filename">
+          <th mat-header-cell *matHeaderCellDef>Archivo</th>
+          <td mat-cell *matCellDef="let backup">{{ backup.filename }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let backup">{{ formatDate(backup.createdAt) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="size">
+          <th mat-header-cell *matHeaderCellDef>Tamaño</th>
+          <td mat-cell *matCellDef="let backup">{{ formatSize(backup.size) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let backup">
+            <button mat-icon-button color="primary" (click)="restoreBackup(backup)" 
+                    matTooltip="Restaurar" [disabled]="isImporting">
+              <mat-icon>restore</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteBackup(backup)" matTooltip="Eliminar">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['filename', 'date', 'size', 'actions']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['filename', 'date', 'size', 'actions'];"></tr>
+      </table>
+
+      <p *ngIf="backupHistory.length === 0" class="no-data">
+        No hay backups registrados. Crea tu primer backup ahora.
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,78 @@
+<div class="entries-container">
+  <h1>Nueva Entrada</h1>
+
+  <!-- Formulario de Nueva Entrada (PANTALLA PRINCIPAL) -->
+  <mat-card class="entry-form-card">
+    <mat-card-content>
+      <form [formGroup]="entryForm" (ngSubmit)="onSubmit()">
+        <div class="entry-form-layout">
+          <!-- Columna izquierda: Fecha, Hora, Contenido -->
+          <div class="entry-form-left">
+            <!-- Fecha y Hora del Evento -->
+            <div class="datetime-row">
+              <mat-form-field appearance="outline" class="date-field">
+                <mat-label>Fecha del Evento</mat-label>
+                <input matInput type="date" [value]="today" readonly tabindex="-1">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="time-field">
+                <mat-label>Hora del Evento</mat-label>
+                <input matInput type="time"
+                       [value]="nowTime"
+                       readonly
+                       tabindex="-1"
+                       inputmode="numeric"
+                       pattern="[0-2][0-9]:[0-5][0-9]"
+                       placeholder="HH:MM (24h)"
+                       step="60">
+              </mat-form-field>
+            </div>
+
+            <!-- Área de texto GRANDE -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Escribe aquí. Usa # para tags (ej: #Trellix #hunting)</mat-label>
+              <textarea matInput formControlName="content" rows="12" 
+                        placeholder="Escribe aquí. Usa # para tags (ej: #Trellix #hunting)"></textarea>
+              <mat-hint align="end">{{ entryForm.get('content')?.value?.length || 0 }}/50000</mat-hint>
+            </mat-form-field>
+
+            <!-- Botón Subir -->
+            <button mat-raised-button color="primary" type="submit" 
+                    [disabled]="entryForm.invalid || isSubmitting" class="submit-button">
+              <mat-icon *ngIf="!isSubmitting">send</mat-icon>
+              <mat-progress-spinner *ngIf="isSubmitting"
+                                     mode="indeterminate"
+                                     diameter="20"
+                                     strokeWidth="3"
+                                     class="loading-spinner"></mat-progress-spinner>
+              <span>{{ isSubmitting ? 'Enviando…' : 'Subir' }}</span>
+            </button>
+          </div>
+
+          <!-- Columna derecha: Clasificación -->
+          <div class="entry-form-right">
+            <h3>Clasificación de la Entrada</h3>
+            <mat-radio-group formControlName="entryType" class="entry-type-selector">
+              <mat-radio-button value="operativa" color="primary">
+                <span class="entry-type-label">
+                  <mat-icon>description</mat-icon>
+                  Operativa
+                </span>
+              </mat-radio-button>
+              <mat-radio-button value="incidente" color="warn">
+                <span class="entry-type-label">
+                  <mat-icon>warning</mat-icon>
+                  Incidente
+                </span>
+              </mat-radio-button>
+            </mat-radio-group>
+            <p class="entry-type-hint">
+              <strong>Operativa:</strong> Eventos rutinarios<br>
+              <strong>Incidente:</strong> Eventos que requieren respuesta
+            </p>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

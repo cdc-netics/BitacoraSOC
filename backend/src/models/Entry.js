@@ -1,0 +1,80 @@
+/**
+ * Modelo de Entrada de Bitácora
+ * 
+ * Campos SOC críticos:
+ *   - entryType: 'operativa' (rutina) | 'incidente' (evento anormal)
+ *   - entryDate + entryTime: timestamp manual del analista (no createdAt)
+ *   - tags: Hashtags extraídos del contenido (#vulnerabilidad, #firewall)
+ *   - isGuestEntry: Marca entradas de invitados (para auditoría)
+ * 
+ * Búsqueda:
+ *   - content: indexed text search (MongoDB full-text)
+ *   - tags: índice array para filtro rápido
+ *   - entryType + createdAt: índice compuesto para dashboards
+ * 
+ * Metadata:
+ *   - ipAddress, userAgent: capturados por middleware (auditoría)
+ *   - createdByUsername: desnormalizado (evita populate en listados)
+ */
+const mongoose = require('mongoose');
+
+const entrySchema = new mongoose.Schema({
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 50000 // 50KB de texto máximo
+  },
+  entryType: {
+    type: String,
+    enum: ['operativa', 'incidente'],
+    default: 'operativa',
+    required: true
+  },
+  entryDate: {
+    type: Date,
+    required: true
+  },
+  entryTime: {
+    type: String,
+    required: true
+  },
+  tags: [{
+    type: String,
+    lowercase: true,
+    trim: true
+  }],
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  createdByUsername: {
+    type: String,
+    required: true
+  },
+  isGuestEntry: {
+    type: Boolean,
+    default: false
+  },
+  // Metadata
+  ipAddress: String,
+  userAgent: String
+}, {
+  timestamps: true
+});
+
+// Índices para búsqueda y filtrado
+entrySchema.index({ content: 'text' });
+entrySchema.index({ tags: 1 });
+entrySchema.index({ entryType: 1 });
+entrySchema.index({ createdAt: -1 });
+entrySchema.index({ entryDate: -1 });
+entrySchema.index({ createdBy: 1 });
+entrySchema.index({ isGuestEntry: 1 });
+
+// Índice compuesto para filtros comunes
+entrySchema.index({ entryType: 1, createdAt: -1 });
+entrySchema.index({ tags: 1, createdAt: -1 });
+
+module.exports = mongoose.model('Entry', entrySchema);

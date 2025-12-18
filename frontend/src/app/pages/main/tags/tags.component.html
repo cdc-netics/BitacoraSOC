@@ -1,0 +1,63 @@
+<div class="tags-container">
+  <h1>🏷️ Gestión de Tags</h1>
+  <p class="subtitle">Administra y normaliza los tags del sistema</p>
+
+  <mat-card class="add-tag-card">
+    <mat-card-header>
+      <mat-card-title>Agregar Nuevo Tag</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="tagForm" (ngSubmit)="addTag()" class="tag-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del Tag</mat-label>
+          <input matInput formControlName="name" placeholder="Ej: firewall">
+          <mat-hint>Se convertirá a minúsculas automáticamente</mat-hint>
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="submit" [disabled]="tagForm.invalid">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-spinner *ngIf="isLoading" diameter="40"></mat-spinner>
+
+  <div class="tags-table-container" *ngIf="!isLoading">
+    <table mat-table [dataSource]="tags" class="tags-table">
+      <!-- Name Column -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Tag</th>
+        <td mat-cell *matCellDef="let tag">
+          <mat-chip>{{ tag.name }}</mat-chip>
+        </td>
+      </ng-container>
+
+      <!-- Count Column -->
+      <ng-container matColumnDef="count">
+        <th mat-header-cell *matHeaderCellDef>Uso</th>
+        <td mat-cell *matCellDef="let tag">{{ tag.count }} entradas</td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let tag">
+          <button mat-icon-button color="primary" (click)="normalizeTag(tag)" matTooltip="Renombrar">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteTag(tag)" matTooltip="Eliminar">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <p *ngIf="tags.length === 0" class="no-data">
+      No hay tags registrados. Los tags se crean automáticamente al usar # en las entradas.
+    </p>
+  </div>
+</div>

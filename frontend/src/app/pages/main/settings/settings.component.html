@@ -1,0 +1,77 @@
+<div class="settings-container">
+  <h1>Configuración</h1>
+
+  <mat-card class="config-card">
+    <mat-card-header>
+      <mat-card-title>Configuración General</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="appConfigForm" (ngSubmit)="saveAppConfig()">
+        <mat-checkbox formControlName="guestEnabled">
+          Habilitar modo invitado
+        </mat-checkbox>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cooldown Checklist (horas)</mat-label>
+          <input matInput type="number" formControlName="checklistCooldownHours">
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" type="submit" 
+                [disabled]="!appConfigForm.valid">
+          Guardar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="smtp-card">
+    <mat-card-header>
+      <mat-card-title>Configuración SMTP</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="smtpForm" (ngSubmit)="saveSmtpConfig()">
+        <mat-form-field appearance="outline">
+          <mat-label>Host</mat-label>
+          <input matInput formControlName="host">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Puerto</mat-label>
+          <input matInput type="number" formControlName="port">
+        </mat-form-field>
+
+        <mat-checkbox formControlName="secure">
+          Conexión segura (SSL/TLS)
+        </mat-checkbox>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Usuario</mat-label>
+          <input matInput formControlName="user">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <input matInput type="password" formControlName="pass">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email Remitente</mat-label>
+          <input matInput type="email" formControlName="from">
+        </mat-form-field>
+
+        <div class="button-group">
+          <button mat-raised-button color="primary" type="submit" 
+                  [disabled]="!smtpForm.valid">
+            Guardar SMTP
+          </button>
+
+          <button mat-raised-button color="accent" type="button" 
+                  (click)="testSmtp()">
+            <mat-icon>email</mat-icon>
+            Probar Envío
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

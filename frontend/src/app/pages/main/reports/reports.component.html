@@ -1,0 +1,34 @@
+<div class="reports-container">
+  <h1>Reportes y Estadísticas</h1>
+
+  <mat-card *ngIf="overview">
+    <mat-card-header>
+      <mat-card-title>Resumen (últimos {{ selectedDays }} días)</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <h3>{{ overview.entriesByType.operativa || 0 }}</h3>
+          <p>Operativa</p>
+        </div>
+        <div class="stat-item">
+          <h3>{{ overview.entriesByType.incidente || 0 }}</h3>
+          <p>Incidentes</p>
+        </div>
+        <div class="stat-item">
+          <h3>{{ overview.totalUsers }}</h3>
+          <p>Usuarios Activos</p>
+        </div>
+        <div class="stat-item">
+          <h3>{{ overview.totalChecks }}</h3>
+          <p>Checks Realizados</p>
+        </div>
+      </div>
+
+      <button mat-raised-button color="primary" (click)="exportEntries()">
+        <mat-icon>download</mat-icon>
+        Exportar CSV
+      </button>
+    </mat-card-content>
+  </mat-card>
+</div>

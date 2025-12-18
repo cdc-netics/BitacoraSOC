@@ -1,0 +1,72 @@
+<div class="profile-container">
+  <h1>👤 Mi Perfil</h1>
+
+  <mat-card class="profile-card">
+    <mat-card-header>
+      <mat-card-title>Información Personal</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nombre Completo</mat-label>
+          <input matInput formControlName="fullName" placeholder="Tu nombre">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Correo Electrónico</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="tu@email.com">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Tema de la Aplicación</mat-label>
+          <mat-select formControlName="theme" (selectionChange)="onThemeChange($event.value)">
+            <mat-option value="light">☀️ Claro</mat-option>
+            <mat-option value="dark">🌙 Oscuro</mat-option>
+            <mat-option value="sepia">📜 Sepia</mat-option>
+            <mat-option value="pastel">🌸 Pastel</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="user-info-display">
+          <p><strong>Rol:</strong> {{ currentUser?.role }}</p>
+          <p><strong>Usuario:</strong> {{ currentUser?.username }}</p>
+        </div>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="isLoading || profileForm.invalid">
+          <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+          <span *ngIf="!isLoading">Guardar Cambios</span>
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="profile-card">
+    <mat-card-header>
+      <mat-card-title>Cambiar Contraseña</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña Actual</mat-label>
+          <input matInput formControlName="currentPassword" type="password">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nueva Contraseña</mat-label>
+          <input matInput formControlName="newPassword" type="password">
+          <mat-hint>Mínimo 6 caracteres</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirmar Nueva Contraseña</mat-label>
+          <input matInput formControlName="confirmPassword" type="password">
+        </mat-form-field>
+
+        <button mat-raised-button color="accent" type="submit" [disabled]="isLoading || passwordForm.invalid">
+          <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+          <span *ngIf="!isLoading">Cambiar Contraseña</span>
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
