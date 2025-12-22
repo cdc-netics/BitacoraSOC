@@ -28,12 +28,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import {
   ServiceCatalog,
   ShiftCheck,
   CreateCheckRequest,
-  CheckHistoryResponse
+  CheckHistoryResponse,
+  ChecklistTemplate,
+  ChecklistItem
 } from '../models/checklist.model';
 
 @Injectable({
@@ -46,8 +49,14 @@ export class ChecklistService {
 
   // ========== SERVICIOS ==========
   
-  getActiveServices(): Observable<ServiceCatalog[]> {
-    return this.http.get<ServiceCatalog[]>(`${this.API_URL}/services`);
+  getActiveChecklist(): Observable<ChecklistTemplate | null> {
+    return this.http
+      .get<{ template: ChecklistTemplate; source: 'template' | 'legacy' }>(`${this.API_URL}/templates/active`)
+      .pipe(map(res => res?.template ? { ...res.template, source: res.source } : null));
+  }
+
+  getActiveServices(): Observable<ChecklistItem[]> {
+    return this.getActiveChecklist().pipe(map(template => template?.flatItems ?? template?.items ?? []));
   }
 
   getAllServices(): Observable<ServiceCatalog[]> {
@@ -64,6 +73,30 @@ export class ChecklistService {
 
   deleteService(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.API_URL}/services/${id}`);
+  }
+
+  // ========== PLANTILLAS ==========
+
+  getTemplates(): Observable<ChecklistTemplate[]> {
+    return this.http
+      .get<{ templates: ChecklistTemplate[] }>(`${this.API_URL}/templates`)
+      .pipe(map(res => res.templates));
+  }
+
+  createTemplate(data: Partial<ChecklistTemplate>): Observable<{ message: string; template: ChecklistTemplate }> {
+    return this.http.post<{ message: string; template: ChecklistTemplate }>(`${this.API_URL}/templates`, data);
+  }
+
+  updateTemplate(id: string, data: Partial<ChecklistTemplate>): Observable<{ message: string; template: ChecklistTemplate }> {
+    return this.http.put<{ message: string; template: ChecklistTemplate }>(`${this.API_URL}/templates/${id}`, data);
+  }
+
+  deleteTemplate(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.API_URL}/templates/${id}`);
+  }
+
+  activateTemplate(id: string): Observable<{ message: string; template: ChecklistTemplate }> {
+    return this.http.put<{ message: string; template: ChecklistTemplate }>(`${this.API_URL}/templates/${id}/activate`, {});
   }
 
   // ========== CHECKS ==========

@@ -1,24 +1,35 @@
 /**
- * Modelos de Checklist de Turno
- * 
- * Reglas SOC:
- *   - type: 'inicio' | 'cierre' (no consecutivos iguales)
- *   - services: TODOS los servicios activos deben incluirse
- *   - status: 'verde' | 'rojo'
- *   - observation: obligatoria si status='rojo', max 1000 chars
+ * Modelos de Checklist de Turno y Plantillas
  */
 
-export interface ServiceCatalog {
+export interface ChecklistItem {
   _id: string;
   title: string;
-  isActive: boolean;
   order: number;
+  isActive: boolean;
+  description?: string;
+  parentId?: string;
+  children?: ChecklistItem[];
+}
+
+// Alias legacy para mantener compatibilidad con código previo
+export type ServiceCatalog = ChecklistItem;
+
+export interface ChecklistTemplate {
+  _id: string | null;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  items: ChecklistItem[];
+  flatItems?: ChecklistItem[];
+  source?: 'template' | 'legacy';
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface ServiceCheck {
   serviceId: string;
+  parentServiceId?: string | null;
   serviceTitle: string;
   status: ServiceStatus;
   observation: string;
@@ -37,6 +48,8 @@ export interface ShiftCheck {
   username: string;
   type: CheckType;
   checkDate: Date;
+  checklistId?: string | null;
+  checklistName?: string;
   services: ServiceCheck[];
   hasRedServices: boolean;
   ipAddress?: string;
@@ -46,8 +59,10 @@ export interface ShiftCheck {
 
 export interface CreateCheckRequest {
   type: CheckType;
+  checklistId?: string | null;
   services: Array<{
     serviceId: string;
+    parentServiceId?: string | null;
     serviceTitle: string;
     status: ServiceStatus;
     observation: string;

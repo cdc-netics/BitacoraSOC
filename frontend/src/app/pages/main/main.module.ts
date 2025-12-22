@@ -27,6 +27,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 // Components
 import { MainLayoutComponent } from './main-layout.component';
@@ -41,9 +42,9 @@ import { MyEntriesComponent } from './my-entries/my-entries.component';
 import { TagsComponent } from './tags/tags.component';
 import { LogoComponent } from './logo/logo.component';
 import { BackupComponent } from './backup/backup.component';
+import { ChecklistAdminComponent } from './checklist-admin/checklist-admin.component';
 
 // Guards
-import { NotGuestGuard } from '../../guards/not-guest.guard';
 import { AdminGuard } from '../../guards/admin.guard';
 
 const routes: Routes = [
@@ -51,7 +52,7 @@ const routes: Routes = [
     path: '',
     component: MainLayoutComponent,
     children: [
-      { path: '', redirectTo: 'entries', pathMatch: 'full' },
+      { path: '', redirectTo: 'checklist', pathMatch: 'full' },
       { path: 'entries', component: EntriesComponent },
       { path: 'my-entries', component: MyEntriesComponent },
       { path: 'checklist', component: ChecklistComponent },
@@ -62,6 +63,7 @@ const routes: Routes = [
       { path: 'tags', component: TagsComponent },
       { path: 'logo', component: LogoComponent },
       { path: 'backup', component: BackupComponent },
+      { path: 'checklist-admin', component: ChecklistAdminComponent, canActivate: [AdminGuard] },
       { path: 'settings', component: SettingsComponent }
     ]
   }
@@ -79,7 +81,8 @@ const routes: Routes = [
     MyEntriesComponent,
     TagsComponent,
     LogoComponent,
-    BackupComponent
+    BackupComponent,
+    ChecklistAdminComponent
     // AllEntriesComponent es standalone, va solo en imports
   ],
   imports: [
@@ -110,6 +113,7 @@ const routes: Routes = [
     MatRadioModule,
     MatTooltipModule,
     MatDividerModule,
+    MatProgressBarModule,
     AllEntriesComponent
   ]
 })

@@ -89,6 +89,11 @@
     mat-panel-description {
       color: var(--text-secondary);
     }
+
+    .service-description {
+      margin: 4px 0 8px 40px;
+      color: var(--text-secondary);
+    }
   }
 }
 
@@ -135,6 +140,48 @@
       }
     }
   }
+}
+
+.child-services {
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+
+  h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+  }
+
+  .child-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: var(--background-color);
+  }
+
+  .child-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .child-selector {
+    margin: 4px 0 8px 0;
+  }
+}
+
+.status-verde {
+  color: #4caf50;
+}
+
+.status-rojo {
+  color: #f44336;
+}
+
+.status-pending {
+  color: var(--text-secondary);
 }
 
 .form-actions {

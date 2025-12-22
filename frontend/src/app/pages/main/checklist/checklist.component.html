@@ -1,13 +1,13 @@
 <div class="checklist-container">
-  <h1>Checklist de Turno</h1>
+  <h1>{{ activeChecklist?.name || 'Checklist de Turno' }}</h1>
+  <p *ngIf="activeChecklist?.description" class="subtle">{{ activeChecklist?.description }}</p>
 
-  <!-- Indicador último check -->
   <mat-card class="status-card">
     <mat-card-content>
       <div class="status-info">
         <mat-icon>info</mat-icon>
         <div>
-          <p><strong>Estado del último check:</strong></p>
+          <p><strong>Estado del ultimo check:</strong></p>
           <p>{{ getLastCheckStatus() }}</p>
           <p *ngIf="lastCheck"><small>{{ lastCheck.createdAt | date:'dd/MM/yyyy HH:mm' }} por {{ lastCheck.username }}</small></p>
         </div>
@@ -15,96 +15,162 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Formulario de Checklist -->
-  <mat-card class="checklist-form-card">
-    <mat-card-header>
-      <mat-card-title>Registrar Check</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form (ngSubmit)="onSubmit()" #checkForm="ngForm">
-        <!-- Selector tipo de check -->
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Tipo de Check</mat-label>
-          <mat-select [(ngModel)]="checkType" name="checkType" required>
-            <mat-option value="inicio">
-              <mat-icon>wb_sunny</mat-icon>
-              Inicio de Turno
-            </mat-option>
-            <mat-option value="cierre">
-              <mat-icon>nightlight</mat-icon>
-              Cierre de Turno
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+  <ng-container *ngIf="!isLoading && checklistTree.length > 0; else checklistPlaceholder">
+    <mat-accordion>
+      <mat-expansion-panel hideToggle>
+        <mat-expansion-panel-header>
+          <mat-panel-title> Checklist Diaria </mat-panel-title>
+        </mat-expansion-panel-header>
 
-        <!-- Lista de servicios EN ACORDEÓN -->
-        <div class="services-accordion">
-          <h3>Evaluación de Servicios</h3>
-          <p class="hint">Todos los servicios deben tener estado. Los servicios en rojo requieren observación obligatoria.</p>
+        <mat-card-content>
+          <form (ngSubmit)="onSubmit()" #checkForm="ngForm">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Tipo de Check</mat-label>
+              <mat-select [(ngModel)]="checkType" name="checkType" required>
+                <mat-option value="inicio">
+                  <mat-icon>wb_sunny</mat-icon>
+                  Inicio de Turno
+                </mat-option>
+                <mat-option value="cierre">
+                  <mat-icon>nightlight</mat-icon>
+                  Cierre de Turno
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
 
-          <mat-accordion multi>
-            <mat-expansion-panel *ngFor="let service of checklistServices; let i = index" [expanded]="service.status === 'rojo'">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <mat-icon [class.status-verde]="service.status === 'verde'" 
-                            [class.status-rojo]="service.status === 'rojo'"
-                            [class.status-pending]="!service.status">
-                    {{ service.status === 'verde' ? 'check_circle' : service.status === 'rojo' ? 'cancel' : 'radio_button_unchecked' }}
-                  </mat-icon>
-                  {{ service.serviceTitle }}
-                </mat-panel-title>
-                <mat-panel-description>
-                  {{ service.status === 'verde' ? 'Operativo' : service.status === 'rojo' ? 'Con problema' : 'Pendiente' }}
-                </mat-panel-description>
-              </mat-expansion-panel-header>
+            <div class="services-accordion">
+              <h3>Evaluacion de Servicios</h3>
+              <p class="hint">Todos los servicios y sub-items deben tener estado. Los servicios en rojo requieren observacion obligatoria.</p>
 
-              <!-- Contenido del acordeón: Estado Verde/Rojo -->
-              <mat-radio-group [(ngModel)]="service.status" [name]="'status_' + i" required class="status-selector">
-                <mat-radio-button value="verde" color="primary">
-                  <mat-icon class="status-icon verde">check_circle</mat-icon>
-                  Verde (Operativo)
-                </mat-radio-button>
-                <mat-radio-button value="rojo" color="warn">
-                  <mat-icon class="status-icon rojo">cancel</mat-icon>
-                  Rojo (Problema)
-                </mat-radio-button>
-              </mat-radio-group>
+              <mat-accordion multi>
+                <mat-expansion-panel *ngFor="let service of checklistTree; let i = index" [expanded]="service.status === 'rojo'">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      <mat-icon [class.status-verde]="service.status === 'verde'"
+                                [class.status-rojo]="service.status === 'rojo'"
+                                [class.status-pending]="!service.status">
+                        {{ service.status === 'verde' ? 'check_circle' : service.status === 'rojo' ? 'cancel' : 'radio_button_unchecked' }}
+                      </mat-icon>
+                      {{ service.serviceTitle }}
+                    </mat-panel-title>
+                    <mat-panel-description>
+                      {{ service.status === 'verde' ? 'Operativo' : service.status === 'rojo' ? 'Con problema' : 'Pendiente' }}
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
 
-              <!-- Observación (obligatoria si rojo) -->
-              <mat-form-field appearance="outline" class="full-width" *ngIf="service.status === 'rojo'">
-                <mat-label>Observación (obligatoria)</mat-label>
-                <textarea 
-                  matInput 
-                  [(ngModel)]="service.observation" 
-                  [name]="'obs_' + i"
-                  rows="3"
-                  maxlength="1000"
-                  required
-                  placeholder="Describe el problema detectado..."></textarea>
-                <mat-hint align="end">{{ (service.observation || '').length }}/1000</mat-hint>
-              </mat-form-field>
-            </mat-expansion-panel>
-          </mat-accordion>
-        </div>
+                  <p class="service-description" *ngIf="service.description">{{ service.description }}</p>
 
-        <!-- Botón enviar -->
-        <div class="form-actions">
-          <button mat-raised-button color="primary" type="submit" [disabled]="!checkForm.valid || isSubmitting" class="submit-button">
-            <mat-icon *ngIf="!isSubmitting">send</mat-icon>
-            <mat-progress-spinner *ngIf="isSubmitting"
-                                   mode="indeterminate"
-                                   diameter="20"
-                                   strokeWidth="3"
-                                   class="loading-spinner"></mat-progress-spinner>
-            <span>{{ isSubmitting ? 'Enviando…' : 'Enviar Checklist' }}</span>
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+                  <mat-radio-group
+                    [(ngModel)]="service.status"
+                    [name]="'status_' + i"
+                    required
+                    class="status-selector"
+                    (change)="onStatusChange(service, $event.value)">
+                    <mat-radio-button value="verde" color="primary">
+                      <mat-icon class="status-icon verde">check_circle</mat-icon>
+                      Verde (Operativo)
+                    </mat-radio-button>
+                    <mat-radio-button value="rojo" color="warn">
+                      <mat-icon class="status-icon rojo">cancel</mat-icon>
+                      Rojo (Problema)
+                    </mat-radio-button>
+                  </mat-radio-group>
+
+                  <mat-form-field appearance="outline" class="full-width" *ngIf="service.status === 'rojo'">
+                    <mat-label>Observacion (obligatoria)</mat-label>
+                    <textarea
+                      matInput
+                      [(ngModel)]="service.observation"
+                      [name]="'obs_' + i"
+                      rows="3"
+                      maxlength="1000"
+                      required
+                      placeholder="Describe el problema detectado..."></textarea>
+                    <mat-hint align="end">{{ (service.observation || '').length }}/1000</mat-hint>
+                  </mat-form-field>
+
+                  <div class="child-services" *ngIf="service.children?.length">
+                    <h4>Sub-items</h4>
+                    <div class="child-card" *ngFor="let child of service.children; let j = index">
+                      <div class="child-header">
+                        <div>
+                          <strong>{{ child.serviceTitle }}</strong>
+                          <p class="service-description" *ngIf="child.description">{{ child.description }}</p>
+                        </div>
+                        <mat-icon [class.status-verde]="child.status === 'verde'"
+                                  [class.status-rojo]="child.status === 'rojo'"
+                                  [class.status-pending]="!child.status">
+                          {{ child.status === 'verde' ? 'check_circle' : child.status === 'rojo' ? 'cancel' : 'radio_button_unchecked' }}
+                        </mat-icon>
+                      </div>
+
+                      <mat-radio-group
+                        [(ngModel)]="child.status"
+                        [name]="'status_' + i + '_' + j"
+                        required
+                        class="status-selector child-selector"
+                        (change)="onStatusChange(child, $event.value)">
+                        <mat-radio-button value="verde" color="primary">
+                          <mat-icon class="status-icon verde">check_circle</mat-icon>
+                          Verde
+                        </mat-radio-button>
+                        <mat-radio-button value="rojo" color="warn">
+                          <mat-icon class="status-icon rojo">cancel</mat-icon>
+                          Rojo
+                        </mat-radio-button>
+                      </mat-radio-group>
+
+                      <mat-form-field appearance="outline" class="full-width" *ngIf="child.status === 'rojo'">
+                        <mat-label>Observacion (obligatoria)</mat-label>
+                        <textarea
+                          matInput
+                          [(ngModel)]="child.observation"
+                          [name]="'obs_' + i + '_' + j"
+                          rows="3"
+                          maxlength="1000"
+                          required
+                          placeholder="Describe el problema detectado..."></textarea>
+                        <mat-hint align="end">{{ (child.observation || '').length }}/1000</mat-hint>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+              </mat-accordion>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="!checkForm.valid || isSubmitting" class="submit-button">
+                <mat-icon *ngIf="!isSubmitting">send</mat-icon>
+                <mat-progress-spinner *ngIf="isSubmitting"
+                                       mode="indeterminate"
+                                       diameter="20"
+                                       strokeWidth="3"
+                                       class="loading-spinner"></mat-progress-spinner>
+                <span>{{ isSubmitting ? 'Enviando...' : 'Enviar Checklist' }}</span>
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </ng-container>
 </div>
 
-<!-- Formulario de escritura al final, reutilizando la pantalla existente -->
+<ng-template #checklistPlaceholder>
+  <mat-card class="checklist-form-card">
+    <mat-card-content>
+      <div class="placeholder" *ngIf="isLoading">
+        <mat-progress-spinner mode="indeterminate" diameter="30"></mat-progress-spinner>
+        <p>Cargando checklist activo...</p>
+      </div>
+      <div class="placeholder" *ngIf="!isLoading">
+        <mat-icon>warning</mat-icon>
+        <p>No hay checklist activo asignado. Pide a un admin que publique uno.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</ng-template>
+
 <div class="writer-below">
   <app-entries></app-entries>
 </div>

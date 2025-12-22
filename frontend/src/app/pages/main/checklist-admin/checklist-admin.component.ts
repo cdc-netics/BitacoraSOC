@@ -1,0 +1,192 @@
+import { Component, OnInit } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ChecklistService } from '../../../services/checklist.service';
+import { ChecklistTemplate, ChecklistItem } from '../../../models/checklist.model';
+
+@Component({
+  selector: 'app-checklist-admin',
+  templateUrl: './checklist-admin.component.html',
+  styleUrls: ['./checklist-admin.component.scss']
+})
+export class ChecklistAdminComponent implements OnInit {
+  templates: ChecklistTemplate[] = [];
+  selectedTemplate: ChecklistTemplate | null = null;
+  isLoading = false;
+  form: FormGroup;
+
+  constructor(
+    private fb: FormBuilder,
+    private checklistService: ChecklistService,
+    private snackBar: MatSnackBar
+  ) {
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      description: [''],
+      items: this.fb.array([])
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadTemplates();
+    this.addItem();
+  }
+
+  get items(): FormArray {
+    return this.form.get('items') as FormArray;
+  }
+
+  private createItemGroup(item?: Partial<ChecklistItem>): FormGroup {
+    return this.fb.group({
+      _id: [item?._id || null],
+      title: [item?.title || '', Validators.required],
+      description: [item?.description || ''],
+      order: [item?.order ?? this.items.length],
+      isActive: [item?.isActive !== false],
+      children: this.fb.array(
+        (item?.children || []).map((child, idx) => this.createChildGroup(child, idx))
+      )
+    });
+  }
+
+  private createChildGroup(child?: Partial<ChecklistItem>, idx = 0): FormGroup {
+    return this.fb.group({
+      _id: [child?._id || null],
+      title: [child?.title || '', Validators.required],
+      description: [child?.description || ''],
+      order: [child?.order ?? idx],
+      isActive: [child?.isActive !== false]
+    });
+  }
+
+  addItem(item?: Partial<ChecklistItem>): void {
+    this.items.push(this.createItemGroup(item));
+  }
+
+  removeItem(index: number): void {
+    if (this.items.length === 1) {
+      this.snackBar.open('Debe existir al menos un item en la plantilla', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    this.items.removeAt(index);
+  }
+
+  getChildrenArray(itemIndex: number): FormArray {
+    return this.items.at(itemIndex).get('children') as FormArray;
+  }
+
+  addChild(itemIndex: number, child?: Partial<ChecklistItem>): void {
+    this.getChildrenArray(itemIndex).push(this.createChildGroup(child, this.getChildrenArray(itemIndex).length));
+  }
+
+  removeChild(itemIndex: number, childIndex: number): void {
+    this.getChildrenArray(itemIndex).removeAt(childIndex);
+  }
+
+  loadTemplates(): void {
+    this.isLoading = true;
+    this.checklistService.getTemplates().subscribe({
+      next: (templates) => {
+        this.templates = templates;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error cargando plantillas', err);
+        this.snackBar.open('Error cargando plantillas', 'Cerrar', { duration: 3000 });
+        this.isLoading = false;
+      }
+    });
+  }
+
+  selectTemplate(template: ChecklistTemplate): void {
+    this.selectedTemplate = template;
+    this.form.patchValue({
+      name: template.name,
+      description: template.description || ''
+    });
+    this.items.clear();
+    (template.items || []).forEach(item => this.addItem(item));
+  }
+
+  resetForm(): void {
+    this.selectedTemplate = null;
+    this.form.reset({ name: '', description: '' });
+    this.items.clear();
+    this.addItem();
+  }
+
+  saveTemplate(): void {
+    if (this.form.invalid) {
+      this.snackBar.open('Completa el nombre y los items del checklist', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const payload = {
+      name: this.form.value.name,
+      description: this.form.value.description,
+      items: this.items.value.map((item: any, idx: number) => ({
+        _id: item._id,
+        title: item.title,
+        description: item.description,
+        order: typeof item.order === 'number' ? item.order : idx,
+        isActive: item.isActive !== false,
+        children: (item.children || []).map((child: any, cIdx: number) => ({
+          _id: child._id,
+          title: child.title,
+          description: child.description,
+          order: typeof child.order === 'number' ? child.order : cIdx,
+          isActive: child.isActive !== false
+        }))
+      }))
+    } as Partial<ChecklistTemplate>;
+
+    const request$ = this.selectedTemplate
+      ? this.checklistService.updateTemplate(this.selectedTemplate._id as string, payload)
+      : this.checklistService.createTemplate(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.snackBar.open('Plantilla guardada', 'Cerrar', { duration: 3000 });
+        this.resetForm();
+        this.loadTemplates();
+      },
+      error: (err) => {
+        console.error('Error guardando plantilla', err);
+        this.snackBar.open(err.error?.message || 'Error guardando plantilla', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  activateTemplate(template: ChecklistTemplate): void {
+    if (!template._id) return;
+    this.checklistService.activateTemplate(template._id).subscribe({
+      next: () => {
+        this.snackBar.open('Checklist activado', 'Cerrar', { duration: 3000 });
+        this.loadTemplates();
+      },
+      error: (err) => {
+        console.error('Error activando plantilla', err);
+        this.snackBar.open(err.error?.message || 'Error activando plantilla', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  deleteTemplate(template: ChecklistTemplate): void {
+    if (!template._id) return;
+    if (!confirm(`Eliminar la plantilla "${template.name}"?`)) return;
+
+    this.checklistService.deleteTemplate(template._id).subscribe({
+      next: () => {
+        this.snackBar.open('Plantilla eliminada', 'Cerrar', { duration: 3000 });
+        this.loadTemplates();
+        if (this.selectedTemplate?._id === template._id) {
+          this.resetForm();
+        }
+      },
+      error: (err) => {
+        console.error('Error eliminando plantilla', err);
+        this.snackBar.open(err.error?.message || 'Error eliminando plantilla', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+}

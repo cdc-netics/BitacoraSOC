@@ -1,15 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
-
-interface Tag {
-  _id: string;
-  name: string;
-  count: number;
-  createdAt: string;
-}
+import { TagService } from '../../../services/tag.service';
+import { TagStats } from '../../../models/report.model';
 
 @Component({
   selector: 'app-tags',
@@ -17,27 +9,22 @@ interface Tag {
   styleUrls: ['./tags.component.scss']
 })
 export class TagsComponent implements OnInit {
-  tags: Tag[] = [];
+  tags: Array<TagStats & { name?: string }> = [];
   isLoading = false;
-  tagForm!: FormGroup;
   displayedColumns: string[] = ['name', 'count', 'actions'];
 
   constructor(
-    private fb: FormBuilder,
-    private http: HttpClient,
+    private tagService: TagService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
-    this.tagForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]]
-    });
     this.loadTags();
   }
 
   loadTags(): void {
     this.isLoading = true;
-    this.http.get<any>(`${environment.apiUrl}/tags`).subscribe({
+    this.tagService.getAll().subscribe({
       next: (response) => {
         this.tags = response.tags || [];
         this.isLoading = false;
@@ -45,30 +32,16 @@ export class TagsComponent implements OnInit {
       error: (err) => {
         console.error('Error cargando tags:', err);
         this.isLoading = false;
+        this.snackBar.open(err.error?.message || 'Error cargando tags', 'Cerrar', { duration: 3000 });
       }
     });
   }
 
-  addTag(): void {
-    if (this.tagForm.invalid) return;
-    
-    const tagName = this.tagForm.value.name.toLowerCase().trim();
-    this.http.post<any>(`${environment.apiUrl}/tags`, { name: tagName }).subscribe({
-      next: () => {
-        this.snackBar.open('Tag creado', 'Cerrar', { duration: 3000 });
-        this.tagForm.reset();
-        this.loadTags();
-      },
-      error: (err) => {
-        this.snackBar.open(err.error?.message || 'Error creando tag', 'Cerrar', { duration: 3000 });
-      }
-    });
-  }
+  deleteTag(tag: TagStats & { name?: string }): void {
+    const tagName = (tag.tag || tag.name || '').toLowerCase();
+    if (!confirm(`Eliminar el tag "${tagName}" de todas las entradas?`)) return;
 
-  deleteTag(tag: Tag): void {
-    if (!confirm(`¿Eliminar el tag "${tag.name}"?`)) return;
-    
-    this.http.delete(`${environment.apiUrl}/tags/${tag._id}`).subscribe({
+    this.tagService.delete(tagName).subscribe({
       next: () => {
         this.snackBar.open('Tag eliminado', 'Cerrar', { duration: 3000 });
         this.loadTags();
@@ -79,11 +52,12 @@ export class TagsComponent implements OnInit {
     });
   }
 
-  normalizeTag(tag: Tag): void {
-    const newName = prompt('Nuevo nombre para el tag:', tag.name);
-    if (!newName || newName === tag.name) return;
-    
-    this.http.put(`${environment.apiUrl}/tags/${tag._id}`, { name: newName.toLowerCase() }).subscribe({
+  normalizeTag(tag: TagStats & { name?: string }): void {
+    const currentName = tag.tag || tag.name || '';
+    const newName = prompt('Nuevo nombre para el tag:', currentName);
+    if (!newName || newName === currentName) return;
+
+    this.tagService.rename(currentName, newName.toLowerCase().trim()).subscribe({
       next: () => {
         this.snackBar.open('Tag actualizado', 'Cerrar', { duration: 3000 });
         this.loadTags();

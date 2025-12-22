@@ -1,85 +1,310 @@
-/**
- * Rutas de Checklist de Turno
- * 
- * Servicios SOC:
- *   - Catálogo de servicios configurable por admin (CRUD)
- *   - Registro de checks de turno (inicio/cierre)
- *   - Historial de checks con filtros
- * 
- * Reglas SOC CRÍTICAS:
- *   1. Todos los servicios activos deben evaluarse (verde/rojo)
- *   2. Servicios en rojo REQUIEREN observación (max 1000 chars)
- *   3. Anti-spam: NO permitir tipos consecutivos iguales (inicio->inicio)
- *   4. Cooldown configurable entre checks (default 4h)
- *   5. Email automático si config SMTP existe (condicional si sendOnlyIfRed)
- */
+// Checklist routes and admin template management
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
+const ChecklistTemplate = require('../models/ChecklistTemplate');
 const ServiceCatalog = require('../models/ServiceCatalog');
 const ShiftCheck = require('../models/ShiftCheck');
 const AppConfig = require('../models/AppConfig');
-const { authenticate, authorize, notGuest } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const captureMetadata = require('../middleware/metadata');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
 
-// ========== CATÁLOGO DE SERVICIOS ==========
+const normalizeChildren = (children = []) => {
+  if (!Array.isArray(children)) return [];
+  return children.map((child, idx) => ({
+    _id: child._id,
+    title: child.title,
+    description: child.description,
+    order: typeof child.order === 'number' ? child.order : idx,
+    isActive: child.isActive !== false
+  }));
+};
 
-// GET /api/checklist/services - Obtener servicios activos
+const normalizeItem = (item, idx) => ({
+  _id: item._id,
+  title: item.title,
+  description: item.description,
+  order: typeof item.order === 'number' ? item.order : idx,
+  isActive: item.isActive !== false,
+  children: normalizeChildren(item.children)
+});
+
+const sortItems = (items = []) =>
+  [...items].sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+
+const flattenItems = (items = [], parentId = null) => {
+  const flat = [];
+  sortItems(items).forEach(item => {
+    flat.push({
+      ...item.toObject?.() ? item.toObject() : item,
+      parentId
+    });
+    if (item.children && item.children.length > 0) {
+      flat.push(...flattenItems(item.children, item._id || item.id));
+    }
+  });
+  return flat;
+};
+
+// Snapshot helper: returns active template or legacy catalog as fallback
+const getActiveChecklistSnapshot = async () => {
+  const activeTemplate = await ChecklistTemplate.findOne({ isActive: true });
+
+  if (activeTemplate) {
+    const activeItems = sortItems((activeTemplate.items || [])
+      .filter(item => item.isActive !== false)
+      .map(item => ({
+        ...item.toObject(),
+        children: sortItems((item.children || []).filter(c => c.isActive !== false))
+      })));
+
+    return {
+      type: 'template',
+      checklistId: activeTemplate._id,
+      checklistName: activeTemplate.name,
+      items: activeItems,
+      flatItems: flattenItems(activeItems)
+    };
+  }
+
+  const services = await ServiceCatalog.find({ isActive: true }).sort({ order: 1, title: 1 });
+  return {
+    type: 'legacy',
+    checklistId: null,
+    checklistName: 'Catalogo de servicios',
+    items: services,
+    flatItems: services
+  };
+};
+
+// ========== Checklist templates (admin) ==========
+
+// Active template (visible to any authenticated role)
+router.get('/templates/active', authenticate, async (req, res) => {
+  try {
+    const snapshot = await getActiveChecklistSnapshot();
+
+    if (!snapshot.items || snapshot.items.length === 0) {
+      return res.status(404).json({ message: 'No hay checklist activo configurado' });
+    }
+
+    res.json({
+      template: {
+        _id: snapshot.checklistId,
+        name: snapshot.checklistName,
+        isActive: true,
+        items: snapshot.items,
+        flatItems: snapshot.flatItems
+      },
+      source: snapshot.type
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Error obteniendo checklist activo');
+    res.status(500).json({ message: 'Error obteniendo checklist activo' });
+  }
+});
+
+// List templates
+router.get('/templates', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const templates = await ChecklistTemplate.find().sort({ isActive: -1, updatedAt: -1 });
+    res.json({ templates });
+  } catch (error) {
+    logger.error({ err: error }, 'Error listando plantillas');
+    res.status(500).json({ message: 'Error listando plantillas' });
+  }
+});
+
+// Create template
+router.post('/templates',
+  authenticate,
+  authorize('admin'),
+  [
+    body('name').trim().notEmpty().withMessage('El nombre es requerido'),
+    body('description').optional().trim(),
+    body('items').isArray({ min: 1 }).withMessage('Debes definir al menos un item'),
+    body('items.*.title').trim().notEmpty().withMessage('Cada item requiere titulo'),
+    body('items.*.description').optional().trim(),
+    body('items.*.order').optional().isInt().toInt(),
+    body('items.*.isActive').optional().isBoolean(),
+    body('items.*.children').optional().isArray(),
+    body('items.*.children.*.title').optional().trim().notEmpty(),
+    body('items.*.children.*.description').optional().trim(),
+    body('items.*.children.*.order').optional().isInt().toInt(),
+    body('items.*.children.*.isActive').optional().isBoolean(),
+    body('isActive').optional().isBoolean()
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { name, description, items, isActive } = req.body;
+
+      const normalizedItems = items.map((item, idx) => normalizeItem(item, idx));
+
+      const template = new ChecklistTemplate({
+        name,
+        description,
+        items: normalizedItems,
+        isActive: !!isActive,
+        activatedAt: isActive ? new Date() : undefined,
+        createdBy: req.user?._id,
+        updatedBy: req.user?._id
+      });
+
+      if (template.isActive) {
+        await ChecklistTemplate.updateMany({ _id: { $ne: template._id } }, { isActive: false });
+      } else {
+        const activeCount = await ChecklistTemplate.countDocuments({ isActive: true });
+        if (activeCount === 0) {
+          template.isActive = true;
+          template.activatedAt = new Date();
+        }
+      }
+
+      await template.save();
+      res.status(201).json({ message: 'Plantilla creada', template });
+    } catch (error) {
+      logger.error({ err: error }, 'Error creando plantilla');
+      res.status(500).json({ message: 'Error creando plantilla' });
+    }
+  }
+);
+
+// Update template
+router.put('/templates/:id',
+  authenticate,
+  authorize('admin'),
+  [
+    body('name').optional().trim().notEmpty(),
+    body('description').optional().trim(),
+    body('items').optional().isArray({ min: 1 }),
+    body('items.*.title').optional().trim().notEmpty(),
+    body('items.*.description').optional().trim(),
+    body('items.*.order').optional().isInt().toInt(),
+    body('items.*.isActive').optional().isBoolean(),
+    body('items.*.children').optional().isArray(),
+    body('items.*.children.*.title').optional().trim().notEmpty(),
+    body('items.*.children.*.description').optional().trim(),
+    body('items.*.children.*.order').optional().isInt().toInt(),
+    body('items.*.children.*.isActive').optional().isBoolean()
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const payload = { ...req.body };
+
+      if (payload.items) {
+        payload.items = payload.items.map((item, idx) => normalizeItem(item, idx));
+      }
+
+      payload.updatedBy = req.user?._id;
+
+      const template = await ChecklistTemplate.findByIdAndUpdate(
+        req.params.id,
+        payload,
+        { new: true }
+      );
+
+      if (!template) {
+        return res.status(404).json({ message: 'Plantilla no encontrada' });
+      }
+
+      res.json({ message: 'Plantilla actualizada', template });
+    } catch (error) {
+      logger.error({ err: error }, 'Error actualizando plantilla');
+      res.status(500).json({ message: 'Error actualizando plantilla' });
+    }
+  }
+);
+
+// Delete template
+router.delete('/templates/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const template = await ChecklistTemplate.findById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Plantilla no encontrada' });
+    }
+
+    if (template.isActive) {
+      return res.status(400).json({ message: 'No puedes eliminar una plantilla activa. Desactiva primero.' });
+    }
+
+    await ChecklistTemplate.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Plantilla eliminada' });
+  } catch (error) {
+    logger.error({ err: error }, 'Error eliminando plantilla');
+    res.status(500).json({ message: 'Error eliminando plantilla' });
+  }
+});
+
+// Activate template
+router.put('/templates/:id/activate', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const template = await ChecklistTemplate.findById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Plantilla no encontrada' });
+    }
+
+    await ChecklistTemplate.updateMany({ _id: { $ne: template._id } }, { isActive: false });
+    template.isActive = true;
+    template.activatedAt = new Date();
+    template.updatedBy = req.user?._id;
+    await template.save();
+
+    res.json({ message: 'Plantilla activada', template });
+  } catch (error) {
+    logger.error({ err: error }, 'Error activando plantilla');
+    res.status(500).json({ message: 'Error activando plantilla' });
+  }
+});
+
+// ========== Legacy service catalog endpoints ==========
+
 router.get('/services', authenticate, async (req, res) => {
   try {
-    const services = await ServiceCatalog.find({ isActive: true })
-      .sort({ order: 1, title: 1 });
-
-    res.json(services);
+    const snapshot = await getActiveChecklistSnapshot();
+    const items = (snapshot.flatItems || []).filter(item => item.isActive !== false);
+    res.json(items);
   } catch (error) {
-    console.error('Error al obtener servicios:', error);
+    logger.error({ err: error }, 'Error al obtener servicios');
     res.status(500).json({ message: 'Error al obtener servicios' });
   }
 });
 
-// GET /api/checklist/services/all - Obtener todos los servicios (admin)
 router.get('/services/all', authenticate, authorize('admin'), async (req, res) => {
   try {
     const services = await ServiceCatalog.find().sort({ order: 1, title: 1 });
     res.json(services);
   } catch (error) {
-    console.error('Error al obtener servicios:', error);
+    logger.error({ err: error }, 'Error al obtener servicios');
     res.status(500).json({ message: 'Error al obtener servicios' });
   }
 });
 
-// POST /api/checklist/services - Crear servicio (admin)
 router.post('/services',
   authenticate,
   authorize('admin'),
   [
-    body('title').trim().notEmpty().withMessage('El título es requerido'),
+    body('title').trim().notEmpty().withMessage('El titulo es requerido'),
     body('order').optional().isInt().toInt()
   ],
   validate,
   async (req, res) => {
     try {
       const { title, order } = req.body;
-
-      const service = new ServiceCatalog({
-        title,
-        order: order || 0
-      });
-
+      const service = new ServiceCatalog({ title, order: order || 0 });
       await service.save();
-
       res.status(201).json({ message: 'Servicio creado', service });
     } catch (error) {
-      console.error('Error al crear servicio:', error);
+      logger.error({ err: error }, 'Error al crear servicio');
       res.status(500).json({ message: 'Error al crear servicio' });
     }
   }
 );
 
-// PUT /api/checklist/services/:id - Actualizar servicio (admin)
 router.put('/services/:id',
   authenticate,
   authorize('admin'),
@@ -103,124 +328,99 @@ router.put('/services/:id',
 
       res.json({ message: 'Servicio actualizado', service });
     } catch (error) {
-      console.error('Error al actualizar servicio:', error);
+      logger.error({ err: error }, 'Error al actualizar servicio');
       res.status(500).json({ message: 'Error al actualizar servicio' });
     }
   }
 );
 
-// DELETE /api/checklist/services/:id - Eliminar servicio (admin)
 router.delete('/services/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const service = await ServiceCatalog.findByIdAndDelete(req.params.id);
-
     if (!service) {
       return res.status(404).json({ message: 'Servicio no encontrado' });
     }
-
     res.json({ message: 'Servicio eliminado' });
   } catch (error) {
-    console.error('Error al eliminar servicio:', error);
+    logger.error({ err: error }, 'Error al eliminar servicio');
     res.status(500).json({ message: 'Error al eliminar servicio' });
   }
 });
 
-// ========== REGISTROS DE CHECKLIST ==========
+// ========== Checklist records ==========
 
-// POST /api/checklist/check - Registrar checklist de turno
 router.post('/check',
   authenticate,
-  notGuest,
   captureMetadata,
   [
-    body('type').isIn(['inicio', 'cierre']).withMessage('Tipo inválido'),
+    body('type').isIn(['inicio', 'cierre']).withMessage('Tipo invalido'),
+    body('checklistId').optional().isMongoId(),
     body('services').isArray({ min: 1 }).withMessage('Debes incluir al menos un servicio'),
-    body('services.*.serviceId').isMongoId().withMessage('ID de servicio inválido'),
-    body('services.*.serviceTitle').trim().notEmpty(),
-    body('services.*.status').isIn(['verde', 'rojo']).withMessage('Estado inválido'),
+    body('services.*.serviceId').isMongoId().withMessage('ID de servicio invalido'),
+    body('services.*.status').isIn(['verde', 'rojo']).withMessage('Estado invalido'),
     body('services.*.observation').optional().trim().isString().isLength({ max: 1000 })
   ],
   validate,
   async (req, res) => {
     try {
-      const { type, services } = req.body;
+      const { type, services, checklistId } = req.body;
       const userId = req.user._id;
 
-      // 1. Obtener servicios activos y verificar que se incluyeron TODOS
-      const activeServices = await ServiceCatalog.find({ isActive: true });
-      const receivedServiceIds = services.map(s => s.serviceId.toString());
-      const activeServiceIds = activeServices.map(s => s._id.toString());
+      const snapshot = await getActiveChecklistSnapshot();
+      if (!snapshot.items || snapshot.items.length === 0) {
+        return res.status(400).json({ message: 'No hay un checklist activo configurado' });
+      }
 
-      // Verificar que se incluyeron TODOS los servicios activos
+      if (snapshot.type === 'template' && checklistId && checklistId !== String(snapshot.checklistId)) {
+        return res.status(400).json({ message: 'El checklist usado ya no esta activo. Refresca y vuelve a intentar.' });
+      }
+
+      const activeServices = snapshot.flatItems || snapshot.items;
+      const servicesMap = new Map(activeServices.map(s => [String(s._id), s]));
+      const receivedServiceIds = services.map(s => String(s.serviceId));
+      const activeServiceIds = activeServices.map(s => String(s._id));
+
       const missingServices = activeServiceIds.filter(id => !receivedServiceIds.includes(id));
       if (missingServices.length > 0) {
         const missingTitles = activeServices
-          .filter(s => missingServices.includes(s._id.toString()))
+          .filter(s => missingServices.includes(String(s._id)))
           .map(s => s.title);
-        return res.status(400).json({
-          message: `Debes evaluar todos los servicios. Faltan: ${missingTitles.join(', ')}`
-        });
+        return res.status(400).json({ message: `Debes evaluar todos los servicios. Faltan: ${missingTitles.join(', ')}` });
       }
 
-      // Verificar que no haya servicios extra/inactivos
       const extraServices = receivedServiceIds.filter(id => !activeServiceIds.includes(id));
       if (extraServices.length > 0) {
-        return res.status(400).json({
-          message: 'Se incluyeron servicios inactivos o inexistentes'
-        });
+        return res.status(400).json({ message: 'Se incluyeron servicios inactivos o inexistentes' });
       }
 
-      // 2. Verificar que todos los servicios en rojo tengan observación
       for (const service of services) {
         if (service.status === 'rojo' && (!service.observation || service.observation.trim() === '')) {
-          return res.status(400).json({
-            message: `El servicio "${service.serviceTitle}" está en rojo y requiere observación`
-          });
+          return res.status(400).json({ message: `El servicio "${servicesMap.get(String(service.serviceId))?.title || service.serviceId}" esta en rojo y requiere observacion` });
         }
       }
 
-      // 2. 🔒 REGLA SOC: Anti-spam - NO permitir tipos consecutivos iguales
-      // 
-      // Por qué: Evita errores operativos donde un analista registra dos "inicio"
-      // sin haber cerrado el turno anterior. Fuerza el flujo correcto:
-      //   inicio -> cierre -> inicio -> cierre...
-      // 
-      // Ejemplo de error bloqueado: Usuario hace "inicio" dos veces seguidas.
-      // Solución: Backend valida último check y rechaza si tipo === lastCheck.type
       const lastCheck = await ShiftCheck.findOne({ userId }).sort({ createdAt: -1 });
-
       if (lastCheck && lastCheck.type === type) {
         const expectedType = type === 'inicio' ? 'cierre' : 'inicio';
-        
+
         await audit(req, {
           event: 'shiftcheck.block.consecutive',
           level: 'warn',
           result: { success: false, reason: `Consecutive ${type} blocked` },
           metadata: { type, lastCheckType: lastCheck.type, expectedType }
         });
-        
-        return res.status(400).json({
-          message: `No puedes registrar dos "${type}" consecutivos. Debes hacer "${expectedType}" primero.`
-        });
+
+        return res.status(400).json({ message: `No puedes registrar dos "${type}" consecutivos. Debes hacer "${expectedType}" primero.` });
       }
 
-      // 3. 🔒 REGLA SOC: Cooldown configurable entre checks
-      //
-      // Por qué: Previene spam de checks (ej: registrar inicio cada 5 minutos).
-      // El admin puede configurar las horas mínimas entre checks (default 4h).
-      // Calculamos tiempo transcurrido y bloqueamos si no cumple el mínimo.
-      //
-      // Cálculo: (now - lastCheck.createdAt) en milisegundos
-      //          Si < cooldownHours * 3600 * 1000 -> rechazar
       const config = await AppConfig.findOne();
       const cooldownHours = config?.shiftCheckCooldownHours || 4;
 
       if (lastCheck) {
         const hoursSinceLastCheck = (Date.now() - lastCheck.createdAt.getTime()) / (1000 * 60 * 60);
-
         if (hoursSinceLastCheck < cooldownHours) {
           const remainingHours = (cooldownHours - hoursSinceLastCheck).toFixed(1);
-          
+
           await audit(req, {
             event: 'shiftcheck.block.cooldown',
             level: 'warn',
@@ -232,21 +432,31 @@ router.post('/check',
               remainingHours
             }
           });
-          
-          return res.status(400).json({
-            message: `Debes esperar ${cooldownHours} horas entre checks. Tiempo restante: ${remainingHours}h`
-          });
+
+          return res.status(400).json({ message: `Debes esperar ${cooldownHours} horas entre checks. Tiempo restante: ${remainingHours}h` });
         }
       }
 
-      // 4. Crear registro
       const hasRedServices = services.some(s => s.status === 'rojo');
 
+      const normalizedServices = services.map(s => {
+        const def = servicesMap.get(String(s.serviceId));
+        return {
+          serviceId: def?._id,
+          parentServiceId: def?.parentId || null,
+          serviceTitle: def?.title || s.serviceId,
+          status: s.status,
+          observation: s.observation || ''
+        };
+      });
+
       const check = new ShiftCheck({
+        checklistId: snapshot.checklistId,
+        checklistName: snapshot.checklistName,
         userId,
         username: req.user.username,
         type,
-        services,
+        services: normalizedServices,
         hasRedServices,
         checkDate: new Date(),
         ipAddress: req.clientIp,
@@ -254,17 +464,17 @@ router.post('/check',
       });
 
       await check.save();
-      
-      // Auditar registro exitoso
+
       await audit(req, {
         event: 'shiftcheck.submit',
         level: 'info',
         result: { success: true, reason: 'Check registered successfully' },
         metadata: {
           type,
-          redCount: services.filter(s => s.status === 'rojo').length,
-          greenCount: services.filter(s => s.status === 'verde').length,
-          services: services.map(s => ({
+          checklistId: snapshot.checklistId,
+          redCount: normalizedServices.filter(s => s.status === 'rojo').length,
+          greenCount: normalizedServices.filter(s => s.status === 'verde').length,
+          services: normalizedServices.map(s => ({
             title: s.serviceTitle,
             status: s.status,
             hasObservation: !!s.observation
@@ -272,45 +482,30 @@ router.post('/check',
         }
       });
 
-      // 5. 📧 Envío automático de email (si SMTP configurado)
-      //
-      // Si existe SmtpConfig activo:
-      //   - sendOnlyIfRed=false → envía siempre
-      //   - sendOnlyIfRed=true  → envía solo si hay servicios en rojo
-      // El email incluye todos los servicios con estados y observaciones.
       try {
         const { sendChecklistEmail } = require('./smtp');
         const SmtpConfig = require('../models/SmtpConfig');
         const smtpConfig = await SmtpConfig.findOne({ isActive: true });
-        
+
         if (smtpConfig) {
           const shouldSend = !smtpConfig.sendOnlyIfRed || hasRedServices;
           if (shouldSend) {
-            await sendChecklistEmail(check, services);
+            await sendChecklistEmail(check, normalizedServices);
           }
         }
       } catch (emailError) {
-        logger.error({
-          err: emailError,
-          requestId: req.requestId,
-          checkId: check._id
-        }, 'Error sending checklist email');
-        // No fallar la petición si el email falla
+        logger.error({ err: emailError, requestId: req.requestId, checkId: check._id }, 'Error sending checklist email');
       }
 
-      res.status(201).json({
-        message: 'Checklist registrado exitosamente',
-        check
-      });
+      res.status(201).json({ message: 'Checklist registrado exitosamente', check });
     } catch (error) {
-      console.error('Error al registrar check:', error);
+      logger.error({ err: error }, 'Error al registrar checklist');
       res.status(500).json({ message: 'Error al registrar checklist' });
     }
   }
 );
 
-// GET /api/checklist/check/last - Obtener último check del usuario
-router.get('/check/last', authenticate, notGuest, async (req, res) => {
+router.get('/check/last', authenticate, async (req, res) => {
   try {
     const lastCheck = await ShiftCheck.findOne({ userId: req.user._id })
       .sort({ createdAt: -1 })
@@ -322,18 +517,16 @@ router.get('/check/last', authenticate, notGuest, async (req, res) => {
 
     res.json(lastCheck);
   } catch (error) {
-    console.error('Error al obtener último check:', error);
-    res.status(500).json({ message: 'Error al obtener último check' });
+    logger.error({ err: error }, 'Error al obtener ultimo check');
+    res.status(500).json({ message: 'Error al obtener ultimo check' });
   }
 });
 
-// GET /api/checklist/check/history - Historial de checks
-router.get('/check/history', authenticate, notGuest, async (req, res) => {
+router.get('/check/history', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    // Si es admin, ver todos; si no, solo los suyos
     const filter = req.user.role === 'admin' ? {} : { userId: req.user._id };
 
     const [checks, total] = await Promise.all([
@@ -355,7 +548,7 @@ router.get('/check/history', authenticate, notGuest, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error al obtener historial:', error);
+    logger.error({ err: error }, 'Error al obtener historial');
     res.status(500).json({ message: 'Error al obtener historial' });
   }
 });

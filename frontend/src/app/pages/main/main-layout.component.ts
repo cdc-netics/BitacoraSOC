@@ -1,49 +1,20 @@
-/**
- * Componente Layout Principal (Post-Login)
- * 
- * Funcionalidad:
- *   - Layout contenedor con sidebars izquierda/derecha
- *   - Sidebar izquierda: notas (admin + personal), autosave cada 3s
- *   - Sidebar derecha: checklist de turno (inicio/cierre)
- *   - Header con menú navegación + logout
- *   - Router outlet para vistas hijas (entries, reports, users, settings)
- * 
- * Sidebars:
- *   - Left: Nota admin (todos ven, solo admin edita) + nota personal (privada)
- *   - Right: Checklist servicios SOC (evaluar todos, rojos requieren observación)
- *   - Guests NO ven sidebars (solo contenido principal)
- * 
- * Autosave:
- *   - debounceTime(3000): guarda 3s después del último cambio
- *   - distinctUntilChanged: solo guarda si contenido realmente cambió
- *   - Subjects: adminNoteChange$, personalNoteChange$
- * 
- * Checklist:
- *   - Valida TODOS los servicios activos estén evaluados
- *   - Servicios en rojo REQUIEREN observación
- *   - NO permite tipos consecutivos (inicio->inicio bloqueado)
- *   - Valida cooldown configurable (default 4h)
- * 
- * Menú navegación (role-based):
- *   - Entries: todos los roles
- *   - Reports: admin + user (NO guests)
- *   - Users: solo admin
- *   - Settings: solo admin
- * 
- * RxJS:
- *   - destroy$: Subject para cleanup en ngOnDestroy (evita memory leaks)
- *   - takeUntil(destroy$): cancela subscriptions al destruir componente
- */
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
+﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { NoteService } from '../../services/note.service';
 import { ChecklistService } from '../../services/checklist.service';
 import { ThemeService } from '../../services/theme.service';
 import { AdminNote, PersonalNote } from '../../models/note.model';
-import { ServiceCatalog, ShiftCheck } from '../../models/checklist.model';
+import { ChecklistTemplate, ChecklistItem, ShiftCheck } from '../../models/checklist.model';
 import { Theme } from '../../models/user.model';
+
+type MenuItem = {
+  icon: string;
+  label: string;
+  route: string;
+  fragment?: string;
+  roles: string[];
+};
 
 @Component({
   selector: 'app-main-layout',
@@ -62,14 +33,15 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   // Sidebar states
   leftSidebarOpened = true;
-  rightSidebarOpened = true;
+  rightSidebarOpened = false;
 
   // Notas
   adminNote: Partial<AdminNote> = { content: '' };
   personalNote: Partial<PersonalNote> = { content: '' };
 
   // Checklist
-  activeServices: ServiceCatalog[] = [];
+  activeChecklist: ChecklistTemplate | null = null;
+  activeServices: ChecklistItem[] = [];
   lastCheck: ShiftCheck | null = null;
   checkType: 'inicio' | 'cierre' = 'inicio';
   checklistServices: Array<{
@@ -77,31 +49,36 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     serviceTitle: string;
     status: 'verde' | 'rojo' | null;
     observation: string;
+    parentId?: string;
   }> = [];
   checklistHasErrors = false;
   checklistErrorMessage = '';
 
-  // Menú según prompt: Admin tiene todo, User solo básico, Guest limitado
-  menuItems = [
-    { icon: 'edit', label: 'Escribir', route: '/main/entries', roles: ['admin', 'user', 'guest'] },
+  primaryMenuItems: MenuItem[] = [
+    { icon: 'edit', label: 'Escribir', route: '/main/checklist', roles: ['admin', 'user', 'guest'] },
     { icon: 'history', label: 'Mis Entradas', route: '/main/my-entries', roles: ['admin'] },
-    { icon: 'public', label: '🌍 Ver todas', route: '/main/all-entries', roles: ['admin', 'user', 'guest'] },
-    { icon: 'person', label: '👤 Mi Perfil', route: '/main/profile', roles: ['admin', 'user'] },
+    { icon: 'public', label: 'Ver todas', route: '/main/all-entries', roles: ['admin', 'user', 'guest'] },
+    { icon: 'person', label: 'Mi Perfil', route: '/main/profile', roles: ['admin', 'user'] },
+    { icon: 'fact_check', label: 'Checklist (Admin)', route: '/main/checklist-admin', roles: ['admin'] },
+    { icon: 'assessment', label: 'Reportes', route: '/main/reports', roles: ['admin', 'user'] }
+  ];
+
+  configItems: MenuItem[] = [
     { icon: 'people', label: 'Admin Usuarios', route: '/main/users', roles: ['admin'] },
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
-    { icon: 'assessment', label: 'Reportes', route: '/main/reports', roles: ['admin', 'user'] },
     { icon: 'image', label: 'Logo', route: '/main/logo', roles: ['admin'] },
-    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] },
-    { icon: 'checklist', label: 'Checklist', route: '/main/checklist', roles: ['admin', 'user'] },
-    { icon: 'settings', label: 'Configuración', route: '/main/settings', roles: ['admin'] }
+    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] }
   ];
+
+  visiblePrimaryMenu: MenuItem[] = [];
+  visibleConfigItems: MenuItem[] = [];
+  hasConfigAccess = false;
 
   constructor(
     private authService: AuthService,
     private noteService: NoteService,
     private checklistService: ChecklistService,
-    private themeService: ThemeService,
-    private router: Router
+    private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -123,38 +100,30 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       this.isUser = this.currentUser.role === 'user';
       this.isGuest = this.currentUser.role === 'guest';
     }
+
+    this.updateVisibleMenus();
   }
 
   setupAutosave(): void {
-    // Autosave nota admin (solo para admins)
     this.adminNoteChange$
-      .pipe(
-        debounceTime(3000),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
+      .pipe(debounceTime(3000), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(content => {
         if (this.isAdmin && content !== null) {
           this.noteService.updateAdminNote({ content })
             .subscribe({
-              next: () => console.log('✅ Nota admin guardada automáticamente'),
+              next: () => console.log('Nota admin guardada automaticamente'),
               error: (err) => console.error('Error en autosave nota admin:', err)
             });
         }
       });
 
-    // Autosave nota personal
     this.personalNoteChange$
-      .pipe(
-        debounceTime(3000),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
+      .pipe(debounceTime(3000), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(content => {
         if (content !== null) {
           this.noteService.updatePersonalNote({ content })
             .subscribe({
-              next: () => console.log('✅ Nota personal guardada automáticamente'),
+              next: () => console.log('Nota personal guardada automaticamente'),
               error: (err) => console.error('Error en autosave nota personal:', err)
             });
         }
@@ -180,67 +149,72 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   loadChecklist(): void {
-    this.checklistService.getActiveServices()
+    this.checklistService.getActiveChecklist()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (services) => {
+        next: (template) => {
+          this.activeChecklist = template;
+          const services = template?.flatItems || this.flattenItems(template?.items || []);
           this.activeServices = services;
-          // Inicializar estructura de checklist
           this.checklistServices = services.map(s => ({
             serviceId: s._id,
             serviceTitle: s.title,
             status: null,
-            observation: ''
+            observation: '',
+            parentId: (s as any).parentId
           }));
         },
-        error: (err) => console.error('Error cargando servicios:', err)
+        error: (err) => console.error('Error cargando checklist activo:', err)
       });
 
     this.checklistService.getLastCheck()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          this.lastCheck = response.check || null;
-          // Determinar próximo tipo según último check
+          this.lastCheck = response.check || response || null;
           if (this.lastCheck) {
             this.checkType = this.lastCheck.type === 'inicio' ? 'cierre' : 'inicio';
           }
         },
-        error: (err) => console.error('Error cargando último check:', err)
+        error: (err) => console.error('Error cargando ultimo check:', err)
       });
 
-    // 🔄 Refetch servicios cada 2 minutos para captar cambios del admin
     setInterval(() => {
       this.refreshChecklistServices();
-    }, 120000); // 2 minutos
+    }, 120000);
   }
 
   refreshChecklistServices(): void {
-    this.checklistService.getActiveServices()
+    this.checklistService.getActiveChecklist()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (services) => {
-          // Solo actualizar si hay cambios (evitar reset innecesario)
+        next: (template) => {
+          const services = template?.flatItems || this.flattenItems(template?.items || []);
           if (JSON.stringify(services) !== JSON.stringify(this.activeServices)) {
-            console.log('ℹ️ Servicios actualizados por admin');
+            console.log('Checklist actualizado por admin');
+            this.activeChecklist = template;
             this.activeServices = services;
             this.checklistServices = services.map(s => ({
               serviceId: s._id,
               serviceTitle: s.title,
               status: null,
-              observation: ''
+              observation: '',
+              parentId: (s as any).parentId
             }));
           }
         },
-        error: (err) => console.error('Error refrescando servicios:', err)
+        error: (err) => console.error('Error refrescando checklist:', err)
       });
   }
 
-  getVisibleMenuItems() {
-    return this.menuItems.filter(item =>
-      item.roles.includes(this.currentUser?.role || '')
-    );
+  private updateVisibleMenus(): void {
+    const role = this.currentUser?.role || '';
+    this.visiblePrimaryMenu = this.primaryMenuItems.filter(item => item.roles.includes(role));
+    this.visibleConfigItems = this.configItems.filter(item => item.roles.includes(role));
+    this.hasConfigAccess = role === 'admin';
   }
+
+  trackByMenu = (_: number, item: MenuItem) => item.route + (item.fragment || '');
 
   toggleLeftSidebar(): void {
     this.leftSidebarOpened = !this.leftSidebarOpened;
@@ -248,6 +222,17 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   toggleRightSidebar(): void {
     this.rightSidebarOpened = !this.rightSidebarOpened;
+  }
+
+  private flattenItems(items: ChecklistItem[], parentId?: string): ChecklistItem[] {
+    const flat: ChecklistItem[] = [];
+    (items || []).forEach(item => {
+      flat.push({ ...item, parentId });
+      if (item.children?.length) {
+        flat.push(...this.flattenItems(item.children, item._id));
+      }
+    });
+    return flat;
   }
 
   saveAdminNote(): void {
@@ -284,7 +269,6 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.checklistHasErrors = false;
     this.checklistErrorMessage = '';
 
-    // Validar que TODOS los servicios tengan estado
     const incompleteServices = this.checklistServices.filter(s => s.status === null);
     if (incompleteServices.length > 0) {
       this.checklistErrorMessage = `Debes evaluar todos los servicios. Faltan: ${incompleteServices.map(s => s.serviceTitle).join(', ')}`;
@@ -292,21 +276,19 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validar que servicios en rojo tengan observación
-    const redWithoutObservation = this.checklistServices.filter(s => 
-      s.status === 'rojo' && (!s.observation || s.observation.trim() === '')
-    );
+    const redWithoutObservation = this.checklistServices.filter(s => s.status === 'rojo' && (!s.observation || s.observation.trim() === ''));
     if (redWithoutObservation.length > 0) {
-      this.checklistErrorMessage = `Los servicios en rojo requieren observación: ${redWithoutObservation.map(s => s.serviceTitle).join(', ')}`;
+      this.checklistErrorMessage = `Los servicios en rojo requieren observacion: ${redWithoutObservation.map(s => s.serviceTitle).join(', ')}`;
       this.checklistHasErrors = true;
       return;
     }
 
-    // Construir payload
     const payload = {
+      checklistId: this.activeChecklist?._id || undefined,
       type: this.checkType,
       services: this.checklistServices.map(s => ({
         serviceId: s.serviceId,
+        parentServiceId: s.parentId || null,
         serviceTitle: s.serviceTitle,
         status: s.status!,
         observation: s.observation
@@ -318,14 +300,12 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.lastCheck = response.check;
-          // Alternar tipo para próximo check
           this.checkType = this.checkType === 'inicio' ? 'cierre' : 'inicio';
-          // Resetear formulario
           this.checklistServices.forEach(s => {
             s.status = null;
             s.observation = '';
           });
-          console.log('✅ Checklist enviado exitosamente');
+          console.log('Checklist enviado exitosamente');
         },
         error: (err) => {
           this.checklistErrorMessage = err.error?.message || 'Error enviando checklist';
@@ -348,18 +328,17 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     const status = this.getChecklistStatus();
     switch (status) {
       case 'ok':
-        return '✓ OK';
+        return 'OK';
       case 'warning':
-        return '⚠ Problemas';
+        return 'Problemas';
       case 'none':
-        return '— Sin registro';
+        return 'Sin registro';
       default:
         return '';
     }
   }
 
   changeTheme(theme: string): void {
-    // Cast seguro: el selector HTML solo permite valores válidos
     this.themeService.setTheme(theme as Theme);
   }
 

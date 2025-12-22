@@ -35,7 +35,7 @@ import { SmtpConfigRequest } from '../../../models/smtp.model';
 @Component({
   selector: 'app-settings',
   templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.scss']
+  styleUrls: ['./settings.component.scss'],
 })
 export class SettingsComponent implements OnInit {
   appConfigForm: FormGroup;

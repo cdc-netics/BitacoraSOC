@@ -1,0 +1,131 @@
+﻿.checklist-admin {
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  .hint {
+    color: #555;
+    margin-bottom: 16px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 16px;
+  }
+
+  .list-card {
+    max-height: 80vh;
+    overflow: hidden;
+
+    .mat-card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding: 16px;
+    }
+
+    .mat-nav-list {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    a.active {
+      background: #f0f4ff;
+    }
+
+    .list-actions {
+      padding: 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+
+  .form-card {
+    .items-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .item-row {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .item-grid {
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .children-block {
+      background: #fafafa;
+      border: 1px dashed #d0d0d0;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .children-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .child-row {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .description-field {
+      margin: 0;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .flex {
+      width: 100%;
+    }
+
+    .order-field {
+      width: 140px;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+  }
+}
