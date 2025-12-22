@@ -23,25 +23,26 @@
 
 ## ✅ 2. Checklist - Múltiples Problemas
 
-### 2.1 Duplicación de UI
+### 2.1 Duplicación de UI ---DONE
 **Problema:**
 - Existe un link "Checklist" y abajo otro link que también muestra el campo de entradas
 - Confusión entre "Escribir" y "Checklist"
+ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 
 **Esperado:**
 - "Escribir" → Solo para crear entradas de bitácora
 - "Checklist" → Solo para marcar servicios verificados
 
-### 2.2 Configuración de Servicios NO Funciona
+### 2.2 Configuración de Servicios NO Funciona  ---DONE
 **Estado:** ❌ No implementado
 
 **Problema:**
-- El admin no puede configurar qué servicios aparecen en el checklist
-- No hay opción para agregar/quitar servicios
+- El admin no puede configurar qué servicios aparecen en el checklist ---DONE
+- No hay opción para agregar/quitar servicios ---DONE
 
 **Esperado:**
 - En Configuración → Sección "Checklist"
-- Lista editable de servicios (agregar, editar, eliminar)
+- Lista editable de servicios (agregar, editar, eliminar) ---DONE
 - Cada servicio con: nombre, descripción, orden
 - Activar/desactivar servicios
 
@@ -49,17 +50,17 @@
 **Estado:** ❌ No implementado
 
 **Problema:**
-- El checklist no se muestra en formato acordeón/expandible
-- Debería mostrar categorías colapsables con servicios dentro
+- El checklist no se muestra en formato acordeón/expandible ---DONE
+- Debería mostrar categorías colapsables con servicios dentro ---DONE
 
 **Esperado:**
-- Acordeón con categorías (ej: "Firewalls", "Servidores", "Backups")
-- Cada categoría expandible con sus servicios
+- Acordeón con categorías (ej: "Firewalls", "Servidores", "Backups") ---DONE
+- Cada categoría expandible con sus servicios ---DONE
 - Estado visual: ✅ verificado, ⏳ pendiente, ❌ con problemas
 
 ---
 
-## 🏷️ 3. Gestión de Tags - No Sincroniza
+## 🏷️ 3. Gestión de Tags - No Sincroniza ---DONE
 
 **Estado:** ❌ Bug
 
@@ -79,7 +80,7 @@
 
 ---
 
-## 📋 4. Ver Todas las Entradas - Orden Incorrecto
+## 📋 4. Ver Todas las Entradas - Orden Incorrecto --DONE
 
 **Estado:** ❌ Bug
 
@@ -150,10 +151,10 @@
 **Estado:** ⏳ Pendiente de prueba
 
 **Funcionalidades a verificar:**
-- [ ] Cambio de tema (light/dark/sepia/pastel)
-- [ ] Cambio de contraseña
-- [ ] Ver datos del usuario actual
-- [ ] Guardar preferencias
+- [ ] Cambio de tema (light/dark/sepia/pastel) Verificar color de header (Azul-Rosa)
+- [ ] Cambio de contraseña ---No funciona
+- [ ] Ver datos del usuario actual ---DONE
+- [ ] Guardar preferencias ---No funciona
 
 ---
 

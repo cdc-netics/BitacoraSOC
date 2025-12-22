@@ -23,6 +23,14 @@ const mongoose = require('mongoose');
 
 // Registro de checklist de turno
 const shiftCheckSchema = new mongoose.Schema({
+  checklistId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ChecklistTemplate'
+  },
+  checklistName: {
+    type: String,
+    trim: true
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -47,6 +55,10 @@ const shiftCheckSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ServiceCatalog',
       required: true
+    },
+    parentServiceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ServiceCatalog'
     },
     serviceTitle: {
       type: String,
@@ -79,5 +91,6 @@ shiftCheckSchema.index({ userId: 1, createdAt: -1 });
 shiftCheckSchema.index({ type: 1 });
 shiftCheckSchema.index({ checkDate: -1 });
 shiftCheckSchema.index({ hasRedServices: 1 });
+shiftCheckSchema.index({ checklistId: 1 });
 
 module.exports = mongoose.model('ShiftCheck', shiftCheckSchema);

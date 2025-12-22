@@ -12,6 +12,10 @@ export class TagService {
 
   constructor(private http: HttpClient) {}
 
+  getAll(): Observable<{ tags: TagStats[] }> {
+    return this.http.get<{ tags: TagStats[] }>(`${this.API_URL}`);
+  }
+
   getStats(): Observable<TagStats[]> {
     return this.http.get<TagStats[]>(`${this.API_URL}/stats`);
   }
@@ -24,5 +28,13 @@ export class TagService {
     return this.http.get<TagStats[]>(`${this.API_URL}/suggest`, {
       params: { q: query }
     });
+  }
+
+  rename(current: string, next: string): Observable<any> {
+    return this.http.put(`${this.API_URL}/${encodeURIComponent(current)}`, { name: next });
+  }
+
+  delete(tag: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/${encodeURIComponent(tag)}`);
   }
 }
