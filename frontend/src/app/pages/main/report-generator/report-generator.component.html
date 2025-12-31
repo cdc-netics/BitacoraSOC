@@ -1,0 +1,164 @@
+<div class="report-generator-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Generador de Reportes SOC</mat-card-title>
+      <mat-card-subtitle>Completa la información para generar tabla HTML</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="reportForm">
+        <!-- Tipo de operación -->
+        <app-entity-autocomplete
+          label="Tipo de operación *"
+          placeholder="Buscar tipo de operación..."
+          [searchFn]="catalogService.searchOperationTypes.bind(catalogService)"
+          displayKey="name"
+          (optionSelected)="onOperationTypeSelected($event)">
+        </app-entity-autocomplete>
+
+        <!-- Código interno -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Ofensa/Código interno</mat-label>
+          <input matInput formControlName="codigoInterno" placeholder="Ej: OF-2024-001">
+        </mat-form-field>
+
+        <!-- Nombre de evento -->
+        <app-entity-autocomplete
+          label="Nombre de Ofensa/Evento *"
+          placeholder="Buscar evento..."
+          [searchFn]="catalogService.searchEvents.bind(catalogService)"
+          displayKey="name"
+          (optionSelected)="onEventSelected($event)">
+        </app-entity-autocomplete>
+
+        <!-- Motivo (autofill) -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Motivo de la Ofensa/Evento *</mat-label>
+          <textarea matInput formControlName="motivoEvento" rows="3" 
+                    placeholder="Se auto-completa desde el evento seleccionado"></textarea>
+          <mat-error *ngIf="reportForm.get('motivoEvento')?.hasError('required')">
+            Campo obligatorio
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Fecha -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Fecha *</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="fecha">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <!-- Criticidad -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>MRSC (Criticidad) *</mat-label>
+          <mat-select formControlName="criticidad">
+            <mat-option value="baja">Baja</mat-option>
+            <mat-option value="media">Media</mat-option>
+            <mat-option value="alta">Alta</mat-option>
+            <mat-option value="critica">Crítica</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Origen de conexión -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Origen de conexión</mat-label>
+          <input matInput formControlName="origenConexion" placeholder="Ej: 192.168.1.100">
+        </mat-form-field>
+
+        <!-- Log Source -->
+        <app-entity-autocomplete
+          label="Fuente / Log Source *"
+          placeholder="Buscar cliente o log source..."
+          [searchFn]="catalogService.searchLogSources.bind(catalogService)"
+          displayKey="name"
+          (optionSelected)="onLogSourceSelected($event)">
+        </app-entity-autocomplete>
+
+        <!-- Destino -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Destino</mat-label>
+          <input matInput formControlName="destino" placeholder="Ej: 10.0.0.50">
+        </mat-form-field>
+
+        <!-- Reputación de origen -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Reputación de origen</mat-label>
+          <mat-select formControlName="reputacionOrigen">
+            <mat-option value="Interna">Interna</mat-option>
+            <mat-option value="Externa">Externa</mat-option>
+            <mat-option value="Desconocida">Desconocida</mat-option>
+            <mat-option value="Maliciosa">Maliciosa</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Observaciones -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Observaciones *</mat-label>
+          <textarea matInput formControlName="observaciones" rows="4" 
+                    placeholder="Detalla las observaciones relevantes"></textarea>
+          <mat-error *ngIf="reportForm.get('observaciones')?.hasError('required')">
+            Campo obligatorio
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Evidencia (upload) -->
+        <div class="upload-section">
+          <h4>Evidencia</h4>
+          <input type="file" accept="image/*" multiple (change)="onImageUpload($event)" #fileInput style="display: none;">
+          <button mat-raised-button color="accent" type="button" (click)="fileInput.click()">
+            <mat-icon>upload</mat-icon>
+            Subir imágenes
+          </button>
+          <div class="image-preview" *ngIf="uploadedImages.length > 0">
+            <div *ngFor="let img of uploadedImages; let i = index" class="preview-item">
+              <img [src]="img.dataUrl" [alt]="img.name">
+              <button mat-icon-button color="warn" (click)="removeImage(i)" type="button">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recomendación -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Recomendación</mat-label>
+          <textarea matInput formControlName="recomendacion" rows="3" 
+                    placeholder="Recomendaciones técnicas"></textarea>
+        </mat-form-field>
+
+        <!-- Información adicional (autofill) -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Información adicional</mat-label>
+          <textarea matInput formControlName="informacionAdicional" rows="3" 
+                    placeholder="Se auto-completa desde el tipo de operación"></textarea>
+        </mat-form-field>
+
+        <!-- Botones de acción -->
+        <div class="actions">
+          <button mat-raised-button color="primary" type="button" (click)="generateTable()" 
+                  [disabled]="reportForm.invalid">
+            <mat-icon>table_chart</mat-icon>
+            Generar Tabla HTML
+          </button>
+          <button mat-stroked-button type="button" (click)="clearForm()">
+            <mat-icon>clear</mat-icon>
+            Limpiar
+          </button>
+        </div>
+      </form>
+
+      <!-- Vista previa -->
+      <div *ngIf="showPreview" class="preview-section">
+        <div class="preview-header">
+          <h3>Vista previa</h3>
+          <button mat-raised-button color="accent" (click)="copyToClipboard()">
+            <mat-icon>content_copy</mat-icon>
+            Copiar HTML
+          </button>
+        </div>
+        <div class="html-preview" [innerHTML]="generatedHtml"></div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -86,6 +86,8 @@ app.use('/api/logging', require('./routes/logging'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/backup', require('./routes/backup'));
+app.use('/api/catalog', require('./routes/catalog'));
+app.use('/api/admin/catalog', require('./routes/admin-catalog')); // CRUD admin
 
 // Health check (ANTES del fallback SPA)
 app.get('/health', (req, res) => {
