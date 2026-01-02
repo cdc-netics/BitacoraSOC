@@ -23,6 +23,8 @@ const CatalogEvent = require('../models/CatalogEvent');
 const CatalogLogSource = require('../models/CatalogLogSource');
 const CatalogOperationType = require('../models/CatalogOperationType');
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /**
  * GET /api/catalog/events
  * 
@@ -54,22 +56,36 @@ router.get('/events', authenticate, async (req, res) => {
     const enabledBool = enabled === 'true';
 
     // Construir query
-    let query = { enabled: enabledBool };
+    let query = enabledBool
+      ? { $or: [
+          { enabled: true },
+          { enabled: { $exists: false } },
+          { enabled: 'true' },
+          { enabled: 1 }
+        ] }
+      : { $or: [
+          { enabled: false },
+          { enabled: 'false' },
+          { enabled: 0 }
+        ] };
 
     // Agregar cursor para pagination
     if (cursor) {
       query._id = { $gt: cursor };
     }
 
-    // Si hay término de búsqueda, usar text search
     if (searchTerm.length > 0) {
-      query.$text = { $search: searchTerm };
+      const regex = new RegExp(escapeRegExp(searchTerm), 'i');
+      query.$or = [
+        { name: regex },
+        { parent: regex },
+        { description: regex }
+      ];
     }
 
-    // Ejecutar query con proyección de score para ordenamiento
     const items = await CatalogEvent
-      .find(query, searchTerm.length > 0 ? { score: { $meta: 'textScore' } } : {})
-      .sort(searchTerm.length > 0 ? { score: { $meta: 'textScore' } } : { name: 1 })
+      .find(query)
+      .sort({ name: 1 })
       .limit(limitNum + 1) // +1 para detectar si hay más
       .select('_id name parent description motivoDefault')
       .lean();
@@ -107,19 +123,35 @@ router.get('/log-sources', authenticate, async (req, res) => {
     const limitNum = Math.min(parseInt(limit) || 20, 50);
     const enabledBool = enabled === 'true';
 
-    let query = { enabled: enabledBool };
+    let query = enabledBool
+      ? { $or: [
+          { enabled: true },
+          { enabled: { $exists: false } },
+          { enabled: 'true' },
+          { enabled: 1 }
+        ] }
+      : { $or: [
+          { enabled: false },
+          { enabled: 'false' },
+          { enabled: 0 }
+        ] };
 
     if (cursor) {
       query._id = { $gt: cursor };
     }
 
     if (searchTerm.length > 0) {
-      query.$text = { $search: searchTerm };
+      const regex = new RegExp(escapeRegExp(searchTerm), 'i');
+      query.$or = [
+        { name: regex },
+        { parent: regex },
+        { description: regex }
+      ];
     }
 
     const items = await CatalogLogSource
-      .find(query, searchTerm.length > 0 ? { score: { $meta: 'textScore' } } : {})
-      .sort(searchTerm.length > 0 ? { score: { $meta: 'textScore' } } : { name: 1 })
+      .find(query)
+      .sort({ name: 1 })
       .limit(limitNum + 1)
       .select('_id name parent description')
       .lean();
@@ -156,19 +188,35 @@ router.get('/operation-types', authenticate, async (req, res) => {
     const limitNum = Math.min(parseInt(limit) || 20, 50);
     const enabledBool = enabled === 'true';
 
-    let query = { enabled: enabledBool };
+    let query = enabledBool
+      ? { $or: [
+          { enabled: true },
+          { enabled: { $exists: false } },
+          { enabled: 'true' },
+          { enabled: 1 }
+        ] }
+      : { $or: [
+          { enabled: false },
+          { enabled: 'false' },
+          { enabled: 0 }
+        ] };
 
     if (cursor) {
       query._id = { $gt: cursor };
     }
 
     if (searchTerm.length > 0) {
-      query.$text = { $search: searchTerm };
+      const regex = new RegExp(escapeRegExp(searchTerm), 'i');
+      query.$or = [
+        { name: regex },
+        { parent: regex },
+        { description: regex }
+      ];
     }
 
     const items = await CatalogOperationType
-      .find(query, searchTerm.length > 0 ? { score: { $meta: 'textScore' } } : {})
-      .sort(searchTerm.length > 0 ? { score: { $meta: 'textScore' } } : { name: 1 })
+      .find(query)
+      .sort({ name: 1 })
       .limit(limitNum + 1)
       .select('_id name parent description infoAdicionalDefault')
       .lean();

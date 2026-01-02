@@ -12,9 +12,13 @@
           label="Tipo de operación *"
           placeholder="Buscar tipo de operación..."
           [searchFn]="catalogService.searchOperationTypes.bind(catalogService)"
-          displayKey="name"
-          (optionSelected)="onOperationTypeSelected($event)">
+          [minChars]="0"
+          (selected)="onOperationTypeSelected($event)"
+          (cleared)="onOperationTypeCleared()">
         </app-entity-autocomplete>
+        <div class="field-error" *ngIf="reportForm.get('tipoOperacion')?.invalid && reportForm.get('tipoOperacion')?.touched">
+          Campo obligatorio
+        </div>
 
         <!-- Código interno -->
         <mat-form-field appearance="outline" class="full-width">
@@ -27,9 +31,13 @@
           label="Nombre de Ofensa/Evento *"
           placeholder="Buscar evento..."
           [searchFn]="catalogService.searchEvents.bind(catalogService)"
-          displayKey="name"
-          (optionSelected)="onEventSelected($event)">
+          [minChars]="0"
+          (selected)="onEventSelected($event)"
+          (cleared)="onEventCleared()">
         </app-entity-autocomplete>
+        <div class="field-error" *ngIf="reportForm.get('nombreEvento')?.invalid && reportForm.get('nombreEvento')?.touched">
+          Campo obligatorio
+        </div>
 
         <!-- Motivo (autofill) -->
         <mat-form-field appearance="outline" class="full-width">
@@ -71,9 +79,13 @@
           label="Fuente / Log Source *"
           placeholder="Buscar cliente o log source..."
           [searchFn]="catalogService.searchLogSources.bind(catalogService)"
-          displayKey="name"
-          (optionSelected)="onLogSourceSelected($event)">
+          [minChars]="0"
+          (selected)="onLogSourceSelected($event)"
+          (cleared)="onLogSourceCleared()">
         </app-entity-autocomplete>
+        <div class="field-error" *ngIf="reportForm.get('logSource')?.invalid && reportForm.get('logSource')?.touched">
+          Campo obligatorio
+        </div>
 
         <!-- Destino -->
         <mat-form-field appearance="outline" class="full-width">
@@ -136,8 +148,7 @@
 
         <!-- Botones de acción -->
         <div class="actions">
-          <button mat-raised-button color="primary" type="button" (click)="generateTable()" 
-                  [disabled]="reportForm.invalid">
+          <button mat-raised-button color="primary" type="button" (click)="generateTable()">
             <mat-icon>table_chart</mat-icon>
             Generar Tabla HTML
           </button>
@@ -152,10 +163,16 @@
       <div *ngIf="showPreview" class="preview-section">
         <div class="preview-header">
           <h3>Vista previa</h3>
-          <button mat-raised-button color="accent" (click)="copyToClipboard()">
-            <mat-icon>content_copy</mat-icon>
-            Copiar HTML
-          </button>
+          <div class="preview-actions">
+            <button mat-raised-button color="accent" (click)="copyToClipboard()">
+              <mat-icon>content_copy</mat-icon>
+              Copiar tabla
+            </button>
+            <button mat-stroked-button color="primary" (click)="copyMarkdown()">
+              <mat-icon>code</mat-icon>
+              Copiar Markdown
+            </button>
+          </div>
         </div>
         <div class="html-preview" [innerHTML]="generatedHtml"></div>
       </div>

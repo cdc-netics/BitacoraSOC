@@ -20,6 +20,7 @@
     [matAutocomplete]="auto"
     [disabled]="disabled"
     autocomplete="off"
+    matAutocompleteTrigger
   />
 
   <!-- Botón para limpiar selección -->
@@ -32,6 +33,18 @@
     (click)="clearSelection()"
   >
     <mat-icon>close</mat-icon>
+  </button>
+
+  <!-- Botón para desplegar lista -->
+  <button
+    *ngIf="!disabled"
+    matSuffix
+    mat-icon-button
+    type="button"
+    aria-label="Mostrar opciones"
+    (click)="openPanel()"
+  >
+    <mat-icon>arrow_drop_down</mat-icon>
   </button>
 
   <!-- Spinner mientras busca -->
@@ -80,7 +93,7 @@
 
   <!-- Mensaje "Sin resultados" -->
   <mat-option 
-    *ngIf="(filteredItems$ | async)?.length === 0 && !isLoading"
+    *ngIf="(filteredItems$ | async)?.length === 0 && shouldShowNoResults"
     disabled
     class="no-results-option"
   >

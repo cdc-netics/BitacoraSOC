@@ -19,6 +19,7 @@
  *   - 100 req/15min: permite operación normal pero bloquea scraping
  */
 const rateLimit = require('express-rate-limit');
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Rate limiter para login
 const loginLimiter = rateLimit({
@@ -36,7 +37,8 @@ const apiLimiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: () => !isProduction
 });
 
 module.exports = {

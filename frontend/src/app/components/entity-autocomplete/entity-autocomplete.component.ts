@@ -49,11 +49,10 @@ import {
   distinctUntilChanged, 
   switchMap, 
   catchError, 
-  filter,
   startWith,
   tap
 } from 'rxjs/operators';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 
 export interface AutocompleteItem {
   _id: string;
@@ -76,6 +75,7 @@ export interface AutocompleteResponse {
 })
 export class EntityAutocompleteComponent implements OnInit {
   @ViewChild('inputField', { static: false }) inputField?: ElementRef<HTMLInputElement>;
+  @ViewChild(MatAutocompleteTrigger, { static: false }) autocompleteTrigger?: MatAutocompleteTrigger;
 
   // Inputs
   @Input() label = 'Buscar';
@@ -115,19 +115,23 @@ export class EntityAutocompleteComponent implements OnInit {
       startWith(''),
       map(value => typeof value === 'string' ? value.trim() : ''),
       distinctUntilChanged(),
-      tap(() => this.isLoading = true),
-      filter(query => query.length >= this.minChars),
       debounceTime(250),
-      switchMap(query => 
-        apiFn(query).pipe(
+      switchMap(query => {
+        if (query.length < this.minChars) {
+          this.isLoading = false;
+          return of([]);
+        }
+
+        this.isLoading = true;
+        return apiFn(query).pipe(
           map(response => response.items || []),
           catchError(err => {
             console.error('Error en búsqueda de autocomplete:', err);
             return of([]);
-          })
-        )
-      ),
-      tap(() => this.isLoading = false)
+          }),
+          tap(() => this.isLoading = false)
+        );
+      })
     );
   }
 
@@ -157,6 +161,13 @@ export class EntityAutocompleteComponent implements OnInit {
     setTimeout(() => this.inputField?.nativeElement.focus(), 100);
   }
 
+  openPanel(): void {
+    if (this.disabled) return;
+    const value = this.searchControl.value ?? '';
+    this.searchControl.setValue(value as string, { emitEvent: true });
+    setTimeout(() => this.autocompleteTrigger?.openPanel(), 0);
+  }
+
   /**
    * Función de display para mat-autocomplete
    * Evita que se muestre "[object Object]" en el input
@@ -183,5 +194,15 @@ export class EntityAutocompleteComponent implements OnInit {
     return text.length > maxLength 
       ? text.substring(0, maxLength) + '...' 
       : text;
+  }
+
+  get shouldShowNoResults(): boolean {
+    if (this.isLoading) return false;
+    if (!this.selectedItem) {
+      const value = this.searchControl.value;
+      if (typeof value !== 'string') return false;
+      return value.trim().length >= this.minChars;
+    }
+    return false;
   }
 }

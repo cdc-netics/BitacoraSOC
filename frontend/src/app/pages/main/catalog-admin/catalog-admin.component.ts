@@ -11,7 +11,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   styleUrls: ['./catalog-admin.component.scss']
 })
 export class CatalogAdminComponent implements OnInit {
-  activeTab = 'events'; // 'events' | 'log-sources' | 'operation-types'
+  activeTabIndex = 0;
 
   // Listas
   events: CatalogEvent[] = [];
@@ -20,7 +20,9 @@ export class CatalogAdminComponent implements OnInit {
 
   // Estados
   isLoading = false;
-  editingId: string | null = null;
+  editingEventId: string | null = null;
+  editingLogSourceId: string | null = null;
+  editingOperationTypeId: string | null = null;
 
   // Formularios
   eventForm: FormGroup;
@@ -91,12 +93,12 @@ export class CatalogAdminComponent implements OnInit {
 
     const data = this.eventForm.value;
 
-    if (this.editingId) {
-      this.catalogService.updateEvent(this.editingId, data).subscribe({
+    if (this.editingEventId) {
+      this.catalogService.updateEvent(this.editingEventId, data).subscribe({
         next: () => {
           this.snackBar.open('✅ Evento actualizado', 'Cerrar', { duration: 2000 });
           this.loadEvents();
-          this.cancelEdit();
+          this.cancelEventEdit();
         },
         error: () => this.snackBar.open('Error actualizando', 'Cerrar', { duration: 3000 })
       });
@@ -113,7 +115,7 @@ export class CatalogAdminComponent implements OnInit {
   }
 
   editEvent(event: CatalogEvent): void {
-    this.editingId = event._id;
+    this.editingEventId = event._id;
     this.eventForm.patchValue(event);
   }
 
@@ -147,12 +149,12 @@ export class CatalogAdminComponent implements OnInit {
 
     const data = this.logSourceForm.value;
 
-    if (this.editingId) {
-      this.catalogService.updateLogSource(this.editingId, data).subscribe({
+    if (this.editingLogSourceId) {
+      this.catalogService.updateLogSource(this.editingLogSourceId, data).subscribe({
         next: () => {
           this.snackBar.open('✅ Log Source actualizado', 'Cerrar', { duration: 2000 });
           this.loadLogSources();
-          this.cancelEdit();
+          this.cancelLogSourceEdit();
         },
         error: () => this.snackBar.open('Error actualizando', 'Cerrar', { duration: 3000 })
       });
@@ -169,7 +171,7 @@ export class CatalogAdminComponent implements OnInit {
   }
 
   editLogSource(source: CatalogLogSource): void {
-    this.editingId = source._id;
+    this.editingLogSourceId = source._id;
     this.logSourceForm.patchValue(source);
   }
 
@@ -203,12 +205,12 @@ export class CatalogAdminComponent implements OnInit {
 
     const data = this.operationTypeForm.value;
 
-    if (this.editingId) {
-      this.catalogService.updateOperationType(this.editingId, data).subscribe({
+    if (this.editingOperationTypeId) {
+      this.catalogService.updateOperationType(this.editingOperationTypeId, data).subscribe({
         next: () => {
           this.snackBar.open('✅ Tipo de operación actualizado', 'Cerrar', { duration: 2000 });
           this.loadOperationTypes();
-          this.cancelEdit();
+          this.cancelOperationTypeEdit();
         },
         error: () => this.snackBar.open('Error actualizando', 'Cerrar', { duration: 3000 })
       });
@@ -225,7 +227,7 @@ export class CatalogAdminComponent implements OnInit {
   }
 
   editOperationType(type: CatalogOperationType): void {
-    this.editingId = type._id;
+    this.editingOperationTypeId = type._id;
     this.operationTypeForm.reset({ enabled: true });
     this.operationTypeForm.patchValue(type);
   }
@@ -242,10 +244,18 @@ export class CatalogAdminComponent implements OnInit {
     });
   }
 
-  cancelEdit(): void {
-    this.editingId = null;
+  cancelEventEdit(): void {
+    this.editingEventId = null;
     this.eventForm.reset({ enabled: true });
+  }
+
+  cancelLogSourceEdit(): void {
+    this.editingLogSourceId = null;
     this.logSourceForm.reset({ enabled: true });
+  }
+
+  cancelOperationTypeEdit(): void {
+    this.editingOperationTypeId = null;
     this.operationTypeForm.reset({ enabled: true });
   }
 }

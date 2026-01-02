@@ -9,6 +9,12 @@
   margin-bottom: 16px;
 }
 
+.field-error {
+  margin: -10px 0 16px;
+  color: #f44336;
+  font-size: 12px;
+}
+
 .upload-section {
   margin: 24px 0;
 
@@ -73,6 +79,12 @@
     h3 {
       margin: 0;
     }
+  }
+
+  .preview-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .html-preview {

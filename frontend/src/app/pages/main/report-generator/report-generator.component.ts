@@ -52,6 +52,14 @@ export class ReportGeneratorComponent {
     }
   }
 
+  onEventCleared(): void {
+    this.selectedEvent = null;
+    this.reportForm.patchValue({
+      nombreEvento: '',
+      motivoEvento: ''
+    });
+  }
+
   onLogSourceSelected(source: any): void {
     this.selectedLogSource = source as CatalogLogSource;
     if (source) {
@@ -59,6 +67,11 @@ export class ReportGeneratorComponent {
         logSource: source.name
       });
     }
+  }
+
+  onLogSourceCleared(): void {
+    this.selectedLogSource = null;
+    this.reportForm.patchValue({ logSource: '' });
   }
 
   onOperationTypeSelected(type: any): void {
@@ -69,6 +82,14 @@ export class ReportGeneratorComponent {
         informacionAdicional: type.infoAdicionalDefault || ''
       });
     }
+  }
+
+  onOperationTypeCleared(): void {
+    this.selectedOperationType = null;
+    this.reportForm.patchValue({
+      tipoOperacion: '',
+      informacionAdicional: ''
+    });
   }
 
   onImageUpload(event: any): void {
@@ -94,6 +115,7 @@ export class ReportGeneratorComponent {
 
   generateTable(): void {
     if (this.reportForm.invalid) {
+      this.reportForm.markAllAsTouched();
       this.snackBar.open('Completa todos los campos obligatorios', 'Cerrar', { duration: 3000 });
       return;
     }
@@ -101,77 +123,77 @@ export class ReportGeneratorComponent {
     const form = this.reportForm.value;
     const fechaFormateada = new Date(form.fecha).toLocaleDateString('es-CL');
 
-    let html = `<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
+    let html = `<table cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; border: 1px solid #2b2b2b;">
   <tr>
-    <th colspan="2" style="background-color: #4CAF50; color: white; text-align: center; font-size: 18px;">Reporte de Detección</th>
+    <th colspan="2" style="background-color: #4CAF50; color: white; text-align: center; font-size: 18px; border: 1px solid #2b2b2b;">Reporte de Detección</th>
   </tr>
   <tr>
-    <th style="background-color: #8BC34A; color: white; width: 30%;">Campo</th>
-    <th style="background-color: #8BC34A; color: white;">Detalle</th>
+    <th style="background-color: #8BC34A; color: white; width: 30%; border: 1px solid #2b2b2b;">Campo</th>
+    <th style="background-color: #8BC34A; color: white; border: 1px solid #2b2b2b;">Detalle</th>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Tipo de operación</td>
-    <td>${form.tipoOperacion}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Tipo de operación</td>
+    <td style="border: 1px solid #2b2b2b;">${form.tipoOperacion}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Ofensa/Código interno</td>
-    <td>${form.codigoInterno || '-'}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Ofensa/Código interno</td>
+    <td style="border: 1px solid #2b2b2b;">${form.codigoInterno || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Nombre de Ofensa/Evento</td>
-    <td>${form.nombreEvento}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Nombre de Ofensa/Evento</td>
+    <td style="border: 1px solid #2b2b2b;">${form.nombreEvento}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Motivo de la Ofensa/Evento</td>
-    <td>${form.motivoEvento}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Motivo de la Ofensa/Evento</td>
+    <td style="border: 1px solid #2b2b2b;">${form.motivoEvento}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Fecha</td>
-    <td>${fechaFormateada}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Fecha</td>
+    <td style="border: 1px solid #2b2b2b;">${fechaFormateada}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">MRSC (Criticidad)</td>
-    <td>${form.criticidad}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">MRSC (Criticidad)</td>
+    <td style="border: 1px solid #2b2b2b;">${form.criticidad}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Origen de conexión</td>
-    <td>${form.origenConexion || '-'}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Origen de conexión</td>
+    <td style="border: 1px solid #2b2b2b;">${form.origenConexion || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Fuente / Log Source</td>
-    <td>${form.logSource}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Fuente / Log Source</td>
+    <td style="border: 1px solid #2b2b2b;">${form.logSource}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Destino</td>
-    <td>${form.destino || '-'}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Destino</td>
+    <td style="border: 1px solid #2b2b2b;">${form.destino || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Reputación de origen</td>
-    <td>${form.reputacionOrigen}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Reputación de origen</td>
+    <td style="border: 1px solid #2b2b2b;">${form.reputacionOrigen}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Observaciones</td>
-    <td style="white-space: pre-wrap;">${form.observaciones}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Observaciones</td>
+    <td style="white-space: pre-wrap; border: 1px solid #2b2b2b;">${form.observaciones}</td>
   </tr>`;
 
     if (this.uploadedImages.length > 0) {
-      html += `\n  <tr>\n    <td style="background-color: #8BC34A; font-weight: bold;">Evidencia</td>\n    <td>`;
+      html += `\n  <tr>\n    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Evidencia</td>\n    <td style="border: 1px solid #2b2b2b;">`;
       this.uploadedImages.forEach(img => {
-        html += `<img src="${img.dataUrl}" style="max-width: 100%; margin: 5px 0; border: 1px solid #ddd;"><br>`;
+        html += `<img src="${img.dataUrl}" style="max-width: 100%; width: 100%; height: auto; max-height: 420px; object-fit: contain; margin: 8px 0; border: 1px solid #ddd;"><br>`;
       });
       html += `</td>\n  </tr>`;
     } else {
-      html += `\n  <tr>\n    <td style="background-color: #8BC34A; font-weight: bold;">Evidencia</td>\n    <td>Se adjunta en el correo</td>\n  </tr>`;
+      html += `\n  <tr>\n    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Evidencia</td>\n    <td style="border: 1px solid #2b2b2b;">Se adjunta en el correo</td>\n  </tr>`;
     }
 
     html += `
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Recomendación</td>
-    <td style="white-space: pre-wrap;">${form.recomendacion || '-'}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Recomendación</td>
+    <td style="white-space: pre-wrap; border: 1px solid #2b2b2b;">${form.recomendacion || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold;">Información adicional</td>
-    <td style="white-space: pre-wrap;">${form.informacionAdicional || '-'}</td>
+    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Información adicional</td>
+    <td style="white-space: pre-wrap; border: 1px solid #2b2b2b;">${form.informacionAdicional || '-'}</td>
   </tr>
 </table>`;
 
@@ -185,11 +207,78 @@ export class ReportGeneratorComponent {
       return;
     }
 
-    navigator.clipboard.writeText(this.generatedHtml).then(() => {
+    const html = this.generatedHtml;
+    const plainText = this.getPlainTextFromHtml(html);
+    const clipboardItem = (window as any).ClipboardItem;
+
+    if (navigator.clipboard && clipboardItem) {
+      const htmlBlob = new Blob([html], { type: 'text/html' });
+      const textBlob = new Blob([plainText], { type: 'text/plain' });
+      const item = new clipboardItem({
+        'text/html': htmlBlob,
+        'text/plain': textBlob
+      });
+
+      navigator.clipboard.write([item]).then(() => {
+        this.snackBar.open('✅ Tabla copiada con formato', 'Cerrar', { duration: 2000 });
+      }).catch(() => {
+        this.snackBar.open('Error al copiar con formato. Prueba copiar HTML.', 'Cerrar', { duration: 3000 });
+      });
+      return;
+    }
+
+    navigator.clipboard.writeText(html).then(() => {
       this.snackBar.open('✅ HTML copiado al portapapeles', 'Cerrar', { duration: 2000 });
     }).catch(() => {
       this.snackBar.open('Error al copiar. Selecciona y copia manualmente.', 'Cerrar', { duration: 3000 });
     });
+  }
+
+  copyMarkdown(): void {
+    if (!this.generatedHtml) {
+      this.snackBar.open('Primero genera la tabla', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const markdown = this.getMarkdownFromHtml(this.generatedHtml);
+    navigator.clipboard.writeText(markdown).then(() => {
+      this.snackBar.open('✅ Markdown copiado', 'Cerrar', { duration: 2000 });
+    }).catch(() => {
+      this.snackBar.open('Error al copiar Markdown.', 'Cerrar', { duration: 3000 });
+    });
+  }
+
+  private getPlainTextFromHtml(html: string): string {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    return doc.body.textContent?.trim() || '';
+  }
+
+  private getMarkdownFromHtml(html: string): string {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const rows = Array.from(doc.querySelectorAll('tr'));
+    const dataRows: Array<[string, string]> = [];
+
+    rows.forEach((row, index) => {
+      const cells = Array.from(row.querySelectorAll('th, td')).map(cell => {
+        const text = cell.textContent?.replace(/\s+/g, ' ').trim() || '';
+        return text.replace(/\|/g, '\\|');
+      });
+      if (index === 0 || cells.length < 2) return;
+      if (cells.length >= 2) {
+        dataRows.push([cells[0] || '-', cells[1] || '-']);
+      }
+    });
+
+    const header = ['Campo', 'Detalle'];
+    const sep = ['---', '---'];
+    const lines = [
+      `| ${header[0]} | ${header[1]} |`,
+      `| ${sep[0]} | ${sep[1]} |`,
+      ...dataRows.map(row => `| ${row[0]} | ${row[1]} |`)
+    ];
+    return lines.join('\n');
   }
 
   clearForm(): void {
