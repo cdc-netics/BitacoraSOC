@@ -37,6 +37,7 @@ export class ReportGeneratorComponent {
       destino: [''],
       reputacionOrigen: ['Interna'],
       observaciones: ['', Validators.required],
+      evidenciaTexto: [''],
       recomendacion: [''],
       informacionAdicional: ['']
     });
@@ -123,77 +124,89 @@ export class ReportGeneratorComponent {
     const form = this.reportForm.value;
     const fechaFormateada = new Date(form.fecha).toLocaleDateString('es-CL');
 
+    const cellDetailStyle = 'border: 1px solid #2b2b2b; word-break: break-word; overflow-wrap: anywhere; vertical-align: top;';
+    const cellLabelStyle = 'background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b; word-break: break-word; overflow-wrap: anywhere; vertical-align: top; max-width: 200px;';
+
     let html = `<table cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; border: 1px solid #2b2b2b;">
   <tr>
     <th colspan="2" style="background-color: #4CAF50; color: white; text-align: center; font-size: 18px; border: 1px solid #2b2b2b;">Reporte de Detección</th>
   </tr>
   <tr>
-    <th style="background-color: #8BC34A; color: white; width: 30%; border: 1px solid #2b2b2b;">Campo</th>
-    <th style="background-color: #8BC34A; color: white; border: 1px solid #2b2b2b;">Detalle</th>
+    <th style="background-color: #8BC34A; color: white; width: 30%; border: 1px solid #2b2b2b; word-break: break-word; overflow-wrap: anywhere;">Campo</th>
+    <th style="background-color: #8BC34A; color: white; border: 1px solid #2b2b2b; word-break: break-word; overflow-wrap: anywhere;">Detalle</th>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Tipo de operación</td>
-    <td style="border: 1px solid #2b2b2b;">${form.tipoOperacion}</td>
+    <td style="${cellLabelStyle}">Tipo de operación</td>
+    <td style="${cellDetailStyle}">${form.tipoOperacion}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Ofensa/Código interno</td>
-    <td style="border: 1px solid #2b2b2b;">${form.codigoInterno || '-'}</td>
+    <td style="${cellLabelStyle}">Ofensa/Código interno</td>
+    <td style="${cellDetailStyle}">${form.codigoInterno || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Nombre de Ofensa/Evento</td>
-    <td style="border: 1px solid #2b2b2b;">${form.nombreEvento}</td>
+    <td style="${cellLabelStyle}">Nombre de Ofensa/Evento</td>
+    <td style="${cellDetailStyle}">${form.nombreEvento}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Motivo de la Ofensa/Evento</td>
-    <td style="border: 1px solid #2b2b2b;">${form.motivoEvento}</td>
+    <td style="${cellLabelStyle}">Motivo de la Ofensa/Evento</td>
+    <td style="${cellDetailStyle}">${form.motivoEvento}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Fecha</td>
-    <td style="border: 1px solid #2b2b2b;">${fechaFormateada}</td>
+    <td style="${cellLabelStyle}">Fecha</td>
+    <td style="${cellDetailStyle}">${fechaFormateada}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">MRSC (Criticidad)</td>
-    <td style="border: 1px solid #2b2b2b;">${form.criticidad}</td>
+    <td style="${cellLabelStyle}">MRSC (Criticidad)</td>
+    <td style="${cellDetailStyle}">${form.criticidad}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Origen de conexión</td>
-    <td style="border: 1px solid #2b2b2b;">${form.origenConexion || '-'}</td>
+    <td style="${cellLabelStyle}">Origen de conexión</td>
+    <td style="${cellDetailStyle}">${form.origenConexion || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Fuente / Log Source</td>
-    <td style="border: 1px solid #2b2b2b;">${form.logSource}</td>
+    <td style="${cellLabelStyle}">Fuente / Log Source</td>
+    <td style="${cellDetailStyle}">${form.logSource}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Destino</td>
-    <td style="border: 1px solid #2b2b2b;">${form.destino || '-'}</td>
+    <td style="${cellLabelStyle}">Destino</td>
+    <td style="${cellDetailStyle}">${form.destino || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Reputación de origen</td>
-    <td style="border: 1px solid #2b2b2b;">${form.reputacionOrigen}</td>
+    <td style="${cellLabelStyle}">Reputación de origen</td>
+    <td style="${cellDetailStyle}">${form.reputacionOrigen}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Observaciones</td>
-    <td style="white-space: pre-wrap; border: 1px solid #2b2b2b;">${form.observaciones}</td>
+    <td style="${cellLabelStyle}">Observaciones</td>
+    <td style="white-space: pre-wrap; ${cellDetailStyle}">${form.observaciones}</td>
   </tr>`;
 
-    if (this.uploadedImages.length > 0) {
-      html += `\n  <tr>\n    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Evidencia</td>\n    <td style="border: 1px solid #2b2b2b;">`;
-      this.uploadedImages.forEach(img => {
-        html += `<img src="${img.dataUrl}" style="max-width: 100%; width: 100%; height: auto; max-height: 420px; object-fit: contain; margin: 8px 0; border: 1px solid #ddd;"><br>`;
-      });
+    const evidenciaTexto = (form.evidenciaTexto || '').trim();
+    const hasImages = this.uploadedImages.length > 0;
+    const hasTextEvidence = evidenciaTexto.length > 0;
+
+    if (hasImages || hasTextEvidence) {
+      html += `\n  <tr>\n    <td style="${cellLabelStyle}">Evidencia</td>\n    <td style="${cellDetailStyle}">`;
+      if (hasTextEvidence) {
+        html += `<div style="white-space: pre-wrap; margin-bottom: ${hasImages ? '10px' : '0'};">${evidenciaTexto}</div>`;
+      }
+      if (hasImages) {
+        this.uploadedImages.forEach(img => {
+          html += `<img src="${img.dataUrl}" style="max-width: 100%; height: auto; max-height: 420px; object-fit: contain; margin: 8px auto; display: block; border: 1px solid #ddd;"><br>`;
+        });
+      }
       html += `</td>\n  </tr>`;
     } else {
-      html += `\n  <tr>\n    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Evidencia</td>\n    <td style="border: 1px solid #2b2b2b;">Se adjunta en el correo</td>\n  </tr>`;
+      html += `\n  <tr>\n    <td style="${cellLabelStyle}">Evidencia</td>\n    <td style="${cellDetailStyle}">Se adjunta en el correo</td>\n  </tr>`;
     }
 
     html += `
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Recomendación</td>
-    <td style="white-space: pre-wrap; border: 1px solid #2b2b2b;">${form.recomendacion || '-'}</td>
+    <td style="${cellLabelStyle}">Recomendación</td>
+    <td style="white-space: pre-wrap; ${cellDetailStyle}">${form.recomendacion || '-'}</td>
   </tr>
   <tr>
-    <td style="background-color: #8BC34A; font-weight: bold; border: 1px solid #2b2b2b;">Información adicional</td>
-    <td style="white-space: pre-wrap; border: 1px solid #2b2b2b;">${form.informacionAdicional || '-'}</td>
+    <td style="${cellLabelStyle}">Información adicional</td>
+    <td style="white-space: pre-wrap; ${cellDetailStyle}">${form.informacionAdicional || '-'}</td>
   </tr>
 </table>`;
 

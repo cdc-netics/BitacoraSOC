@@ -117,6 +117,11 @@
         <!-- Evidencia (upload) -->
         <div class="upload-section">
           <h4>Evidencia</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Texto de evidencia</mat-label>
+            <textarea matInput formControlName="evidenciaTexto" rows="3"
+                      placeholder="Pega evidencia en texto, código o comentarios"></textarea>
+          </mat-form-field>
           <input type="file" accept="image/*" multiple (change)="onImageUpload($event)" #fileInput style="display: none;">
           <button mat-raised-button color="accent" type="button" (click)="fileInput.click()">
             <mat-icon>upload</mat-icon>
