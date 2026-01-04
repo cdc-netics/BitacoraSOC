@@ -44,7 +44,7 @@ export class EscalationAdminComponent implements OnInit {
   clientColumns = ['name', 'active', 'actions'];
   serviceColumns = ['name', 'clientName', 'active', 'actions'];
   contactColumns = ['name', 'email', 'phone', 'organization', 'active', 'actions'];
-  ruleColumns = ['service', 'recipientsTo', 'recipientsCC', 'emergencyPhone', 'actions'];
+  ruleColumns = ['primaryName', 'recipientsTo', 'recipientsCC', 'emergencyPhone', 'actions'];
   cycleColumns = ['roleCode', 'startDayOfWeek', 'startTimeUTC', 'durationDays', 'timezone', 'actions'];
   assignmentColumns = ['roleCode', 'userName', 'weekStartDate', 'weekEndDate', 'actions'];
   overrideColumns = ['roleCode', 'replacementUserName', 'startDate', 'endDate', 'reason', 'active', 'actions'];
@@ -424,6 +424,46 @@ export class EscalationAdminComponent implements OnInit {
       const contact = this.contacts.find(ct => ct._id === c);
       return contact?.name || '?';
     }).join(', ');
+  }
+
+  getRecipientEmails(contactIds: any[]): string {
+    if (!contactIds || contactIds.length === 0) return '-';
+
+    const values = contactIds
+      .map(c => this.extractContactField(c, 'email'))
+      .filter(email => !!email);
+
+    return values.length ? values.join(', ') : '-';
+  }
+
+  getPrimaryRecipientName(rule: EscalationRule): string {
+    if (rule?.recipientsTo?.length) {
+      const name = this.extractContactField(rule.recipientsTo[0], 'name');
+      if (name) return name;
+    }
+
+    return this.getServiceName(rule?.serviceId);
+  }
+
+  copyToClipboard(text: string): void {
+    if (!text || text === '-') return;
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.snackBar.open('Copiado', 'Cerrar', { duration: 1500 });
+      }).catch(err => console.error('Error al copiar:', err));
+    }
+  }
+
+  private extractContactField(contactRef: any, field: 'name' | 'email' | 'phone'): string {
+    if (!contactRef) return '';
+
+    if (typeof contactRef === 'object' && contactRef[field]) {
+      return contactRef[field] as string;
+    }
+
+    const contact = this.contacts.find(ct => ct._id === contactRef);
+    return contact ? (contact as any)[field] || '' : '';
   }
 
   // Placeholder para crear/editar (implementar con dialogs)

@@ -122,64 +122,35 @@
       <h3 class="client-title">{{ selectedClient.name }}</h3>
       
       <div *ngFor="let service of selectedClientData.services" class="service-section">
-        <table class="excel-table">
+        <div class="service-header-row">
+          <h4>{{ selectedClient?.name }} — {{ service.name }}</h4>
+          <span *ngIf="service.emergencyPhone" class="emergency-badge">Teléfono emergencia: {{ service.emergencyPhone }}</span>
+        </div>
+
+        <table class="excel-table simple-table">
           <thead>
             <tr>
-              <th rowspan="2" class="header-service">Cliente</th>
-              <th rowspan="2" class="header-service">Servicio</th>
-              <th colspan="2" class="header-contacts">Envíos de correos</th>
-              <th rowspan="2" class="header-phone">Correo</th>
-              <th rowspan="2" class="header-phone">Teléfono</th>
-            </tr>
-            <tr>
-              <th class="subheader">PARA</th>
-              <th class="subheader">CC</th>
+              <th>Nombre</th>
+              <th>Para</th>
+              <th>CC</th>
+              <th>Teléfono</th>
             </tr>
           </thead>
           <tbody>
-            <ng-container *ngIf="service.contacts && service.contacts.length > 0; else noContacts">
-              <tr *ngFor="let contact of service.contacts; let i = index" class="data-row">
-                <td class="cell-service" *ngIf="i === 0" [attr.rowspan]="service.contacts.length + (service.emergencyPhone ? 1 : 0)">
-                  <strong>{{ selectedClient?.name || service.clientName || '-' }}</strong>
-                </td>
-                <td class="cell-service" *ngIf="i === 0" [attr.rowspan]="service.contacts.length + (service.emergencyPhone ? 1 : 0)">
-                  <strong>{{ service.name }}</strong>
-                </td>
-                <td class="cell-contact">
-                  <span *ngIf="contact.role === 'PARA'">{{ contact.name }}</span>
-                  <span *ngIf="contact.role !== 'PARA'">-</span>
-                </td>
-                <td class="cell-contact">
-                  <span *ngIf="contact.role === 'CC'">{{ contact.name }}</span>
-                  <span *ngIf="contact.role !== 'CC'">-</span>
-                </td>
-                <td class="cell-email">{{ contact.email || '-' }}</td>
-                <td class="cell-phone">{{ contact.phone || '-' }}</td>
-              </tr>
-            </ng-container>
-            
-            <ng-template #noContacts>
-              <tr class="no-data-row">
-                <td class="cell-service" [attr.rowspan]="service.emergencyPhone ? 2 : 1">
-                  <strong>{{ selectedClient?.name || service.clientName || '-' }}</strong>
-                </td>
-                <td class="cell-service" [attr.rowspan]="service.emergencyPhone ? 2 : 1">
-                  <strong>{{ service.name }}</strong>
-                </td>
-                <td colspan="4" class="text-center text-muted">
-                  Sin contactos configurados
-                </td>
-              </tr>
-            </ng-template>
-
-            <!-- Fila de número de emergencia -->
-            <tr class="emergency-row" *ngIf="service.emergencyPhone">
-              <td colspan="4" class="cell-emergency">
-                <strong>Número Emergencia:</strong>
+            <tr *ngFor="let contact of service.contacts" class="data-row">
+              <td class="cell-name">{{ contact.name || '-' }}</td>
+              <td class="cell-email clickable"
+                  (click)="copyToClipboard(contact.role === 'PARA' ? contact.email : '-')">
+                {{ contact.role === 'PARA' ? (contact.email || '-') : '-' }}
               </td>
-              <td class="cell-phone">
-                <strong>{{ service.emergencyPhone }}</strong>
+              <td class="cell-email clickable"
+                  (click)="copyToClipboard(contact.role === 'CC' ? contact.email : '-')">
+                {{ contact.role === 'CC' ? (contact.email || '-') : '-' }}
               </td>
+              <td class="cell-phone highlight">{{ contact.phone || '-' }}</td>
+            </tr>
+            <tr *ngIf="!service.contacts || service.contacts.length === 0" class="no-data-row">
+              <td colspan="4" class="text-center text-muted">Sin contactos configurados</td>
             </tr>
           </tbody>
         </table>

@@ -96,7 +96,7 @@ export class EscalationSimpleComponent implements OnInit {
         servicesByClient.get(clientId)!.push(service);
       });
 
-      // Agrupar contactos por servicio
+      // Agrupar contactos por servicio (ordenando PARA primero, luego CC, resto al final)
       const contactsByService = new Map<string, any[]>();
       (contacts as any[]).forEach((contact: any) => {
         const serviceId = contact.serviceId?._id || contact.serviceId || 'no-service';
@@ -110,11 +110,19 @@ export class EscalationSimpleComponent implements OnInit {
       // Construir datos completos por cliente
       this.escalationData = this.allClients.map((client: any) => {
         const clientServices = servicesByClient.get(client._id) || [];
-        const servicesWithContacts = clientServices.map((service: any) => ({
-          name: service.name,
-          contacts: contactsByService.get(service._id) || [],
-          emergencyPhone: service.emergencyPhone || null
-        }));
+        const servicesWithContacts = clientServices.map((service: any) => {
+          const contactsForService = contactsByService.get(service._id) || [];
+          const ordered = [...contactsForService].sort((a, b) => {
+            const order = { PARA: 0, CC: 1 } as any;
+            return (order[a.role] ?? 2) - (order[b.role] ?? 2);
+          });
+
+          return {
+            name: service.name,
+            contacts: ordered,
+            emergencyPhone: service.emergencyPhone || null
+          };
+        });
 
         return {
           client: client,
@@ -213,5 +221,15 @@ export class EscalationSimpleComponent implements OnInit {
 
   showSuccess(message: string): void {
     this.snackBar.open(message, 'Cerrar', { duration: 3000, panelClass: ['success-snackbar'] });
+  }
+
+  copyToClipboard(text: string): void {
+    if (!text || text === '-') return;
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showSuccess('Copiado al portapapeles');
+      }).catch((err) => console.error('Error al copiar:', err));
+    }
   }
 }
