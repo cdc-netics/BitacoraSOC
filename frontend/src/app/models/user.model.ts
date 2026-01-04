@@ -3,6 +3,7 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
+  phone?: string;
   role: 'admin' | 'user' | 'guest';
   isActive: boolean;
   theme: Theme;
@@ -27,6 +28,7 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   fullName: string;
+  phone?: string;
   role: 'admin' | 'user' | 'guest';
 }
 

@@ -1,0 +1,220 @@
+<div class="escalation-view-container">
+  <!-- Encabezado -->
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>contact_phone</mat-icon>
+        Información de Escalación
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <!-- Selectores -->
+      <div class="selectors">
+        <mat-form-field appearance="outline" class="selector-field">
+          <mat-label>Cliente</mat-label>
+          <input
+            type="text"
+            matInput
+            [formControl]="clientControl"
+            [matAutocomplete]="autoClient"
+            placeholder="Seleccione un cliente">
+          <mat-icon matSuffix>business</mat-icon>
+          <mat-autocomplete
+            #autoClient="matAutocomplete"
+            [displayWith]="displayClientFn"
+            (optionSelected)="onClientSelected($event.option.value)">
+            <mat-option *ngFor="let client of filteredClients | async" [value]="client">
+              <strong>{{ client.name }}</strong>
+              <span class="code-hint">({{ client.code }})</span>
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="selector-field">
+          <mat-label>Servicio</mat-label>
+          <input
+            type="text"
+            matInput
+            [formControl]="serviceControl"
+            [matAutocomplete]="autoService"
+            [disabled]="services.length === 0"
+            placeholder="Seleccione un servicio">
+          <mat-icon matSuffix>business_center</mat-icon>
+          <mat-autocomplete
+            #autoService="matAutocomplete"
+            [displayWith]="displayServiceFn"
+            (optionSelected)="onServiceSelected($event.option.value)">
+            <mat-option *ngFor="let service of filteredServices | async" [value]="service">
+              <strong>{{ service.name }}</strong>
+              <span class="code-hint">({{ service.code }})</span>
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="refresh()" [disabled]="!escalationData || loading">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <!-- Error -->
+  <mat-card *ngIf="error && !loading" class="error-card">
+    <mat-card-content>
+      <mat-icon color="warn">error</mat-icon>
+      {{ error }}
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Datos de Escalación -->
+  <div *ngIf="escalationData && !loading" class="escalation-data">
+    
+    <!-- Info del Servicio -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>{{ escalationData.service.name }}</mat-card-title>
+        <mat-card-subtitle>Cliente: {{ escalationData.service.clientName }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="timestamp">
+          <mat-icon>schedule</mat-icon>
+          Consultado: {{ formatDateTime(escalationData.timestamp) }}
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Contactos Externos -->
+    <mat-card class="contacts-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>email</mat-icon>
+          Contactos Externos
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <!-- Para -->
+        <div class="contact-section" *ngIf="escalationData.externalContacts.to.length > 0">
+          <h3>
+            <mat-chip color="primary">PARA</mat-chip>
+          </h3>
+          <div class="contact-list">
+            <div *ngFor="let contact of escalationData.externalContacts.to" class="contact-item">
+              <mat-icon>person</mat-icon>
+              <div class="contact-info">
+                <strong>{{ contact.name }}</strong>
+                <span *ngIf="contact.email">{{ contact.email }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider *ngIf="escalationData.externalContacts.to.length > 0 && escalationData.externalContacts.cc.length > 0"></mat-divider>
+
+        <!-- CC -->
+        <div class="contact-section" *ngIf="escalationData.externalContacts.cc.length > 0">
+          <h3>
+            <mat-chip color="accent">CC</mat-chip>
+          </h3>
+          <div class="contact-list">
+            <div *ngFor="let contact of escalationData.externalContacts.cc" class="contact-item">
+              <mat-icon>person</mat-icon>
+              <div class="contact-info">
+                <strong>{{ contact.name }}</strong>
+                <span *ngIf="contact.email">{{ contact.email }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider *ngIf="escalationData.externalContacts.emergency.phone"></mat-divider>
+
+        <!-- Emergencia -->
+        <div class="contact-section" *ngIf="escalationData.externalContacts.emergency.phone">
+          <h3>
+            <mat-chip color="warn">EMERGENCIA</mat-chip>
+          </h3>
+          <div class="emergency-contact">
+            <mat-icon>phone</mat-icon>
+            <div class="contact-info">
+              <strong>{{ escalationData.externalContacts.emergency.phone }}</strong>
+              <span *ngIf="escalationData.externalContacts.emergency.contactName">
+                {{ escalationData.externalContacts.emergency.contactName }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sin contactos -->
+        <div *ngIf="escalationData.externalContacts.to.length === 0 && 
+                    escalationData.externalContacts.cc.length === 0 && 
+                    !escalationData.externalContacts.emergency.phone" 
+             class="no-data">
+          <mat-icon>info</mat-icon>
+          <p>No hay contactos externos configurados para este servicio</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Turnos Internos -->
+    <mat-card class="shifts-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>groups</mat-icon>
+          Turnos Internos
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="escalationData.internalShifts.length > 0" class="shifts-list">
+          <div *ngFor="let shift of escalationData.internalShifts" class="shift-item">
+            <div class="shift-header">
+              <mat-chip [class]="getRoleBadgeClass(shift.role)">
+                {{ shift.roleName }}
+              </mat-chip>
+              <mat-chip *ngIf="shift.isOverride" color="warn" class="override-badge">
+                <mat-icon>swap_horiz</mat-icon>
+                REEMPLAZO
+              </mat-chip>
+            </div>
+
+            <div *ngIf="shift.currentUser" class="shift-user">
+              <mat-icon>account_circle</mat-icon>
+              <div class="user-info">
+                <strong>{{ shift.currentUser.name }}</strong>
+                <span>{{ shift.currentUser.email }}</span>
+              </div>
+            </div>
+
+            <div *ngIf="!shift.currentUser" class="no-user">
+              <mat-icon color="warn">warning</mat-icon>
+              <span>No hay nadie asignado</span>
+            </div>
+
+            <div *ngIf="shift.shiftPeriod" class="shift-period">
+              <mat-icon>event</mat-icon>
+              <span>
+                {{ formatDateTime(shift.shiftPeriod.start) }} - {{ formatDateTime(shift.shiftPeriod.end) }}
+              </span>
+            </div>
+
+            <div *ngIf="shift.isOverride && shift.overrideReason" class="override-reason">
+              <mat-icon>info</mat-icon>
+              <em>{{ shift.overrideReason }}</em>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="escalationData.internalShifts.length === 0" class="no-data">
+          <mat-icon>info</mat-icon>
+          <p>No hay turnos internos configurados</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

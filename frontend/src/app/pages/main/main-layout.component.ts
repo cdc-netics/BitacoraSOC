@@ -56,6 +56,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   primaryMenuItems: MenuItem[] = [
     { icon: 'edit', label: 'Escribir', route: '/main/checklist', roles: ['admin', 'user', 'guest'] },
+    { icon: 'contact_phone', label: 'Escalaciones', route: '/main/escalation/view', roles: ['admin', 'user', 'guest'] },
     { icon: 'table_chart', label: 'Generar Reporte', route: '/main/report-generator', roles: ['admin', 'user'] },
     { icon: 'history', label: 'Mis Entradas', route: '/main/my-entries', roles: ['admin'] },
     { icon: 'public', label: 'Ver todas', route: '/main/all-entries', roles: ['admin', 'user', 'guest'] },
@@ -67,6 +68,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   configItems: MenuItem[] = [
     { icon: 'people', label: 'Admin Usuarios', route: '/main/users', roles: ['admin'] },
     { icon: 'category', label: 'Admin Catálogos', route: '/main/catalog-admin', roles: ['admin'] },
+    { icon: 'admin_panel_settings', label: 'Admin Escalaciones', route: '/main/escalation/admin', roles: ['admin'] },
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
     { icon: 'image', label: 'Logo', route: '/main/logo', roles: ['admin'] },
     { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] }

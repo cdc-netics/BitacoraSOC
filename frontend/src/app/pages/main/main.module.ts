@@ -73,7 +73,11 @@ const routes: Routes = [
       { path: 'checklist-admin', component: ChecklistAdminComponent, canActivate: [AdminGuard] },
       { path: 'catalog-admin', component: CatalogAdminComponent, canActivate: [AdminGuard] },
       { path: 'report-generator', component: ReportGeneratorComponent },
-      { path: 'settings', component: SettingsComponent }
+      { path: 'settings', component: SettingsComponent },
+      { 
+        path: 'escalation', 
+        loadChildren: () => import('../escalation/escalation.module').then(m => m.EscalationModule)
+      }
     ]
   }
 ];

@@ -1,0 +1,381 @@
+<div class="container">
+  <mat-card class="page-header">
+    <mat-icon>settings</mat-icon>
+    <div>
+      <h1>Administración de Escalaciones</h1>
+      <p>Configura turnos internos y contactos de clientes</p>
+    </div>
+  </mat-card>
+
+  <mat-tab-group>
+    <!-- TAB 1: TURNOS INTERNOS -->
+    <mat-tab label="🗓️ Turnos Internos (Mi Empresa)">
+      <div class="tab-content">
+        <h2>Asignar Turnos Semanales</h2>
+        <p class="subtitle">Configura quién estará de turno cada semana del mes</p>
+
+        <button mat-raised-button color="primary" (click)="addAssignment()">
+          <mat-icon>add</mat-icon>
+          Asignar Turno
+        </button>
+
+        <!-- Formulario de asignación -->
+        <mat-card *ngIf="showAssignmentForm" class="form-card">
+          <h3>Nueva Asignación de Turno</h3>
+          <form [formGroup]="assignmentForm" (ngSubmit)="saveAssignment()">
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Rol</mat-label>
+                <mat-select formControlName="roleCode" required>
+                  <mat-option value="N2">N2 - Soporte Técnico</mat-option>
+                  <mat-option value="TI">TI - Infraestructura</mat-option>
+                  <mat-option value="N1_NO_HABIL">N1 - No Hábil</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Persona</mat-label>
+                <mat-select formControlName="assignedUserId" required>
+                  <!-- Usuarios del sistema -->
+                  <mat-optgroup label="Usuarios del Sistema" *ngIf="users.length > 0">
+                    <mat-option *ngFor="let user of users" [value]="user._id">
+                      {{ user.name || user.username || 'Usuario sin nombre' }}
+                    </mat-option>
+                  </mat-optgroup>
+                  
+                  <!-- Personas externas -->
+                  <mat-optgroup label="Personas Externas" *ngIf="externalPeople.length > 0">
+                    <mat-option *ngFor="let person of externalPeople" [value]="'ext_' + person._id">
+                      {{ person.name }} ({{ person.position || 'Sin cargo' }})
+                    </mat-option>
+                  </mat-optgroup>
+                  
+                  <!-- Sin datos -->
+                  <mat-option *ngIf="users.length === 0 && externalPeople.length === 0" disabled>
+                    No hay personas disponibles
+                  </mat-option>
+                </mat-select>
+                <mat-hint>Selecciona un usuario del sistema o una persona externa</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Desde (Lunes)</mat-label>
+                <input matInput [matDatepicker]="pickerStart" formControlName="weekStartDate" required>
+                <mat-datepicker-toggle matSuffix [for]="pickerStart"></mat-datepicker-toggle>
+                <mat-datepicker #pickerStart></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Hora Inicio</mat-label>
+                <input matInput type="time" formControlName="startTime" required>
+                <mat-hint>Hora de inicio del turno</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Hasta (Domingo)</mat-label>
+                <input matInput [matDatepicker]="pickerEnd" formControlName="weekEndDate" required>
+                <mat-datepicker-toggle matSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+                <mat-datepicker #pickerEnd></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Hora Fin</mat-label>
+                <input matInput type="time" formControlName="endTime" required>
+                <mat-hint>Hora de fin del turno</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="assignmentForm.invalid || savingAssignment">
+                Guardar
+              </button>
+              <button mat-button type="button" (click)="showAssignmentForm = false">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </mat-card>
+
+        <!-- Tabla de asignaciones -->
+        <div *ngIf="!loadingAssignments && assignments.length > 0" class="simple-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Semana</th>
+                <th>Rol</th>
+                <th>Persona</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let assignment of assignments">
+                <td>{{ formatDate(assignment.weekStartDate) }} - {{ formatDate(assignment.weekEndDate) }}</td>
+                <td><strong>{{ assignment.roleCode }}</strong></td>
+                <td>
+                  {{ assignment.userId?.fullName || assignment.userId?.name || assignment.externalPersonId?.name || 'N/A' }}
+                </td>
+                <td>
+                  <button mat-icon-button color="warn" (click)="deleteAssignment(assignment._id)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="loadingAssignments" class="loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="!loadingAssignments && assignments.length === 0" class="no-data">
+          <mat-icon>event_busy</mat-icon>
+          <p>No hay turnos asignados</p>
+        </div>
+
+        <!-- Sección: Personas Externas -->
+        <div class="section" style="margin-top: 40px;">
+          <h3>👤 Personas Externas (No usuarios del sistema)</h3>
+          <p class="subtitle">Agrega personas que pueden estar de turno pero no tienen cuenta en el sistema</p>
+          
+          <button mat-raised-button color="accent" (click)="addExternalPerson()">
+            <mat-icon>person_add</mat-icon>
+            Agregar Persona Externa
+          </button>
+
+          <mat-card *ngIf="showExternalPersonForm" class="inline-form">
+            <h4>Nueva Persona Externa</h4>
+            <form [formGroup]="externalPersonForm" (ngSubmit)="saveExternalPerson()">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre Completo</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: Juan Pérez">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" formControlName="email">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <input matInput formControlName="phone" placeholder="+56 9 1234 5678">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Cargo (Opcional)</mat-label>
+                <input matInput formControlName="position" placeholder="Ej: Soporte N2 Externo">
+              </mat-form-field>
+              <button mat-raised-button color="primary" type="submit" [disabled]="externalPersonForm.invalid">
+                Guardar
+              </button>
+              <button mat-button type="button" (click)="showExternalPersonForm = false">Cancelar</button>
+            </form>
+          </mat-card>
+
+          <div class="simple-table" *ngIf="externalPeople.length > 0" style="margin-top: 16px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Cargo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let person of externalPeople">
+                  <td><strong>{{ person.name }}</strong></td>
+                  <td>{{ person.email }}</td>
+                  <td>{{ person.phone }}</td>
+                  <td>{{ person.position || '-' }}</td>
+                  <td>
+                    <button mat-icon-button color="warn" (click)="deleteExternalPerson(person._id)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="externalPeople.length === 0 && !showExternalPersonForm" class="no-data">
+            <mat-icon>person_off</mat-icon>
+            <p>No hay personas externas registradas</p>
+            <small>Las personas externas pueden ser asignadas a turnos sin tener cuenta en el sistema</small>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: CONTACTOS DE CLIENTES -->
+    <mat-tab label="📞 Contactos de Clientes">
+      <div class="tab-content">
+        <h2>Gestión de Contactos de Escalación</h2>
+        <p class="subtitle">Administra clientes, servicios y sus contactos</p>
+
+        <!-- Sección: Clientes -->
+        <div class="section">
+          <h3>1. Clientes</h3>
+          <button mat-raised-button color="accent" (click)="addClient()">
+            <mat-icon>add</mat-icon>
+            Agregar Cliente
+          </button>
+
+          <mat-card *ngIf="showClientForm" class="inline-form">
+            <form [formGroup]="clientForm" (ngSubmit)="saveClient()">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Cliente</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: JUNJI, DPP">
+              </mat-form-field>
+              <button mat-raised-button color="primary" type="submit" [disabled]="clientForm.invalid">
+                Guardar
+              </button>
+              <button mat-button type="button" (click)="showClientForm = false">Cancelar</button>
+            </form>
+          </mat-card>
+
+          <div class="chips-list" *ngIf="!loadingClients">
+            <div class="chip" *ngFor="let client of clients">
+              {{ client.name }}
+              <button mat-icon-button (click)="deleteClient(client._id)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Servicios -->
+        <div class="section">
+          <h3>2. Servicios</h3>
+          <button mat-raised-button color="accent" (click)="addService()">
+            <mat-icon>add</mat-icon>
+            Agregar Servicio
+          </button>
+
+          <mat-card *ngIf="showServiceForm" class="inline-form">
+            <form [formGroup]="serviceForm" (ngSubmit)="saveService()">
+              <mat-form-field appearance="outline">
+                <mat-label>Cliente</mat-label>
+                <mat-select formControlName="clientId">
+                  <mat-option *ngFor="let client of clients" [value]="client._id">
+                    {{ client.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del Servicio</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: JUNJI - Mundo">
+              </mat-form-field>
+              <button mat-raised-button color="primary" type="submit" [disabled]="serviceForm.invalid">
+                Guardar
+              </button>
+              <button mat-button type="button" (click)="showServiceForm = false">Cancelar</button>
+            </form>
+          </mat-card>
+
+          <div class="simple-table" *ngIf="!loadingServices && services.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Servicio</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let service of services">
+                  <td>{{ service.clientId?.name || 'N/A' }}</td>
+                  <td><strong>{{ service.name }}</strong></td>
+                  <td>
+                    <button mat-icon-button color="warn" (click)="deleteService(service._id)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sección: Contactos -->
+        <div class="section">
+          <h3>3. Contactos de Escalación</h3>
+          <button mat-raised-button color="accent" (click)="addContact()">
+            <mat-icon>add</mat-icon>
+            Agregar Contacto
+          </button>
+
+          <mat-card *ngIf="showContactForm" class="inline-form">
+            <form [formGroup]="contactForm" (ngSubmit)="saveContact()">
+              <mat-form-field appearance="outline">
+                <mat-label>Servicio</mat-label>
+                <mat-select formControlName="serviceId">
+                  <mat-option *ngFor="let service of services" [value]="service._id">
+                    {{ service.clientId?.name }} - {{ service.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre</mat-label>
+                <input matInput formControlName="name" placeholder="Nombre del contacto">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" formControlName="email">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <input matInput formControlName="phone">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo</mat-label>
+                <mat-select formControlName="role">
+                  <mat-option value="PARA">PARA</mat-option>
+                  <mat-option value="CC">CC</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <button mat-raised-button color="primary" type="submit" [disabled]="contactForm.invalid">
+                Guardar
+              </button>
+              <button mat-button type="button" (click)="showContactForm = false">Cancelar</button>
+            </form>
+          </mat-card>
+
+          <div class="simple-table" *ngIf="!loadingContacts && contacts.length > 0">
+            <table>
+              <thead>
+                <tr>
+              <th>Cliente</th>
+              <th>Servicio</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Tipo</th>
+              <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let contact of contacts">
+                  <td>{{ contact.serviceId?.clientId?.name || 'N/A' }}</td>
+                  <td>{{ contact.serviceId?.name || 'N/A' }}</td>
+                  <td><strong>{{ contact.name }}</strong></td>
+                  <td>{{ contact.email }}</td>
+                  <td>{{ contact.phone || '-' }}</td>
+                  <td><span class="badge" [class.para]="contact.role === 'PARA'">{{ contact.role }}</span></td>
+                  <td>
+                    <button mat-icon-button color="primary" (click)="editContact(contact)" matTooltip="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteContact(contact._id)" matTooltip="Eliminar">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

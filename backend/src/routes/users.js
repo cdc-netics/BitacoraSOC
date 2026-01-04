@@ -26,6 +26,31 @@ const validate = require('../middleware/validate');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
 
+// GET /api/users/list - Listar usuarios básicos (cualquier usuario autenticado)
+// Para uso en dropdowns y asignaciones
+router.get('/list', authenticate, async (req, res) => {
+  try {
+    const users = await User.find({ isActive: true })
+      .select('_id username email fullName role phone')
+      .sort({ fullName: 1 });
+
+    // Mapear a formato simple con "name" para compatibilidad
+    const usersSimple = users.map(u => ({
+      _id: u._id,
+      name: u.fullName,
+      username: u.username,
+      email: u.email,
+      role: u.role,
+      phone: u.phone
+    }));
+
+    res.json(usersSimple);
+  } catch (error) {
+    console.error('Error al listar usuarios:', error);
+    res.status(500).json({ message: 'Error al obtener usuarios' });
+  }
+});
+
 // GET /api/users - Listar usuarios (solo admin)
 router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -49,12 +74,13 @@ router.post('/',
     body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
     body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
     body('fullName').trim().notEmpty().withMessage('El nombre completo es requerido'),
-    body('role').isIn(['admin', 'user', 'guest']).withMessage('Rol inválido')
+    body('role').isIn(['admin', 'user', 'guest']).withMessage('Rol inválido'),
+    body('phone').optional().trim().isLength({ min: 6, max: 20 }).withMessage('Teléfono inválido')
   ],
   validate,
   async (req, res) => {
     try {
-      const { username, email, password, fullName, role } = req.body;
+      const { username, email, password, fullName, role, phone } = req.body;
 
       // Verificar si ya existe
       const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -76,6 +102,7 @@ router.post('/',
         email,
         password,
         fullName,
+        phone,
         role,
         guestExpiresAt
       });
@@ -102,6 +129,7 @@ router.post('/',
           id: user._id,
           username: user.username,
           email: user.email,
+          phone: user.phone,
           fullName: user.fullName,
           role: user.role,
           guestExpiresAt: user.guestExpiresAt
@@ -127,7 +155,8 @@ router.put('/:id',
     body('email').optional().isEmail().normalizeEmail(),
     body('fullName').optional().trim().notEmpty(),
     body('role').optional().isIn(['admin', 'user', 'guest']),
-    body('isActive').optional().isBoolean()
+    body('isActive').optional().isBoolean(),
+    body('phone').optional().trim().isLength({ min: 6, max: 20 })
   ],
   validate,
   async (req, res) => {

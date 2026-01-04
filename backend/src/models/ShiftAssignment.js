@@ -1,0 +1,63 @@
+const mongoose = require('mongoose');
+
+const shiftAssignmentSchema = new mongoose.Schema({
+  roleCode: {
+    type: String,
+    required: true,
+    uppercase: true,
+    trim: true,
+    enum: ['N2', 'TI', 'N1_NO_HABIL']
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  externalPersonId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ExternalPerson'
+  },
+  weekStartDate: {
+    type: Date,
+    required: true
+  },
+  weekEndDate: {
+    type: Date,
+    required: true
+  },
+  notes: {
+    type: String,
+    trim: true
+  }
+}, {
+  timestamps: true
+});
+
+// Índices
+shiftAssignmentSchema.index({ roleCode: 1, weekStartDate: 1, weekEndDate: 1 });
+shiftAssignmentSchema.index({ userId: 1 });
+shiftAssignmentSchema.index({ externalPersonId: 1 });
+
+// Validación: weekEndDate debe ser mayor a weekStartDate
+shiftAssignmentSchema.pre('save', function(next) {
+  if (this.weekEndDate <= this.weekStartDate) {
+    return next(new Error('weekEndDate must be greater than weekStartDate'));
+  }
+  next();
+});
+
+// Validación: se requiere userId o externalPersonId (pero no ambos)
+shiftAssignmentSchema.pre('validate', function(next) {
+  const hasUser = !!this.userId;
+  const hasExternal = !!this.externalPersonId;
+  if (!hasUser && !hasExternal) {
+    return next(new Error('userId or externalPersonId is required'));
+  }
+  if (hasUser && hasExternal) {
+    return next(new Error('Only one of userId or externalPersonId is allowed'));
+  }
+  next();
+});
+
+const ShiftAssignment = mongoose.model('ShiftAssignment', shiftAssignmentSchema);
+
+module.exports = ShiftAssignment;

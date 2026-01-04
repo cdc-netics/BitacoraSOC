@@ -39,6 +39,11 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
+  // Public list (for dropdowns, assignments)
+  getUsersList(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.API_URL}/list`);
+  }
+
   // Admin endpoints
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(this.API_URL);
