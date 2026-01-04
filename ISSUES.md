@@ -158,6 +158,43 @@ ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 
 ---
 
+## 📞 Escalaciones - Pendientes
+
+### 7. Validación de teléfonos ausente
+
+**Estado:** ⚠️ Falta de validación
+
+**Problema:**
+- Los formularios de contactos (`frontend/src/app/pages/escalation/escalation-admin/escalation-admin.component.ts` y `frontend/src/app/pages/escalation/escalation-admin-simple/escalation-admin-simple.component.ts`) permiten cualquier texto en teléfono sin validar dígitos ni longitud.
+- Los esquemas backend (`backend/src/models/Contact.js`, `backend/src/models/ExternalPerson.js` y campo `emergencyPhone` en `backend/src/models/EscalationRule.js`) aceptan cadenas sin restricciones, por lo que pueden guardarse caracteres inválidos.
+
+**Esperado:**
+- Validación de números en frontend (regex para `+56` o dígitos, longitud mínima/máxima, normalización).
+- Validaciones en backend para rechazar textos no numéricos y limitar longitud; ideal sanitizar/normalizar antes de guardar.
+
+### 8. CRUD admin incompleto
+
+**Estado:** ❌ Sin UI funcional
+
+**Problema:**
+- En `frontend/src/app/pages/escalation/escalation-admin/escalation-admin.component.ts` las acciones de agregar/editar reglas, ciclos, asignaciones y overrides están como placeholders que solo muestran un mensaje ("Funcionalidad en desarrollo") y no permiten CRUD desde la interfaz.
+- Esto obliga a usar la API manualmente y deja al módulo admin sin gestión completa de reglas y turnos.
+
+**Esperado:**
+- Implementar formularios y diálogos para crear/editar reglas de escalación, ciclos de rotación, asignaciones y overrides directamente desde la UI admin, con validación y feedback.
+
+### 9. Teléfono de emergencia no se muestra en vista simple
+
+**Estado:** ❌ Bug funcional
+
+**Problema:**
+- En la vista Excel/simple (`frontend/src/app/pages/escalation/escalation-simple/escalation-simple.component.ts`) se pinta `service.emergencyPhone`, pero el endpoint `getServices` no devuelve ese campo; la información está en `EscalationRule`. Resultado: el número de emergencia nunca aparece para los analistas.
+
+**Esperado:**
+- Traer y mostrar el teléfono de emergencia real por servicio (consultar reglas de escalación o extender el endpoint para incluirlo); agregar fallback claro si no existe.
+
+---
+
 ## 📊 Resumen de Prioridades
 
 | # | Issue | Prioridad | Complejidad |
@@ -168,7 +205,10 @@ ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 | 4 | Orden de entradas | 🟢 Baja | Baja |
 | 5 | Reorganizar menú | 🟡 Media | Media |
 | 6 | Probar perfil | 🟢 Baja | - |
-
+| 7 | Escalaciones: Validar teléfonos | 🟡 Media | Baja |
+| 8 | Escalaciones: CRUD admin incompleto | 🔴 Alta | Media |
+| 9 | Escalaciones: Teléfono emergencia no visible | 🟡 Media | Media |
+| 10 | CRUD de  Lista de Eventos, Log Sources y Tipos de Operación en admin catalogos | 🟡 Media | Media |
 ---
 
 ## 🔧 Próximos Pasos
@@ -177,7 +217,6 @@ ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 2. **Corto plazo:** Sincronizar tags entre entradas y gestión
 3. **Medio plazo:** Reorganizar menú de configuración
 4. **Largo plazo:** Implementar checklist configurable + SMTP Passbolt
-
----
+5. **Escalaciones:** Validar teléfonos, habilitar CRUD admin completo y mostrar teléfono de emergencia en la vista simple
 
 *Documento generado para tracking de issues - Bitácora SOC*
