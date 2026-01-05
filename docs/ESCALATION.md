@@ -19,8 +19,8 @@ Sistema centralizado para gestionar información de escalación: contactos exter
   - Incluye overrides temporales (vacaciones, licencias, etc.)
 
 ### Para Administradores (Gestión Completa)
-- **CRUD de Clientes**: Organizaciones (JUNJI, DPP, etc.)
-- **CRUD de Servicios**: Servicios por cliente (JUNJI - Mundo, etc.)
+- **CRUD de Clientes**: Organizaciones (ACME Corp, Global Tech, etc.)
+- **CRUD de Servicios**: Servicios por cliente (ACME - Service A, etc.)
 - **CRUD de Contactos**: Base de datos de personas con email/teléfono
 - **Reglas de Escalación**: Configurar Para/CC/Emergencia por servicio
 - **Asignaciones de Turno**: Planificar turnos semanales por rol
@@ -60,9 +60,9 @@ Esto crea los 3 roles predefinidos: N2, TI, N1_NO_HABIL.
    ```json
    POST /api/escalation/admin/clients
    {
-     "name": "JUNJI",
-     "code": "JUNJI",
-     "description": "Junta Nacional de Jardines Infantiles",
+     "name": "ACME Corp",
+     "code": "ACME",
+     "description": "ACME Corporation International",
      "active": true
    }
    ```
@@ -72,8 +72,8 @@ Esto crea los 3 roles predefinidos: N2, TI, N1_NO_HABIL.
    POST /api/escalation/admin/services
    {
      "clientId": "64a1b2c3d4e5f6a7b8c9d0e1",
-     "name": "JUNJI - Mundo",
-     "code": "JUNJI_MUNDO",
+     "name": "ACME - Service A",
+     "code": "ACME_SERVICE_A",
      "active": true
    }
    ```
@@ -82,9 +82,9 @@ Esto crea los 3 roles predefinidos: N2, TI, N1_NO_HABIL.
    ```json
    POST /api/escalation/admin/contacts
    {
-     "name": "Milton Aranda",
-     "email": "milton.aranda@mundotelecomunicaciones.cl",
-     "organization": "Mundo Telecomunicaciones",
+     "name": "John Doe",
+     "email": "john.doe@example.com",
+     "organization": "Service Provider Inc.",
      "role": "Jefe Operaciones",
      "active": true
    }
@@ -97,7 +97,7 @@ Esto crea los 3 roles predefinidos: N2, TI, N1_NO_HABIL.
      "serviceId": "64a1b2c3d4e5f6a7b8c9d0e2",
      "recipientsTo": ["64a1b2c3d4e5f6a7b8c9d0e3"],
      "recipientsCC": ["64a1b2c3d4e5f6a7b8c9d0e4"],
-     "emergencyPhone": "+56923609140",
+     "emergencyPhone": "+1234567890",
      "active": true
    }
    ```
@@ -144,8 +144,8 @@ Esto crea los 3 roles predefinidos: N2, TI, N1_NO_HABIL.
 ### Consulta (Analista)
 
 1. Abrir `http://localhost:4200/main/escalation/view`
-2. Seleccionar Cliente (ej: "JUNJI")
-3. Seleccionar Servicio (ej: "JUNJI - Mundo")
+2. Seleccionar Cliente (ej: "ACME Corp")
+3. Seleccionar Servicio (ej: "ACME - Service A")
 4. Ver información:
    - **Contactos Externos**: Para/CC/Emergencia
    - **Turnos Internos**: Quién está de turno AHORA con badges de override
@@ -185,19 +185,19 @@ GET /api/escalation/view/64a1b2c3d4e5f6a7b8c9d0e2
 {
   "service": {
     "id": "64a1b2c3d4e5f6a7b8c9d0e2",
-    "name": "JUNJI - Mundo",
-    "code": "JUNJI_MUNDO",
-    "clientName": "JUNJI"
+    "name": "ACME - Service A",
+    "code": "ACME_SERVICE_A",
+    "clientName": "ACME Corp"
   },
   "externalContacts": {
     "to": [
-      { "id": "...", "name": "Milton Aranda", "email": "milton.aranda@mundo.cl" }
+      { "id": "...", "name": "John Doe", "email": "john.doe@example.com" }
     ],
     "cc": [
-      { "id": "...", "name": "Claudio Schleyer", "email": "claudio.schleyer@mundo.cl" }
+      { "id": "...", "name": "Jane Smith", "email": "jane.smith@example.com" }
     ],
     "emergency": {
-      "phone": "+56923609140",
+      "phone": "+1234567890",
       "contactName": null
     }
   },

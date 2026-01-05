@@ -225,7 +225,7 @@
             <form [formGroup]="clientForm" (ngSubmit)="saveClient()">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre del Cliente</mat-label>
-                <input matInput formControlName="name" placeholder="Ej: JUNJI, DPP">
+                <input matInput formControlName="name" placeholder="Ej: ACME, Global Tech">
               </mat-form-field>
               <button mat-raised-button color="primary" type="submit" [disabled]="clientForm.invalid">
                 Guardar
@@ -264,7 +264,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Nombre del Servicio</mat-label>
-                <input matInput formControlName="name" placeholder="Ej: JUNJI - Mundo">
+                <input matInput formControlName="name" placeholder="Ej: ACME - Service A">
               </mat-form-field>
               <button mat-raised-button color="primary" type="submit" [disabled]="serviceForm.invalid">
                 Guardar
