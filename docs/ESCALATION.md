@@ -271,9 +271,3 @@ GET /api/escalation/view/64a1b2c3d4e5f6a7b8c9d0e2
 - [ ] Notificaciones cuando cambia el turno
 - [ ] Integración con calendario (Google Calendar, Outlook)
 - [ ] Historial de cambios (auditoría de overrides)
-
----
-
-## 📄 Licencia
-
-MIT - Parte del proyecto Bitácora SOC
