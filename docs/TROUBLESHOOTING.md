@@ -107,12 +107,12 @@ Error: ENCRYPTION_KEY must be 32 bytes (64 hex characters)
 # Generar clave correcta (64 caracteres hex)
 openssl rand -hex 32
 
-# Output: a1b2c3d4e5f67890...  (64 chars)
+# Output: <cadena_hex_aleatoria>...  (64 chars)
 ```
 
 **Actualizar `.env`:**
 ```env
-ENCRYPTION_KEY=a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0
+ENCRYPTION_KEY=<pegar_resultado_de_openssl_aqui>
 ```
 
 **Reiniciar backend:**
@@ -137,12 +137,12 @@ Error: JWT_SECRET is not defined in environment variables
 # Generar secret
 openssl rand -base64 32
 
-# Output: x8Y9Z0A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S=
+# Output: <cadena_aleatoria_generada>
 ```
 
 **Añadir a `.env`:**
 ```env
-JWT_SECRET=x8Y9Z0A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S=
+JWT_SECRET=<pegar_resultado_de_openssl_aqui>
 ```
 
 ---
