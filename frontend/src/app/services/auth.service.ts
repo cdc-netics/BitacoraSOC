@@ -80,6 +80,11 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  updateCurrentUser(user: User): void {
+    this.setUser(user);
+    this.currentUserSubject.next(user);
+  }
+
   isAdmin(): boolean {
     const user = this.getCurrentUser();
     return user?.role === 'admin';

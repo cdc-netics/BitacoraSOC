@@ -1,9 +1,9 @@
 <div class="settings-container">
-  <h1>Configuración</h1>
+  <h1>Configuracion</h1>
 
   <mat-card class="config-card" id="general-config">
     <mat-card-header>
-      <mat-card-title>Configuración General</mat-card-title>
+      <mat-card-title>Configuracion General</mat-card-title>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="appConfigForm" (ngSubmit)="saveAppConfig()">
@@ -16,7 +16,7 @@
           <input matInput type="number" formControlName="checklistCooldownHours">
         </mat-form-field>
 
-        <button mat-raised-button color="primary" type="submit" 
+        <button mat-raised-button color="primary" type="submit"
                 [disabled]="!appConfigForm.valid">
           Guardar
         </button>
@@ -26,53 +26,79 @@
 
   <mat-card class="smtp-card" id="smtp-config">
     <mat-card-header>
-      <mat-card-title>Configuración SMTP</mat-card-title>
+      <mat-card-title>Configuracion SMTP</mat-card-title>
+      <span class="status-chip" [ngClass]="connectionStatus">
+        {{ connectionStatus === 'conectado' ? 'Conectado' : connectionStatus === 'desconectado' ? 'Desconectado' : 'Sin configurar' }}
+      </span>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="smtpForm" (ngSubmit)="saveSmtpConfig()">
-        <mat-form-field appearance="outline">
-          <mat-label>Host</mat-label>
-          <input matInput formControlName="host">
-        </mat-form-field>
+        <div class="grid two-cols">
+          <mat-form-field appearance="outline">
+            <mat-label>Proveedor</mat-label>
+            <mat-select formControlName="provider">
+              <mat-option *ngFor="let p of providers" [value]="p.value">{{ p.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Puerto</mat-label>
-          <input matInput type="number" formControlName="port">
-        </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Host</mat-label>
+            <input matInput formControlName="host">
+          </mat-form-field>
 
-        <mat-checkbox formControlName="secure">
-          Conexión segura (SSL/TLS)
+          <mat-form-field appearance="outline">
+            <mat-label>Puerto</mat-label>
+            <input matInput type="number" formControlName="port">
+          </mat-form-field>
+
+          <mat-checkbox formControlName="useTLS">
+            Conexión segura (SSL/TLS)
+          </mat-checkbox>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Usuario</mat-label>
+            <input matInput formControlName="username">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña</mat-label>
+            <input matInput type="password" formControlName="password">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre Remitente</mat-label>
+            <input matInput formControlName="senderName">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email Remitente</mat-label>
+            <input matInput type="email" formControlName="senderEmail">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Destinatarios (separados por coma)</mat-label>
+            <textarea matInput rows="2" formControlName="recipientsText"></textarea>
+          </mat-form-field>
+        </div>
+
+        <mat-checkbox formControlName="sendOnlyIfRed">
+          Enviar solo si hay servicios en rojo
         </mat-checkbox>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Usuario</mat-label>
-          <input matInput formControlName="user">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Contraseña</mat-label>
-          <input matInput type="password" formControlName="pass">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Email Remitente</mat-label>
-          <input matInput type="email" formControlName="from">
-        </mat-form-field>
-
         <div class="button-group">
-          <button mat-raised-button color="primary" type="submit" 
-                  [disabled]="!smtpForm.valid">
-            Guardar SMTP
+          <button mat-raised-button color="accent" type="button"
+                  (click)="testSmtp()" [disabled]="testing || !smtpForm.valid">
+            <mat-spinner *ngIf="testing" diameter="18"></mat-spinner>
+            <span *ngIf="!testing">Probar conexion</span>
           </button>
 
-          <button mat-raised-button color="accent" type="button" 
-                  (click)="testSmtp()">
-            <mat-icon>email</mat-icon>
-            Probar Envío
+          <button mat-raised-button color="primary" type="submit"
+                  [disabled]="!smtpForm.valid || !smtpTestPassed || savingSmtp">
+            <mat-spinner *ngIf="savingSmtp" diameter="18"></mat-spinner>
+            <span *ngIf="!savingSmtp">Guardar SMTP</span>
           </button>
         </div>
       </form>
     </mat-card-content>
   </mat-card>
 </div>
-

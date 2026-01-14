@@ -67,7 +67,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { icon: 'people', label: 'Admin Usuarios', route: '/main/users', roles: ['admin'] },
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
     { icon: 'image', label: 'Logo', route: '/main/logo', roles: ['admin'] },
-    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] }
+    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] },
+    { icon: 'settings', label: 'SMTP / Config', route: '/main/settings', roles: ['admin'] }
   ];
 
   visiblePrimaryMenu: MenuItem[] = [];

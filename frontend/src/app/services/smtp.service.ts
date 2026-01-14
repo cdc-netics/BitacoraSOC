@@ -45,7 +45,7 @@ export class SmtpService {
     return this.http.post<{ message: string; config: SmtpConfig }>(this.API_URL, data);
   }
 
-  testConfig(): Observable<SmtpTestResponse> {
-    return this.http.post<SmtpTestResponse>(`${this.API_URL}/test`, {});
+  testConfig(data: SmtpConfigRequest): Observable<SmtpTestResponse> {
+    return this.http.post<SmtpTestResponse>(`${this.API_URL}/test`, data);
   }
 }
