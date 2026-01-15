@@ -28,6 +28,8 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatTabsModule } from '@angular/material/tabs';
 
 // Components
 import { MainLayoutComponent } from './main-layout.component';
@@ -43,6 +45,11 @@ import { TagsComponent } from './tags/tags.component';
 import { LogoComponent } from './logo/logo.component';
 import { BackupComponent } from './backup/backup.component';
 import { ChecklistAdminComponent } from './checklist-admin/checklist-admin.component';
+import { ReportGeneratorComponent } from './report-generator/report-generator.component';
+import { CatalogAdminComponent } from './catalog-admin/catalog-admin.component';
+
+// Shared Components
+import { SharedComponentsModule } from '../../components/shared-components.module';
 
 // Guards
 import { AdminGuard } from '../../guards/admin.guard';
@@ -64,7 +71,13 @@ const routes: Routes = [
       { path: 'logo', component: LogoComponent },
       { path: 'backup', component: BackupComponent },
       { path: 'checklist-admin', component: ChecklistAdminComponent, canActivate: [AdminGuard] },
-      { path: 'settings', component: SettingsComponent }
+      { path: 'catalog-admin', component: CatalogAdminComponent, canActivate: [AdminGuard] },
+      { path: 'report-generator', component: ReportGeneratorComponent },
+      { path: 'settings', component: SettingsComponent },
+      { 
+        path: 'escalation', 
+        loadChildren: () => import('../escalation/escalation.module').then(m => m.EscalationModule)
+      }
     ]
   }
 ];
@@ -82,14 +95,16 @@ const routes: Routes = [
     TagsComponent,
     LogoComponent,
     BackupComponent,
-    ChecklistAdminComponent
-    // AllEntriesComponent es standalone, va solo en imports
+    ChecklistAdminComponent,
+    CatalogAdminComponent,
+    ReportGeneratorComponent
   ],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
     ReactiveFormsModule,
     FormsModule,
+    SharedComponentsModule, // Para EntityAutocomplete
     MatSidenavModule,
     MatToolbarModule,
     MatIconModule,
@@ -114,6 +129,8 @@ const routes: Routes = [
     MatTooltipModule,
     MatDividerModule,
     MatProgressBarModule,
+    MatAutocompleteModule,
+    MatTabsModule,
     AllEntriesComponent
   ]
 })

@@ -86,6 +86,9 @@ app.use('/api/logging', require('./routes/logging'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/backup', require('./routes/backup'));
+app.use('/api/catalog', require('./routes/catalog'));
+app.use('/api/admin/catalog', require('./routes/admin-catalog')); // CRUD admin
+app.use('/api/escalation', require('./routes/escalation')); // Módulo de escalaciones
 
 // Health check (ANTES del fallback SPA)
 app.get('/health', (req, res) => {
@@ -183,7 +186,8 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('unhandledRejection', (reason) => {
   logger.error({ event: 'server.unhandled.rejection', reason }, 'Unhandled promise rejection');
-  gracefulShutdown('unhandledRejection');
+  // No cerramos el servidor, solo logueamos el error para debug
+  console.error('❌ Unhandled Rejection:', reason);
 });
 process.on('uncaughtException', (error) => {
   logger.error({ event: 'server.uncaught.exception', error: error.message }, 'Uncaught exception');

@@ -36,7 +36,7 @@ import { User, CreateUserRequest } from '../../../models/user.model';
 export class UsersComponent implements OnInit {
   users: User[] = [];
   userForm: FormGroup;
-  displayedColumns: string[] = ['username', 'fullName', 'email', 'role', 'actions'];
+  displayedColumns: string[] = ['username', 'fullName', 'email', 'phone', 'role', 'actions'];
 
   constructor(
     private fb: FormBuilder,
@@ -48,6 +48,7 @@ export class UsersComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
       fullName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
+      phone: [''],
       role: ['user', Validators.required]
     });
   }

@@ -28,6 +28,12 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input matInput type="tel" formControlName="phone" placeholder="Ej: +56 9 1234 5678">
+          <mat-hint>Opcional</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Rol</mat-label>
           <mat-select formControlName="role">
             <mat-option value="admin">Administrador</mat-option>
@@ -60,6 +66,11 @@
         <ng-container matColumnDef="email">
           <th mat-header-cell *matHeaderCellDef>Email</th>
           <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="phone">
+          <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+          <td mat-cell *matCellDef="let user">{{ user.phone || '—' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="role">
