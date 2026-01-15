@@ -72,13 +72,9 @@ export class LoginComponent implements OnInit {
       }
     });
 
-    // ⚠️ DESARROLLO: Credenciales por defecto (borrar en producción)
-    const devUsername = 'admin';
-    const devPassword = 'Admin123!';
-
     this.loginForm = this.fb.group({
-      username: [devUsername, [Validators.required, Validators.minLength(3)]],
-      password: [devPassword, [Validators.required, Validators.minLength(6)]]
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 

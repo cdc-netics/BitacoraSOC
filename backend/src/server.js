@@ -58,7 +58,10 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? (origin, callback) => {
         const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Si ALLOWED_ORIGINS es '*', permite todo
+        if (allowedOrigins.includes('*')) {
+          callback(null, true);
+        } else if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
           callback(new Error('No permitido por CORS'));

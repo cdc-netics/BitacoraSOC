@@ -7,9 +7,9 @@ require('dotenv').config();
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/bitacora_soc';
 
 const adminUser = {
-  username: 'admin',
-  password: 'Admin123!',
-  email: 'admin@bitacora.local',
+  username: process.env.ADMIN_USERNAME || 'admin',
+  password: process.env.ADMIN_PASSWORD || 'Admin123!',
+  email: process.env.ADMIN_EMAIL || 'admin@bitacora.local',
   fullName: 'Administrador',
   role: 'admin',
   theme: 'dark'

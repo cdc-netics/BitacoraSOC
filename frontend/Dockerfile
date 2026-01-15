@@ -18,7 +18,7 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copiar build de Angular
-COPY --from=builder /app/dist/bitacora-soc-frontend /usr/share/nginx/html
+COPY --from=builder /app/dist/bitacora-soc /usr/share/nginx/html
 
 # Exponer puerto
 EXPOSE 80
