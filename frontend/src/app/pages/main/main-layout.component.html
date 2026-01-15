@@ -7,6 +7,8 @@
     class="left-sidebar">
     
     <mat-toolbar color="primary">
+      <img *ngIf="logoUrl" [src]="getAssetUrl(logoUrl)" alt="Logo" class="sidebar-logo">
+      <mat-icon *ngIf="!logoUrl" class="sidebar-icon">shield</mat-icon>
       <span>Bitácora SOC</span>
     </mat-toolbar>
 

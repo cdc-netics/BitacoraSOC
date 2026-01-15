@@ -24,7 +24,7 @@ const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // GET /api/reports/overview - Vista general de KPIs
-router.get('/overview', authenticate, authorize('admin'), async (req, res) => {
+router.get('/overview', authenticate, async (req, res) => {
   try {
     const { days = 30 } = req.query;
     const startDate = new Date();
@@ -102,6 +102,7 @@ router.get('/overview', authenticate, authorize('admin'), async (req, res) => {
 });
 
 // GET /api/reports/export-entries - Exportar entradas a CSV
+// Solo admin puede exportar archivos
 router.get('/export-entries', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { startDate, endDate } = req.query;

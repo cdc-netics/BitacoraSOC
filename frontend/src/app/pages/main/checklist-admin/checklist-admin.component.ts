@@ -171,6 +171,20 @@ export class ChecklistAdminComponent implements OnInit {
     });
   }
 
+  deactivateTemplate(template: ChecklistTemplate): void {
+    if (!template._id) return;
+    this.checklistService.deactivateTemplate(template._id).subscribe({
+      next: () => {
+        this.snackBar.open('Checklist desactivado', 'Cerrar', { duration: 3000 });
+        this.loadTemplates();
+      },
+      error: (err) => {
+        console.error('Error desactivando plantilla', err);
+        this.snackBar.open(err.error?.message || 'Error desactivando plantilla', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
   deleteTemplate(template: ChecklistTemplate): void {
     if (!template._id) return;
     if (!confirm(`Eliminar la plantilla "${template.name}"?`)) return;

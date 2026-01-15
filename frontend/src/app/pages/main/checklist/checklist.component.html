@@ -43,7 +43,9 @@
               <p class="hint">Todos los servicios y sub-items deben tener estado. Los servicios en rojo requieren observacion obligatoria.</p>
 
               <mat-accordion multi>
-                <mat-expansion-panel *ngFor="let service of checklistTree; let i = index" [expanded]="service.status === 'rojo'">
+                <mat-expansion-panel *ngFor="let service of checklistTree; let i = index" 
+                                     [expanded]="service.status === 'rojo'" 
+                                     [hideToggle]="!service.children?.length">
                   <mat-expansion-panel-header>
                     <mat-panel-title>
                       <mat-icon [class.status-verde]="service.status === 'verde'"
@@ -53,28 +55,50 @@
                       </mat-icon>
                       {{ service.serviceTitle }}
                     </mat-panel-title>
-                    <mat-panel-description>
+                    <mat-panel-description *ngIf="service.children?.length">
                       {{ service.status === 'verde' ? 'Operativo' : service.status === 'rojo' ? 'Con problema' : 'Pendiente' }}
+                    </mat-panel-description>
+                    <!-- Si NO tiene hijos, mostrar botones en el header -->
+                    <mat-panel-description *ngIf="!service.children?.length" style="justify-content: flex-end; gap: 8px;">
+                      <mat-radio-group
+                        [(ngModel)]="service.status"
+                        [name]="'status_' + i"
+                        required
+                        style="display: flex; gap: 8px;"
+                        (click)="$event.stopPropagation()"
+                        (change)="onStatusChange(service, $event.value)">
+                        <mat-radio-button value="verde" color="primary" (click)="$event.stopPropagation()">
+                          <mat-icon class="status-icon verde">check_circle</mat-icon>
+                          Verde (Operativo)
+                        </mat-radio-button>
+                        <mat-radio-button value="rojo" color="warn" (click)="$event.stopPropagation()">
+                          <mat-icon class="status-icon rojo">cancel</mat-icon>
+                          Rojo (Problema)
+                        </mat-radio-button>
+                      </mat-radio-group>
                     </mat-panel-description>
                   </mat-expansion-panel-header>
 
                   <p class="service-description" *ngIf="service.description">{{ service.description }}</p>
 
-                  <mat-radio-group
-                    [(ngModel)]="service.status"
-                    [name]="'status_' + i"
-                    required
-                    class="status-selector"
-                    (change)="onStatusChange(service, $event.value)">
-                    <mat-radio-button value="verde" color="primary">
-                      <mat-icon class="status-icon verde">check_circle</mat-icon>
-                      Verde (Operativo)
-                    </mat-radio-button>
-                    <mat-radio-button value="rojo" color="warn">
-                      <mat-icon class="status-icon rojo">cancel</mat-icon>
-                      Rojo (Problema)
-                    </mat-radio-button>
-                  </mat-radio-group>
+                  <!-- Solo mostrar dentro del panel si tiene hijos o si está rojo (para observación) -->
+                  <ng-container *ngIf="service.children?.length">
+                    <mat-radio-group
+                      [(ngModel)]="service.status"
+                      [name]="'status_' + i"
+                      required
+                      class="status-selector"
+                      (change)="onStatusChange(service, $event.value)">
+                      <mat-radio-button value="verde" color="primary">
+                        <mat-icon class="status-icon verde">check_circle</mat-icon>
+                        Verde (Operativo)
+                      </mat-radio-button>
+                      <mat-radio-button value="rojo" color="warn">
+                        <mat-icon class="status-icon rojo">cancel</mat-icon>
+                        Rojo (Problema)
+                      </mat-radio-button>
+                    </mat-radio-group>
+                  </ng-container>
 
                   <mat-form-field appearance="outline" class="full-width" *ngIf="service.status === 'rojo'">
                     <mat-label>Observacion (obligatoria)</mat-label>

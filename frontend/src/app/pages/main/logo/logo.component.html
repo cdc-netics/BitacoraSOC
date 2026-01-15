@@ -10,7 +10,7 @@
       </mat-card-header>
       <mat-card-content>
         <div class="logo-preview">
-          <img *ngIf="currentLogo" [src]="currentLogo" alt="Logo actual">
+          <img *ngIf="currentLogo" [src]="getAssetUrl(currentLogo)" alt="Logo actual">
           <div *ngIf="!currentLogo" class="no-logo">
             <mat-icon>image</mat-icon>
             <p>Sin logo configurado</p>

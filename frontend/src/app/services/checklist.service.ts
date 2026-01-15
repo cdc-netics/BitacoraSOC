@@ -99,6 +99,10 @@ export class ChecklistService {
     return this.http.put<{ message: string; template: ChecklistTemplate }>(`${this.API_URL}/templates/${id}/activate`, {});
   }
 
+  deactivateTemplate(id: string): Observable<{ message: string; template: ChecklistTemplate }> {
+    return this.http.put<{ message: string; template: ChecklistTemplate }>(`${this.API_URL}/templates/${id}/deactivate`, {});
+  }
+
   // ========== CHECKS ==========
   
   createCheck(data: CreateCheckRequest): Observable<{ message: string; check: ShiftCheck }> {

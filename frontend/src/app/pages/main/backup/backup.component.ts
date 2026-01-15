@@ -12,6 +12,7 @@ export class BackupComponent implements OnInit {
   isExporting = false;
   isImporting = false;
   backupHistory: any[] = [];
+  clearBeforeRestore = false;
 
   constructor(
     private http: HttpClient,
@@ -74,15 +75,17 @@ export class BackupComponent implements OnInit {
   }
 
   restoreBackup(backup: any): void {
-    if (!confirm(`¿Restaurar backup "${backup.filename}"? Esto sobrescribirá los datos actuales.`)) return;
+    const action = this.clearBeforeRestore ? 'BORRAR TODOS LOS DATOS y restaurar' : 'agregar datos del';
+    if (!confirm(`¿Confirmar ${action} backup ${backup.filename}? Esta operación no se puede deshacer.`)) return;
 
     this.isImporting = true;
     this.http.post<any>(`${environment.apiUrl}/backup/restore`, { 
-      filename: backup.filename 
+      filename: backup.filename,
+      clearBeforeRestore: this.clearBeforeRestore
     }).subscribe({
-      next: () => {
+      next: (response) => {
         this.isImporting = false;
-        this.snackBar.open('Backup restaurado correctamente', 'Cerrar', { duration: 3000 });
+        this.snackBar.open(`Backup restaurado: ${response.imported} documentos`, 'Cerrar', { duration: 5000 });
       },
       error: (err) => {
         this.isImporting = false;
@@ -101,6 +104,55 @@ export class BackupComponent implements OnInit {
       },
       error: (err) => {
         this.snackBar.open(err.error?.message || 'Error eliminando', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  importBackup(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+    if (!file.name.endsWith('.json')) {
+      this.snackBar.open('Solo se permiten archivos JSON', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    if (!confirm('¿Importar este backup? Esto agregará los datos al sistema.')) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.isImporting = true;
+    this.http.post<any>(`${environment.apiUrl}/backup/import`, formData).subscribe({
+      next: (response) => {
+        this.isImporting = false;
+        this.snackBar.open(`Importados ${response.imported} registros`, 'Cerrar', { duration: 5000 });
+        input.value = ''; // Limpiar el input
+      },
+      error: (err) => {
+        this.isImporting = false;
+        this.snackBar.open(err.error?.message || 'Error importando', 'Cerrar', { duration: 3000 });
+        input.value = '';
+      }
+    });
+  }
+
+  downloadBackup(backup: any): void {
+    this.http.get(`${environment.apiUrl}/backup/download/${backup.filename}`, {
+      responseType: 'blob'
+    }).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = backup.filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.snackBar.open('Descarga completada', 'Cerrar', { duration: 3000 });
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Error descargando', 'Cerrar', { duration: 3000 });
       }
     });
   }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { ThemeService } from '../../../services/theme.service';
 import { Theme } from '../../../models/user.model';
@@ -60,13 +61,16 @@ export class ProfileComponent implements OnInit {
           email: user.email,
           theme: user.theme || this.themeService.getCurrentTheme()
         });
-        if (user.theme) {
-          this.themeService.setTheme(user.theme);
-        }
         this.authService.updateCurrentUser(user);
       },
       error: (err) => {
         console.error('Error loading profile:', err);
+        this.profileForm.patchValue({
+          fullName: this.currentUser?.fullName || '',
+          email: this.currentUser?.email || '',
+          theme: this.themeService.getCurrentTheme()
+        });
+        this.profileForm.updateValueAndValidity({ emitEvent: false });
         this.snackBar.open(err.error?.message || 'No se pudo cargar el perfil', 'Cerrar', { duration: 3000 });
       }
     });
@@ -76,22 +80,23 @@ export class ProfileComponent implements OnInit {
     if (this.profileForm.invalid) return;
 
     this.isSavingProfile = true;
-    this.userService.updateProfile(this.profileForm.value).subscribe({
-      next: (response) => {
-        const updatedUser = response.user;
-        this.currentUser = updatedUser;
-        this.authService.updateCurrentUser(updatedUser);
-        this.themeService.setTheme(updatedUser.theme || this.profileForm.value.theme);
-        this.snackBar.open('Perfil actualizado', 'Cerrar', { duration: 3000 });
-      },
-      error: (err) => {
-        console.error('Error saving profile:', err);
-        this.snackBar.open(err.error?.message || 'No se pudo actualizar el perfil', 'Cerrar', { duration: 3000 });
-      },
-      complete: () => {
+    this.userService.updateProfile(this.profileForm.value)
+      .pipe(finalize(() => {
         this.isSavingProfile = false;
-      }
-    });
+      }))
+      .subscribe({
+        next: (response) => {
+          const updatedUser = response.user;
+          this.currentUser = updatedUser;
+          this.authService.updateCurrentUser(updatedUser);
+          this.themeService.setTheme(updatedUser.theme || this.profileForm.value.theme);
+          this.snackBar.open('Perfil actualizado', 'Cerrar', { duration: 3000 });
+        },
+        error: (err) => {
+          console.error('Error saving profile:', err);
+          this.snackBar.open(err.error?.message || 'No se pudo actualizar el perfil', 'Cerrar', { duration: 3000 });
+        }
+      });
   }
 
   changePassword(): void {
@@ -99,24 +104,24 @@ export class ProfileComponent implements OnInit {
 
     const { currentPassword, newPassword, confirmPassword } = this.passwordForm.value;
     if (newPassword !== confirmPassword) {
-      this.snackBar.open('Las contraseñas no coinciden', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('Las contrasenas no coinciden', 'Cerrar', { duration: 3000 });
       return;
     }
 
     this.isChangingPassword = true;
-    this.userService.updateProfile({ currentPassword, newPassword }).subscribe({
-      next: () => {
-        this.passwordForm.reset();
-        this.snackBar.open('Contraseña actualizada', 'Cerrar', { duration: 3000 });
-      },
-      error: (err) => {
-        console.error('Error changing password:', err);
-        this.snackBar.open(err.error?.message || 'No se pudo cambiar la contraseña', 'Cerrar', { duration: 3000 });
-      },
-      complete: () => {
+    this.userService.updateProfile({ currentPassword, newPassword })
+      .pipe(finalize(() => {
         this.isChangingPassword = false;
-      }
-    });
+      }))
+      .subscribe({
+        next: () => {
+          this.passwordForm.reset();
+          this.snackBar.open('Contrasena actualizada', 'Cerrar', { duration: 3000 });
+        },
+        error: (err) => {
+          console.error('Error changing password:', err);
+          this.snackBar.open(err.error?.message || 'No se pudo cambiar la contrasena', 'Cerrar', { duration: 3000 });
+        }
+      });
   }
 }
-

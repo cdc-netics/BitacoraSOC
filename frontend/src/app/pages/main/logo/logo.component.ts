@@ -13,6 +13,7 @@ export class LogoComponent implements OnInit {
   logoUrl: string = '';
   isLoading = false;
   previewUrl: string = '';
+  private backendBaseUrl = environment.backendBaseUrl;
 
   constructor(
     private http: HttpClient,
@@ -21,6 +22,16 @@ export class LogoComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCurrentLogo();
+  }
+
+  getAssetUrl(url: string): string {
+    if (!url) return '';
+    // Si es URL completa (http/https), retornarla tal cual
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // Si es ruta relativa, construir URL del backend
+    return `${this.backendBaseUrl}${url}`;
   }
 
   loadCurrentLogo(): void {

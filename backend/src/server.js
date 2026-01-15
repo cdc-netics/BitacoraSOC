@@ -65,14 +65,24 @@ const corsOptions = {
         }
       }
     : true, // En desarrollo permite cualquier origen
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  maxAge: 600
 };
 
 // Rate limiting
 app.use('/api/', cors(corsOptions), apiLimiter);
 
-// Servir archivos estáticos (logos)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Servir archivos estáticos (logos) - CORS permisivo para imágenes
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, '../uploads')));
 
 // Rutas de API
 app.use('/api/auth', require('./routes/auth'));

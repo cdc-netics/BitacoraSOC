@@ -112,6 +112,9 @@
             <button mat-flat-button color="accent" type="button" *ngIf="selectedTemplate && !selectedTemplate.isActive" (click)="activateTemplate(selectedTemplate)">
               Activar
             </button>
+            <button mat-flat-button color="warn" type="button" *ngIf="selectedTemplate && selectedTemplate.isActive" (click)="deactivateTemplate(selectedTemplate)">
+              Desactivar
+            </button>
             <button mat-button color="warn" type="button" *ngIf="selectedTemplate" (click)="deleteTemplate(selectedTemplate)">
               Eliminar
             </button>

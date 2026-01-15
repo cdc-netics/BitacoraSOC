@@ -7,5 +7,6 @@
  */
 export const environment = {
   production: true,
-  apiUrl: `http://${window.location.hostname}:3000/api`
+  apiUrl: `http://${window.location.hostname}:3000/api`,
+  backendBaseUrl: `http://${window.location.hostname}:3000`
 };

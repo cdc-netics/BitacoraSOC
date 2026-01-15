@@ -43,6 +43,9 @@ export class ChecklistComponent implements OnInit {
 
   private buildNodes(items: ChecklistItem[], parent?: ChecklistNode): ChecklistNode[] {
     return (items || []).map(item => {
+      if (!item._id) {
+        console.error('[CHECKLIST] Item sin _id encontrado:', item);
+      }
       const node: ChecklistNode = {
         serviceId: item._id,
         serviceTitle: item.title,
@@ -98,9 +101,15 @@ export class ChecklistComponent implements OnInit {
     this.isLoading = true;
     this.checklistService.getActiveChecklist().subscribe({
       next: (template) => {
+        console.log('[CHECKLIST] Template recibido del backend:', template);
+        console.log('[CHECKLIST] Items del template:', template?.items);
         this.activeChecklist = template;
         this.checklistTree = this.buildNodes(template?.items || []);
-        this.logAction('checklist.template.load', 'ok', { count: this.flattenNodes(this.checklistTree).length });
+        console.log('[CHECKLIST] ChecklistTree construido:', this.checklistTree);
+        const flatNodes = this.flattenNodes(this.checklistTree);
+        console.log('[CHECKLIST] Nodos aplanados:', flatNodes);
+        console.log('[CHECKLIST] IDs de servicios:', flatNodes.map(n => ({ title: n.serviceTitle, id: n.serviceId })));
+        this.logAction('checklist.template.load', 'ok', { count: flatNodes.length });
         this.isLoading = false;
       },
       error: (err) => {
@@ -151,6 +160,21 @@ export class ChecklistComponent implements OnInit {
     }
 
     this.isSubmitting = true;
+    
+    // Validar que todos los servicios tengan IDs válidos
+    const invalidServices = flat.filter(s => !s.serviceId || s.serviceId === 'undefined');
+    if (invalidServices.length > 0) {
+      console.error('[CHECKLIST] Servicios con IDs inválidos:');
+      invalidServices.forEach((svc, idx) => {
+        console.error(`  ${idx + 1}. Título: "${svc.serviceTitle}", ID: "${svc.serviceId}", Parent: "${svc.parentId}"`);
+      });
+      console.error('[CHECKLIST] Todos los servicios flat:', flat);
+      console.error('[CHECKLIST] Checklist tree:', this.checklistTree);
+      this.snackBar.open('Error: Algunos servicios no tienen ID válido. Recarga la página.', 'Cerrar', { duration: 5000 });
+      this.isSubmitting = false;
+      return;
+    }
+    
     const payload = {
       checklistId: this.activeChecklist?._id || undefined,
       type: this.checkType,
@@ -162,6 +186,8 @@ export class ChecklistComponent implements OnInit {
         observation: s.observation
       }))
     };
+    
+    console.log('[CHECKLIST] Enviando payload:', payload);
 
     this.checklistService.createCheck(payload).subscribe({
       next: () => {

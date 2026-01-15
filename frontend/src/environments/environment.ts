@@ -8,5 +8,6 @@
  */
 export const environment = {
   production: false,
-  apiUrl: `http://${window.location.hostname}:3000/api`
+  apiUrl: `http://${window.location.hostname}:3000/api`,
+  backendBaseUrl: `http://${window.location.hostname}:3000`
 };

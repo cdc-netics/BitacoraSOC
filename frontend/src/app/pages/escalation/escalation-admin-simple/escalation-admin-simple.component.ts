@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +15,14 @@ import { MatNativeDateModule, DateAdapter, NativeDateAdapter, MAT_DATE_LOCALE } 
 import { MatTabsModule } from '@angular/material/tabs';
 import { EscalationService } from '../../../services/escalation.service';
 import { UserService } from '../../../services/user.service';
+
+@Injectable()
+class MondayFirstNativeDateAdapter extends NativeDateAdapter {
+  // Mostrar lunes como inicio de semana en el datepicker
+  override getFirstDayOfWeek(): number {
+    return 1;
+  }
+}
 
 @Component({
   selector: 'app-escalation-admin-simple',
@@ -39,12 +47,7 @@ import { UserService } from '../../../services/user.service';
     { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
     {
       provide: DateAdapter,
-      useClass: class MondayFirstNativeDateAdapter extends NativeDateAdapter {
-        // Mostrar lunes como inicio de semana en el datepicker
-        override getFirstDayOfWeek(): number {
-          return 1;
-        }
-      }
+      useClass: MondayFirstNativeDateAdapter
     }
   ],
   templateUrl: './escalation-admin-simple.component.html',

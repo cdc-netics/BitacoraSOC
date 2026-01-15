@@ -17,6 +17,36 @@
   font-size: 0.85em;
   font-weight: 500;
   text-transform: uppercase;
-  background-color: #e3f2fd;
-  color: #1976d2;
+  
+  &.admin {
+    background-color: #fce4ec;
+    color: #c2185b;
+  }
+  
+  &.user {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+  
+  &.guest {
+    background-color: #fff3e0;
+    color: #f57c00;
+  }
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+  
+  &.active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  &.inactive {
+    background-color: #ffebee;
+    color: #c62828;
+  }
 }

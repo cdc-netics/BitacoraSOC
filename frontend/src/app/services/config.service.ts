@@ -48,4 +48,8 @@ export class ConfigService {
     formData.append('logo', file);
     return this.http.post<{ message: string; logoUrl: string }>(`${this.API_URL}/logo`, formData);
   }
+
+  getLogo(): Observable<{ logoUrl: string }> {
+    return this.http.get<{ logoUrl: string }>(`${this.API_URL}/logo`);
+  }
 }

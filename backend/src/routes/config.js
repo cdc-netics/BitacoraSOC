@@ -92,36 +92,156 @@ router.put('/',
   }
 );
 
+// GET /api/config/logo - Obtener logo actual (PÚBLICO - para mostrar en login)
+router.get('/logo', async (req, res) => {
+  try {
+    const config = await AppConfig.findOne();
+    
+    if (!config || !config.logoUrl) {
+      return res.json({ logoUrl: '' });
+    }
+
+    // Devolver ruta relativa - el navegador la resolverá automáticamente
+    res.json({ logoUrl: config.logoUrl });
+  } catch (error) {
+    console.error('Error al obtener logo:', error);
+    res.status(500).json({ message: 'Error al obtener logo' });
+  }
+});
+
 // POST /api/config/logo - Subir logo (admin)
 router.post('/logo',
   authenticate,
   authorize('admin'),
-  upload.single('logo'),
+  async (req, res) => {
+    // Middleware dinámico para manejar multipart o JSON
+    const contentType = req.headers['content-type'] || '';
+    
+    if (contentType.includes('multipart/form-data')) {
+      // Manejar subida de archivo
+      upload.single('logo')(req, res, async (err) => {
+        if (err) {
+          console.error('Error en multer:', err);
+          return res.status(400).json({ message: err.message || 'Error al procesar archivo' });
+        }
+
+        try {
+          if (!req.file) {
+            return res.status(400).json({ message: 'No se proporcionó archivo' });
+          }
+
+          const logoUrl = `/uploads/logos/${req.file.filename}`;
+
+          let config = await AppConfig.findOne();
+          if (!config) {
+            config = new AppConfig();
+          }
+
+          config.logoUrl = logoUrl;
+          config.logoType = 'upload';
+          config.lastUpdatedBy = req.user._id;
+          await config.save();
+
+          res.json({
+            message: 'Logo actualizado',
+            logoUrl
+          });
+        } catch (error) {
+          console.error('Error al subir logo:', error);
+          res.status(500).json({ message: 'Error al subir logo' });
+        }
+      });
+    } else {
+      // Manejar base64 o URL externa
+      try {
+        const { logoData, logoUrl } = req.body;
+
+        if (!logoData && !logoUrl) {
+          return res.status(400).json({ message: 'Debe proporcionar logoData (base64) o logoUrl' });
+        }
+
+        let config = await AppConfig.findOne();
+        if (!config) {
+          config = new AppConfig();
+        }
+
+        if (logoData) {
+          // Guardar imagen base64 como archivo
+          const matches = logoData.match(/^data:image\/(\w+);base64,(.+)$/);
+          if (!matches) {
+            return res.status(400).json({ message: 'Formato de imagen base64 inválido' });
+          }
+
+          const ext = matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, 'base64');
+
+          // Validar tamaño (2MB máx)
+          if (buffer.length > 2 * 1024 * 1024) {
+            return res.status(400).json({ message: 'La imagen es muy grande (máx 2MB)' });
+          }
+
+          const uploadDir = path.join(__dirname, '../../uploads/logos');
+          await fs.mkdir(uploadDir, { recursive: true });
+
+          const filename = `logo-${Date.now()}.${ext}`;
+          const filepath = path.join(uploadDir, filename);
+          await fs.writeFile(filepath, buffer);
+
+          config.logoUrl = `/uploads/logos/${filename}`;
+          config.logoType = 'upload';
+        } else if (logoUrl) {
+          // URL externa
+          config.logoUrl = logoUrl;
+          config.logoType = 'external';
+        }
+
+        config.lastUpdatedBy = req.user._id;
+        await config.save();
+
+        res.json({
+          message: 'Logo actualizado',
+          logoUrl: config.logoUrl
+        });
+      } catch (error) {
+        console.error('Error al guardar logo:', error);
+        res.status(500).json({ message: 'Error al guardar logo' });
+      }
+    }
+  }
+);
+
+// DELETE /api/config/logo - Eliminar logo (admin)
+router.delete('/logo',
+  authenticate,
+  authorize('admin'),
   async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: 'No se proporcionó archivo' });
+      const config = await AppConfig.findOne();
+      
+      if (!config || !config.logoUrl) {
+        return res.json({ message: 'No hay logo configurado' });
       }
 
-      const logoUrl = `/uploads/logos/${req.file.filename}`;
-
-      let config = await AppConfig.findOne();
-      if (!config) {
-        config = new AppConfig();
+      // Si es un archivo local, eliminarlo
+      if (config.logoType === 'upload' && config.logoUrl.startsWith('/uploads/')) {
+        const filepath = path.join(__dirname, '../..', config.logoUrl);
+        try {
+          await fs.unlink(filepath);
+        } catch (err) {
+          console.warn('No se pudo eliminar archivo:', err.message);
+        }
       }
 
-      config.logoUrl = logoUrl;
-      config.logoType = 'upload';
+      config.logoUrl = '';
+      config.logoType = undefined;
       config.lastUpdatedBy = req.user._id;
       await config.save();
 
-      res.json({
-        message: 'Logo actualizado',
-        logoUrl
-      });
+      res.json({ message: 'Logo eliminado' });
     } catch (error) {
-      console.error('Error al subir logo:', error);
-      res.status(500).json({ message: 'Error al subir logo' });
+      console.error('Error al eliminar logo:', error);
+      res.status(500).json({ message: 'Error al eliminar logo' });
     }
   }
 );

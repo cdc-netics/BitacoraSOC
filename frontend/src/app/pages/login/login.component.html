@@ -3,7 +3,8 @@
     <mat-card-header>
       <mat-card-title>
         <div class="logo-container">
-          <mat-icon class="logo-icon">shield</mat-icon>
+          <img *ngIf="logoUrl" [src]="getAssetUrl(logoUrl)" alt="Logo" class="app-logo">
+          <mat-icon *ngIf="!logoUrl" class="logo-icon">shield</mat-icon>
           <h1>Bitácora SOC</h1>
         </div>
       </mat-card-title>

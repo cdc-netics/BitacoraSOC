@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
+const mongoose = require('mongoose');
 const ChecklistTemplate = require('../models/ChecklistTemplate');
 const ServiceCatalog = require('../models/ServiceCatalog');
 const ShiftCheck = require('../models/ShiftCheck');
@@ -12,10 +13,14 @@ const captureMetadata = require('../middleware/metadata');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
 
+const ensureObjectId = (value) => (
+  mongoose.Types.ObjectId.isValid(value) ? value : new mongoose.Types.ObjectId()
+);
+
 const normalizeChildren = (children = []) => {
   if (!Array.isArray(children)) return [];
   return children.map((child, idx) => ({
-    _id: child._id,
+    _id: ensureObjectId(child._id),
     title: child.title,
     description: child.description,
     order: typeof child.order === 'number' ? child.order : idx,
@@ -24,13 +29,39 @@ const normalizeChildren = (children = []) => {
 };
 
 const normalizeItem = (item, idx) => ({
-  _id: item._id,
+  _id: ensureObjectId(item._id),
   title: item.title,
   description: item.description,
   order: typeof item.order === 'number' ? item.order : idx,
   isActive: item.isActive !== false,
   children: normalizeChildren(item.children)
 });
+
+const ensureTemplateItemIds = (template) => {
+  let changed = false;
+
+  (template.items || []).forEach(item => {
+    if (!mongoose.Types.ObjectId.isValid(item._id)) {
+      item._id = new mongoose.Types.ObjectId();
+      changed = true;
+    }
+
+    if (Array.isArray(item.children)) {
+      item.children.forEach(child => {
+        if (!mongoose.Types.ObjectId.isValid(child._id)) {
+          child._id = new mongoose.Types.ObjectId();
+          changed = true;
+        }
+      });
+    }
+  });
+
+  if (changed) {
+    template.markModified('items');
+  }
+
+  return changed;
+};
 
 const sortItems = (items = []) =>
   [...items].sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
@@ -54,12 +85,19 @@ const getActiveChecklistSnapshot = async () => {
   const activeTemplate = await ChecklistTemplate.findOne({ isActive: true });
 
   if (activeTemplate) {
-    const activeItems = sortItems((activeTemplate.items || [])
+    if (ensureTemplateItemIds(activeTemplate)) {
+      await activeTemplate.save();
+    }
+
+    // Normalize items to ensure all have _id (including children)
+    const normalizedItems = (activeTemplate.items || [])
       .filter(item => item.isActive !== false)
-      .map(item => ({
-        ...item.toObject(),
-        children: sortItems((item.children || []).filter(c => c.isActive !== false))
-      })));
+      .map((item, idx) => normalizeItem(item, idx));
+    
+    const activeItems = sortItems(normalizedItems.map(item => ({
+      ...item,
+      children: sortItems((item.children || []).filter(c => c.isActive !== false))
+    })));
 
     return {
       type: 'template',
@@ -258,6 +296,25 @@ router.put('/templates/:id/activate', authenticate, authorize('admin'), async (r
   } catch (error) {
     logger.error({ err: error }, 'Error activando plantilla');
     res.status(500).json({ message: 'Error activando plantilla' });
+  }
+});
+
+// Deactivate template
+router.put('/templates/:id/deactivate', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const template = await ChecklistTemplate.findById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Plantilla no encontrada' });
+    }
+
+    template.isActive = false;
+    template.updatedBy = req.user?._id;
+    await template.save();
+
+    res.json({ message: 'Plantilla desactivada', template });
+  } catch (error) {
+    logger.error({ err: error }, 'Error desactivando plantilla');
+    res.status(500).json({ message: 'Error desactivando plantilla' });
   }
 });
 
@@ -527,15 +584,14 @@ router.get('/check/history', authenticate, async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const filter = req.user.role === 'admin' ? {} : { userId: req.user._id };
-
+    // Todos los usuarios ven todos los checklists (información compartida del equipo)
     const [checks, total] = await Promise.all([
-      ShiftCheck.find(filter)
+      ShiftCheck.find({})
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
         .populate('userId', 'username fullName'),
-      ShiftCheck.countDocuments(filter)
+      ShiftCheck.countDocuments({})
     ]);
 
     res.json({

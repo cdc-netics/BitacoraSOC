@@ -48,7 +48,7 @@ const appConfigSchema = new mongoose.Schema({
   },
   logoType: {
     type: String,
-    enum: ['url', 'upload'],
+    enum: ['url', 'upload', 'external'],
     default: 'url'
   },
   // Última actualización

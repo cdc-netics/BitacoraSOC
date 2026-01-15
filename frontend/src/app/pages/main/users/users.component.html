@@ -3,7 +3,7 @@
 
   <mat-card class="user-form-card">
     <mat-card-header>
-      <mat-card-title>Crear Nuevo Usuario</mat-card-title>
+      <mat-card-title>{{ editingUserId ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
@@ -12,7 +12,7 @@
           <input matInput formControlName="username">
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" *ngIf="!editingUserId">
           <mat-label>Contraseña</mat-label>
           <input matInput type="password" formControlName="password">
         </mat-form-field>
@@ -44,7 +44,12 @@
 
         <button mat-raised-button color="primary" type="submit" 
                 [disabled]="!userForm.valid">
-          Crear Usuario
+          {{ editingUserId ? 'Guardar Cambios' : 'Crear Usuario' }}
+        </button>
+        
+        <button mat-raised-button type="button" *ngIf="editingUserId" 
+                (click)="cancelEdit()" style="margin-left: 10px;">
+          Cancelar
         </button>
       </form>
     </mat-card-content>
@@ -76,14 +81,33 @@
         <ng-container matColumnDef="role">
           <th mat-header-cell *matHeaderCellDef>Rol</th>
           <td mat-cell *matCellDef="let user">
-            <span class="role-badge">{{ user.role }}</span>
+            <span class="role-badge" [class]="user.role">{{ user.role.toUpperCase() }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="isActive">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+              {{ user.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let user">
-            <button mat-icon-button color="warn" (click)="deleteUser(user._id)">
+            <button mat-icon-button color="primary" (click)="editUser(user)" 
+                    matTooltip="Editar usuario">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button [color]="user.isActive ? 'accent' : 'primary'" 
+                    (click)="toggleActive(user)"
+                    [matTooltip]="user.isActive ? 'Desactivar' : 'Activar'">
+              <mat-icon>{{ user.isActive ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteUser(user._id)"
+                    matTooltip="Eliminar usuario">
               <mat-icon>delete</mat-icon>
             </button>
           </td>

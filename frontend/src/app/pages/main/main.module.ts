@@ -45,6 +45,7 @@ import { TagsComponent } from './tags/tags.component';
 import { LogoComponent } from './logo/logo.component';
 import { BackupComponent } from './backup/backup.component';
 import { ChecklistAdminComponent } from './checklist-admin/checklist-admin.component';
+import { ChecklistHistoryComponent } from './checklist-history/checklist-history.component';
 import { ReportGeneratorComponent } from './report-generator/report-generator.component';
 import { CatalogAdminComponent } from './catalog-admin/catalog-admin.component';
 
@@ -63,6 +64,7 @@ const routes: Routes = [
       { path: 'entries', component: EntriesComponent },
       { path: 'my-entries', component: MyEntriesComponent },
       { path: 'checklist', component: ChecklistComponent },
+      { path: 'checklist-history', component: ChecklistHistoryComponent },
       { path: 'all-entries', component: AllEntriesComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'reports', component: ReportsComponent },
@@ -96,6 +98,7 @@ const routes: Routes = [
     LogoComponent,
     BackupComponent,
     ChecklistAdminComponent,
+    ChecklistHistoryComponent,
     CatalogAdminComponent,
     ReportGeneratorComponent
   ],

@@ -3,10 +3,12 @@ import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { NoteService } from '../../services/note.service';
 import { ChecklistService } from '../../services/checklist.service';
+import { ConfigService } from '../../services/config.service';
 import { ThemeService } from '../../services/theme.service';
 import { AdminNote, PersonalNote } from '../../models/note.model';
 import { ChecklistTemplate, ChecklistItem, ShiftCheck } from '../../models/checklist.model';
 import { Theme } from '../../models/user.model';
+import { environment } from '../../../environments/environment';
 
 type MenuItem = {
   icon: string;
@@ -56,6 +58,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   primaryMenuItems: MenuItem[] = [
     { icon: 'edit', label: 'Escribir', route: '/main/checklist', roles: ['admin', 'user', 'guest'] },
+    { icon: 'playlist_add_check', label: 'Historial Checklists', route: '/main/checklist-history', roles: ['admin', 'user', 'guest'] },
     { icon: 'contact_phone', label: 'Escalaciones', route: '/main/escalation/view', roles: ['admin', 'user', 'guest'] },
     { icon: 'table_chart', label: 'Generar Reporte', route: '/main/report-generator', roles: ['admin', 'user'] },
     { icon: 'history', label: 'Mis Entradas', route: '/main/my-entries', roles: ['admin'] },
@@ -78,18 +81,30 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   visiblePrimaryMenu: MenuItem[] = [];
   visibleConfigItems: MenuItem[] = [];
   hasConfigAccess = false;
+  logoUrl: string = '';
+  private backendBaseUrl = environment.backendBaseUrl;
 
   constructor(
     private authService: AuthService,
     private noteService: NoteService,
     private checklistService: ChecklistService,
+    private configService: ConfigService,
     private themeService: ThemeService
   ) {}
+
+  getAssetUrl(url: string): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `${this.backendBaseUrl}${url}`;
+  }
 
   ngOnInit(): void {
     this.loadUserData();
     this.loadNotes();
     this.loadChecklist();
+    this.loadLogo();
     this.setupAutosave();
   }
 
@@ -107,6 +122,19 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     }
 
     this.updateVisibleMenus();
+  }
+
+  loadLogo(): void {
+    this.configService.getLogo()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.logoUrl = response.logoUrl;
+        },
+        error: () => {
+          this.logoUrl = '';
+        }
+      });
   }
 
   setupAutosave(): void {
@@ -169,7 +197,12 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
             parentId: (s as any).parentId
           }));
         },
-        error: (err) => console.error('Error cargando checklist activo:', err)
+        error: (err) => {
+          // Silenciar error 404 si el endpoint no está implementado
+          if (err.status !== 404) {
+            console.error('Error cargando checklist activo:', err);
+          }
+        }
       });
 
     this.checklistService.getLastCheck()
