@@ -71,7 +71,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { icon: 'admin_panel_settings', label: 'Admin Escalaciones', route: '/main/escalation/admin', roles: ['admin'] },
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
     { icon: 'image', label: 'Logo', route: '/main/logo', roles: ['admin'] },
-    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] }
+    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] },
+    { icon: 'settings', label: 'SMTP / Config', route: '/main/settings', roles: ['admin'] }
   ];
 
   visiblePrimaryMenu: MenuItem[] = [];

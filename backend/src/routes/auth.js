@@ -2,7 +2,7 @@
  * Rutas de Autenticación
  * 
  * Endpoints:
- *   POST /api/auth/login   - Iniciar sesión (rate limited 5 intentos/15min)
+ *   POST /api/auth/login   - Iniciar sesión
  *   POST /api/auth/refresh - Renovar token JWT
  * 
  * Roles: admin, user, guest
@@ -19,7 +19,6 @@ const { body } = require('express-validator');
 const User = require('../models/User');
 const AppConfig = require('../models/AppConfig');
 const validate = require('../middleware/validate');
-const { loginLimiter } = require('../middleware/rateLimiter');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
 
@@ -37,7 +36,6 @@ const generateToken = (userId, role) => {
 
 // POST /api/auth/login
 router.post('/login', 
-  loginLimiter,
   [
     body('username').trim().notEmpty().withMessage('El usuario es requerido'),
     body('password').notEmpty().withMessage('La contraseña es requerida')

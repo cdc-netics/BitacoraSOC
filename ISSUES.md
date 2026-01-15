@@ -46,7 +46,7 @@ ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 - Cada servicio con: nombre, descripción, orden
 - Activar/desactivar servicios
 
-### 2.3 Menú Acordeón NO Funciona
+### 2.3 Menú Acordeón NO Funciona --DONE
 **Estado:** ❌ No implementado
 
 **Problema:**
@@ -96,7 +96,7 @@ ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 
 ---
 
-## ⚙️ 5. Menú Desorganizado
+## ⚙️ 5. Menú Desorganizado --DONE
 
 **Estado:** ⚠️ UX Problem
 
@@ -146,15 +146,15 @@ ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
 
 ---
 
-## 👤 6. Perfil de Usuario - Sin Probar
+## 👤 6. Perfil de Usuario - Sin Probar --DONE
 
 **Estado:** ⏳ Pendiente de prueba
 
 **Funcionalidades a verificar:**
-- [ ] Cambio de tema (light/dark/sepia/pastel) Verificar color de header (Azul-Rosa)
-- [ ] Cambio de contraseña ---No funciona
+- [ DONE ] Cambio de tema (light/dark/sepia/pastel) Verificar color de header (Azul-Rosa)
+- [ ] Cambio de contraseña ---DONE
 - [ ] Ver datos del usuario actual ---DONE
-- [ ] Guardar preferencias ---No funciona
+- [ ] Guardar preferencias ---DONE
 
 ---
 

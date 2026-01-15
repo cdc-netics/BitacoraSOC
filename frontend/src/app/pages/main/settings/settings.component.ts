@@ -1,36 +1,10 @@
-/**
- * Componente de Configuración Global (Admin)
- * 
- * Funcionalidad:
- *   - Configuración de aplicación SOC (guests, cooldown, logo)
- *   - Configuración SMTP (notificaciones email)
- *   - Tabs Material: "General" y "Email"
- * 
- * Configuración General:
- *   - guestModeEnabled: Permitir creación de invitados
- *   - shiftCheckCooldownHours: Tiempo mínimo entre checks (1-24h)
- *   - Logo personalizado (upload o URL)
- * 
- * Configuración SMTP:
- *   - Provider: Office365, AWS SES, Gmail, Mailgun, Custom
- *   - Auth: username + password (cifrado AES-256 en backend)
- *   - Advanced: host, port, TLS
- *   - Sender: nombre + email
- *   - Recipients: array de emails
- *   - Test: botón para enviar email de prueba (rate limited)
- * 
- * Uso SOC:
- *   - Solo admin accede (AdminGuard)
- *   - Cambios aplican inmediatamente (sin reiniciar)
- *   - Password SMTP NUNCA se muestra (solo se envía al guardar)
- */
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfigService } from '../../../services/config.service';
 import { SmtpService } from '../../../services/smtp.service';
-import { AppConfig, UpdateConfigRequest } from '../../../models/config.model';
-import { SmtpConfigRequest } from '../../../models/smtp.model';
+import { UpdateConfigRequest } from '../../../models/config.model';
+import { SmtpConfigRequest, SmtpConfig } from '../../../models/smtp.model';
 
 @Component({
   selector: 'app-settings',
@@ -40,6 +14,20 @@ import { SmtpConfigRequest } from '../../../models/smtp.model';
 export class SettingsComponent implements OnInit {
   appConfigForm: FormGroup;
   smtpForm: FormGroup;
+  smtpTestPassed = false;
+  connectionStatus: 'conectado' | 'desconectado' | 'sin-config' = 'sin-config';
+  testing = false;
+  savingSmtp = false;
+
+  providers = [
+    { value: 'office365', label: 'Office 365' },
+    { value: 'aws-ses', label: 'AWS SES' },
+    { value: 'elastic-email', label: 'Elastic Email' },
+    { value: 'google-mail', label: 'Google Mail' },
+    { value: 'google-workspace', label: 'Google Workspace' },
+    { value: 'mailgun', label: 'Mailgun' },
+    { value: 'custom', label: 'Custom' }
+  ];
 
   constructor(
     private fb: FormBuilder,
@@ -53,13 +41,21 @@ export class SettingsComponent implements OnInit {
     });
 
     this.smtpForm = this.fb.group({
+      provider: ['custom', Validators.required],
       host: ['', Validators.required],
       port: [587, [Validators.required, Validators.min(1)]],
-      secure: [false],
-      user: ['', Validators.required],
-      pass: ['', [Validators.required, Validators.minLength(8)]],
-      from: ['', [Validators.required, Validators.email]],
-      recipients: [[]]
+      useTLS: [true, Validators.required],
+      username: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      senderName: ['', Validators.required],
+      senderEmail: ['', [Validators.required, Validators.email]],
+      recipientsText: ['', Validators.required],
+      sendOnlyIfRed: [false],
+      isActive: [true]
+    });
+
+    this.smtpForm.valueChanges.subscribe(() => {
+      this.smtpTestPassed = false;
     });
   }
 
@@ -82,39 +78,104 @@ export class SettingsComponent implements OnInit {
 
   loadSmtpConfig(): void {
     this.smtpService.getConfig().subscribe({
-      next: (config) => {
-        if (config) {
-          this.smtpForm.patchValue(config);
-        }
-      },
+      next: (config) => this.patchSmtpConfig(config),
       error: (err) => console.error('Error cargando SMTP:', err)
     });
+  }
+
+  private patchSmtpConfig(config: SmtpConfig | null): void {
+    if (!config) {
+      this.connectionStatus = 'sin-config';
+      return;
+    }
+
+    this.smtpForm.patchValue({
+      provider: config.provider || 'custom',
+      host: config.host,
+      port: config.port,
+      useTLS: config.useTLS,
+      username: config.username,
+      password: '',
+      senderName: config.senderName,
+      senderEmail: config.senderEmail,
+      recipientsText: (config.recipients || []).join(', '),
+      sendOnlyIfRed: config.sendOnlyIfRed ?? false,
+      isActive: config.isActive ?? true
+    });
+
+    this.smtpTestPassed = !!config.lastTestSuccess;
+    this.connectionStatus = config.lastTestSuccess ? 'conectado' : 'desconectado';
   }
 
   saveAppConfig(): void {
     if (this.appConfigForm.valid) {
       const data: UpdateConfigRequest = this.appConfigForm.value;
       this.configService.updateConfig(data).subscribe({
-        next: () => this.snackBar.open('Configuración guardada', 'Cerrar', { duration: 2000 }),
-        error: (err) => this.snackBar.open('Error guardando configuración', 'Cerrar', { duration: 3000 })
+        next: () => this.snackBar.open('Configuracion guardada', 'Cerrar', { duration: 2000 }),
+        error: () => this.snackBar.open('Error guardando configuracion', 'Cerrar', { duration: 3000 })
       });
     }
   }
 
   saveSmtpConfig(): void {
-    if (this.smtpForm.valid) {
-      const data: SmtpConfigRequest = this.smtpForm.value;
-      this.smtpService.saveConfig(data).subscribe({
-        next: () => this.snackBar.open('SMTP guardado', 'Cerrar', { duration: 2000 }),
-        error: (err) => this.snackBar.open('Error guardando SMTP', 'Cerrar', { duration: 3000 })
-      });
+    if (!this.smtpForm.valid || !this.smtpTestPassed) {
+      this.snackBar.open('Primero realiza una prueba SMTP exitosa', 'Cerrar', { duration: 3000 });
+      return;
     }
+
+    this.savingSmtp = true;
+    const payload = this.buildSmtpPayload();
+    this.smtpService.saveConfig(payload).subscribe({
+      next: (resp) => {
+        this.snackBar.open(resp.message || 'SMTP guardado', 'Cerrar', { duration: 2000 });
+        this.patchSmtpConfig(resp.config);
+      },
+      error: () => this.snackBar.open('Error guardando SMTP', 'Cerrar', { duration: 3000 }),
+      complete: () => this.savingSmtp = false
+    });
   }
 
   testSmtp(): void {
-    this.smtpService.testConfig().subscribe({
-      next: (response) => this.snackBar.open(response.message, 'Cerrar', { duration: 3000 }),
-      error: (err) => this.snackBar.open('Error en test SMTP', 'Cerrar', { duration: 3000 })
+    if (!this.smtpForm.valid) {
+      this.snackBar.open('Completa los campos SMTP antes de probar', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    this.testing = true;
+    const payload = this.buildSmtpPayload();
+    this.smtpService.testConfig(payload).subscribe({
+      next: (response) => {
+        this.smtpTestPassed = true;
+        this.connectionStatus = 'conectado';
+        this.snackBar.open(response.message, 'Cerrar', { duration: 3000 });
+      },
+      error: () => {
+        this.connectionStatus = 'desconectado';
+        this.snackBar.open('Error en test SMTP', 'Cerrar', { duration: 3000 });
+      },
+      complete: () => this.testing = false
     });
+  }
+
+  private buildSmtpPayload(): SmtpConfigRequest {
+    const value = this.smtpForm.value;
+    const recipients = (value.recipientsText as string || '')
+      .split(',')
+      .map(r => r.trim())
+      .filter(r => r.length > 0);
+
+    return {
+      provider: value.provider,
+      authMethod: 'credentials',
+      username: value.username,
+      password: value.password,
+      host: value.host,
+      port: Number(value.port),
+      useTLS: value.useTLS,
+      senderName: value.senderName,
+      senderEmail: value.senderEmail,
+      recipients,
+      sendOnlyIfRed: value.sendOnlyIfRed,
+      isActive: value.isActive
+    };
   }
 }
