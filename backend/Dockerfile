@@ -12,9 +12,10 @@ RUN npm install --omit=dev && npm cache clean --force
 # Copiar código fuente
 COPY src ./src
 
-# Crear usuario no-root por seguridad
+# Crear directorios necesarios y usuario no-root por seguridad
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
+    mkdir -p /app/uploads/logos /app/logs && \
     chown -R nodejs:nodejs /app
 
 USER nodejs
