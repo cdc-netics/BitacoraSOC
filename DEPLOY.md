@@ -14,19 +14,56 @@ echo "ENCRYPTION_KEY=$(openssl rand -hex 16)"
 # 3. Levantar todos los servicios
 docker-compose up -d
 
-# 4. Crear usuario administrador inicial
-docker-compose exec backend npm run seed
+# 4. Crear usuario administrador inicial (IMPORTANTE)
+docker exec bitacora-backend node src/scripts/seed.js
+# Usuario: admin
+# Contraseña: la que configuraste en ADMIN_PASSWORD del .env
 
-# 5. Acceder: http://localhost (o http://IP-SERVIDOR)
+# 5. Acceder: http://localhost:4200 (o http://IP-SERVIDOR:4200)
 ```
 
 ---
 
 ## 📋 Servicios Incluidos
 
-- **Frontend**: Angular + Nginx (puerto configurable, default: 80)
+- **Frontend**: Angular + Nginx (puerto configurable, default: 4200)
 - **Backend**: Node.js + Express (puerto interno: 3000)
 - **MongoDB**: Base de datos con persistencia
+
+**Health Checks configurados**:
+- MongoDB: Ping cada 10s
+- Backend: HTTP GET a `/health` cada 5s (30s de gracia inicial)
+- Frontend: Depende de backend healthy
+
+---
+
+## ⚠️ Notas Importantes de Despliegue
+
+### Health Check del Backend
+El backend tiene configurado un health check que verifica `http://127.0.0.1:3000/health`:
+- **start_period**: 30s - Da tiempo a MongoDB para conectar
+- **interval**: 5s - Verifica cada 5 segundos
+- **retries**: 5 - 5 intentos antes de marcar unhealthy
+
+**IMPORTANTE**: Usar `127.0.0.1` en lugar de `localhost` para evitar problemas con resolución IPv6.
+
+### Orden de inicio
+1. **MongoDB** inicia primero y debe estar `(healthy)`
+2. **Backend** espera a MongoDB healthy, luego inicia (30-40s para healthy)
+3. **Frontend** espera a Backend healthy, luego inicia
+
+Si ves "dependency failed to start", es porque el backend aún no pasó su health check. Espera 40-50 segundos.
+
+### Usuario Administrador
+El usuario admin **NO se crea automáticamente**. Debes ejecutar:
+```bash
+docker exec bitacora-backend node src/scripts/seed.js
+```
+
+Las credenciales se toman del `.env`:
+- Usuario: `ADMIN_USERNAME`
+- Contraseña: `ADMIN_PASSWORD`
+- Email: `ADMIN_EMAIL`
 
 ---
 
@@ -80,6 +117,11 @@ docker-compose restart
 docker-compose restart backend
 
 # Reiniciar desde cero
+
+# NOTA: Después de docker-compose down, el backend puede tardar 30-40 segundos
+# en pasar el health check. El frontend no iniciará hasta que backend esté healthy.
+# Monitorear con: docker ps | grep backend
+# Debe mostrar "(healthy)" antes de que el frontend inicie.
 docker-compose down
 docker-compose up -d
 ```
@@ -180,6 +222,38 @@ sudo certbot certonly --standalone -d tu-dominio.com
 ---
 
 ## 🐛 Troubleshooting
+
+### Backend unhealthy (contenedor no pasa health check)
+```bash
+# El problema común es que Docker health check usa localhost en lugar de 127.0.0.1
+# Verificar manualmente si el backend responde:
+docker exec bitacora-backend wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health
+
+# Si responde "remote file exists", el backend está OK
+# El health check en docker-compose.yml debe usar 127.0.0.1:
+# test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
+
+# Ajustar tiempos de health check si tarda mucho:
+# interval: 5s (verifica cada 5 segundos)
+# start_period: 30s (da 30 segundos antes del primer check)
+# retries: 5 (intenta 5 veces antes de marcar unhealthy)
+```
+
+### Error 401 Unauthorized en login
+```bash
+# El usuario admin aún no existe o tiene contraseña incorrecta
+# Recrear usuario admin con credenciales del .env:
+
+# 1. Eliminar usuario existente
+docker exec bitacora-backend node -e "const mongoose = require('mongoose'); const User = require('./src/models/User'); mongoose.connect(process.env.MONGODB_URI).then(async () => { await User.deleteOne({username: 'admin'}); console.log('Usuario admin eliminado'); process.exit(0); })"
+
+# 2. Crear nuevo usuario con .env
+docker exec bitacora-backend node src/scripts/seed.js
+
+# Ahora puedes hacer login con:
+# Usuario: admin
+# Contraseña: (la que está en ADMIN_PASSWORD del .env)
+```
 
 ### Servicios no inician
 ```bash
