@@ -4,16 +4,21 @@ node_modules/
 
 # Environment
 .env
+.env.local
+.env.production
+.env.docker
 *.env.local
 
 # Logs
 *.log
 npm-debug.log*
+logs/
 
 # Build outputs
 dist/
 */dist/
 build/
+.angular/
 
 # IDE
 .vscode/
@@ -28,6 +33,11 @@ Thumbs.db
 
 # Uploads & Backups
 uploads/
+backups/
+
+# Docker
+docker-compose.override.yml
+.dockerignore
 backups/
 
 # Angular

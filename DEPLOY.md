@@ -1,194 +1,280 @@
-# 🚀 Guía de Despliegue a Producción
+# 🚀 Guía de Despliegue Docker - Bitácora SOC v1.1.0
 
-## 📋 Configuración Automática
+## ⚡ Quick Start (5 minutos)
 
-La aplicación está configurada para detectar automáticamente el host donde se ejecuta. **No necesitas cambiar URLs hardcodeadas**.
-
-### ✅ Funciona automáticamente en:
-- **Desarrollo local**: `http://localhost`
-- **Red local**: `http://192.168.x.x`
-- **IP pública**: `http://tu-ip-publica`
-- **Dominio**: `http://tusitio.com`
-
----
-
-## 🔧 Variables de Entorno
-
-### Backend (.env)
 ```bash
-# Base de datos
-MONGO_URI=mongodb://localhost:27017/bitacora-soc
+# 1. Configurar variables de entorno
+cp .env.docker.example .env
+nano .env  # Cambiar TODAS las contraseñas y secrets
 
-# JWT
-JWT_SECRET=tu-secreto-super-seguro-cambiar-en-produccion
+# 2. Generar secrets seguros
+echo "JWT_SECRET=$(openssl rand -base64 32)"
+echo "ENCRYPTION_KEY=$(openssl rand -hex 16)"
 
-# Entorno
-NODE_ENV=production
+# 3. Levantar todos los servicios
+docker-compose up -d
 
-# CORS - Lista de orígenes permitidos (separados por coma)
-ALLOWED_ORIGINS=http://tu-ip-publica:4200,http://tusitio.com
+# 4. Crear usuario administrador inicial
+docker-compose exec backend npm run seed
 
-# Puerto
-PORT=3000
+# 5. Acceder: http://localhost (o http://IP-SERVIDOR)
 ```
-
-### Frontend
-**No requiere configuración**. Usa `window.location.hostname` automáticamente.
 
 ---
 
-## 📦 Build de Producción
+## 📋 Servicios Incluidos
 
-### Backend
+- **Frontend**: Angular + Nginx (puerto configurable, default: 80)
+- **Backend**: Node.js + Express (puerto interno: 3000)
+- **MongoDB**: Base de datos con persistencia
+
+---
+
+## 🔧 Configuración Obligatoria (.env)
+
 ```bash
-cd backend
-npm install --production
-npm start
+# Puerto público
+FRONTEND_PORT=80
+
+# MongoDB
+MONGO_ROOT_PASSWORD=cambiar_por_password_fuerte_123
+
+# Backend - GENERAR NUEVOS VALORES
+JWT_SECRET=$(openssl rand -base64 32)
+ENCRYPTION_KEY=$(openssl rand -hex 16)
+
+# SMTP (opcional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-email@gmail.com
+SMTP_PASS=tu-app-password
 ```
 
-### Frontend
+---
+
+## 🐳 Comandos Docker Útiles
+
+### Estado y logs
 ```bash
-cd frontend
-npm run build --prod
-# Los archivos compilados estarán en dist/
+# Ver servicios activos
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Logs de un servicio específico
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# Últimas 100 líneas
+docker-compose logs --tail=100 backend
 ```
 
----
-
-## 🌐 Configuración de URL del Backend
-
-La aplicación usa URLs dinámicas basadas en `window.location.hostname`:
-
-**Archivo**: `frontend/src/environments/environment.prod.ts`
-```typescript
-export const environment = {
-  production: true,
-  apiUrl: `http://${window.location.hostname}:3000/api`,
-  backendBaseUrl: `http://${window.location.hostname}:3000`
-};
-```
-
-### Si necesitas cambiar el puerto del backend:
-
-1. **Backend**: Cambia `PORT` en el archivo `.env`
-2. **Frontend**: Actualiza el puerto en `environment.prod.ts`:
-   ```typescript
-   apiUrl: `http://${window.location.hostname}:TU_PUERTO/api`
-   ```
-
----
-
-## 🔒 Seguridad en Producción
-
-### 1. Cambiar JWT_SECRET
+### Control de servicios
 ```bash
-# Generar un secreto aleatorio
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Detener
+docker-compose stop
+
+# Reiniciar
+docker-compose restart
+docker-compose restart backend
+
+# Reiniciar desde cero
+docker-compose down
+docker-compose up -d
 ```
 
-### 2. Configurar CORS
-Agregar los orígenes permitidos en `.env`:
+### Backups
+
+#### MongoDB
 ```bash
-ALLOWED_ORIGINS=http://192.168.1.100:4200,http://tusitio.com
+# Backup manual
+docker-compose exec mongodb mongodump \
+  --uri="mongodb://admin:PASSWORD@localhost/bitacora_soc?authSource=admin" \
+  --out=/data/backup/$(date +%Y%m%d)
+
+# Copiar al host
+docker cp bitacora-mongodb:/data/backup ./backups/
 ```
 
-### 3. HTTPS (Recomendado)
-Si usas HTTPS, cambia `http://` por `https://` en los environments:
-```typescript
-apiUrl: `https://${window.location.hostname}:3000/api`
+#### Archivos (logos, logs)
+```bash
+# Ver volúmenes
+docker volume ls
+
+# Backup de uploads
+docker run --rm -v bitacorasoc_backend_uploads:/source \
+  -v $(pwd)/backups:/backup alpine \
+  tar czf /backup/uploads-$(date +%Y%m%d).tar.gz -C /source .
 ```
 
----
+### Actualizar aplicación
+```bash
+# 1. Detener
+docker-compose down
 
-## 🐳 Docker (Opcional)
+# 2. Actualizar código
+git pull
 
-### Dockerfile Backend
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --production
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
+# 3. Reconstruir (sin caché)
+docker-compose build --no-cache
+
+# 4. Levantar nueva versión
+docker-compose up -d
+
+# 5. Verificar
+docker-compose logs -f
 ```
 
-### Dockerfile Frontend
-```dockerfile
-FROM node:18-alpine as builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build --prod
+### Monitoreo
+```bash
+# Recursos en tiempo real
+docker stats
 
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-```
+# Espacio en disco
+docker system df
 
-### docker-compose.yml
-```yaml
-version: '3.8'
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "3000:3000"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/bitacora-soc
-      - NODE_ENV=production
-    depends_on:
-      - mongo
-  
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-  
-  mongo:
-    image: mongo:7
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
+# Limpieza (libera espacio)
+docker system prune -a
 ```
 
 ---
 
-## 🎯 Checklist de Despliegue
+## 🛡️ Seguridad Post-Despliegue
 
-- [ ] Cambiar `JWT_SECRET` en `.env`
-- [ ] Configurar `ALLOWED_ORIGINS` con las IPs/dominios permitidos
-- [ ] Configurar `MONGO_URI` con la base de datos de producción
-- [ ] Verificar que `NODE_ENV=production`
-- [ ] Build del frontend: `npm run build --prod`
-- [ ] Configurar backups automáticos de MongoDB
-- [ ] Configurar HTTPS con certificados SSL
-- [ ] Probar el logo en el login y sidebar
-- [ ] Probar escalaciones y reportes
-- [ ] Configurar monitoreo de logs
+### 1. Cambiar contraseña del administrador
+```bash
+# Después del primer login, ir a "Mi Perfil" y cambiar contraseña
+```
+
+### 2. Verificar variables críticas
+```bash
+# Revisar que no estén valores por defecto
+docker-compose config | grep -E "JWT_SECRET|MONGO_ROOT_PASSWORD|ENCRYPTION_KEY"
+```
+
+### 3. Firewall (opcional pero recomendado)
+```bash
+# Ubuntu/Debian (UFW)
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+
+# CentOS/RHEL (firewalld)
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --reload
+```
+
+### 4. HTTPS con Let's Encrypt
+```bash
+# Instalar Certbot
+sudo apt install certbot
+
+# Obtener certificado
+sudo certbot certonly --standalone -d tu-dominio.com
+
+# Modificar nginx.conf para usar HTTPS
+# Certificados en: /etc/letsencrypt/live/tu-dominio.com/
+```
 
 ---
 
-## 🔍 Verificación Post-Despliegue
+## 🐛 Troubleshooting
 
-1. **Logo**: Debe aparecer en login, sidebar y favicon
-2. **API**: Debe responder en `http://tu-servidor:3000/api`
-3. **CORS**: Sin errores en la consola del navegador
-4. **MongoDB**: Conexión exitosa
-5. **Autenticación**: Login y logout funcionando
+### Servicios no inician
+```bash
+# Ver logs detallados
+docker-compose logs backend
+docker-compose logs mongodb
+
+# Verificar salud de contenedores
+docker-compose ps
+```
+
+### Error de conexión a MongoDB
+```bash
+# Verificar que MongoDB esté healthy
+docker-compose ps | grep mongodb
+
+# Ver logs de MongoDB
+docker-compose logs mongodb
+
+# Reiniciar MongoDB
+docker-compose restart mongodb
+```
+
+### Frontend no carga
+```bash
+# Verificar build de Angular
+docker-compose logs frontend
+
+# Ver archivos servidos por Nginx
+docker-compose exec frontend ls -la /usr/share/nginx/html
+
+# Test de configuración Nginx
+docker-compose exec frontend nginx -t
+```
+
+### Puerto 80 ocupado
+```bash
+# Ver qué proceso usa el puerto
+sudo netstat -tulpn | grep :80
+
+# Cambiar puerto en .env
+FRONTEND_PORT=8080
+
+# Reiniciar
+docker-compose down
+docker-compose up -d
+```
+
+### Limpiar completamente (¡CUIDADO! Borra datos)
+```bash
+# Detener y eliminar contenedores, redes y volúmenes
+docker-compose down -v
+
+# Limpiar imágenes
+docker system prune -a
+```
+
+---
+
+## 📊 Volúmenes Persistentes
+
+Los siguientes datos persisten entre reinicios:
+
+- **mongodb_data**: Todos los datos de la aplicación
+- **backend_uploads**: Logos y archivos subidos  
+- **backend_logs**: Logs del sistema
+
+```bash
+# Ver volúmenes
+docker volume ls
+
+# Inspeccionar un volumen
+docker volume inspect bitacorasoc_mongodb_data
+```
+
+---
+
+## ✅ Checklist de Producción
+
+- [ ] **.env configurado** con valores seguros
+- [ ] **JWT_SECRET y ENCRYPTION_KEY** generados aleatoriamente
+- [ ] **MONGO_ROOT_PASSWORD** cambiado
+- [ ] **Servicios levantados**: `docker-compose ps` muestra todos "healthy"
+- [ ] **Admin inicial creado**: `docker-compose exec backend npm run seed`
+- [ ] **Password admin cambiado** desde la interfaz
+- [ ] **Backups configurados** (cron job)
+- [ ] **Firewall configurado** (solo puertos necesarios)
+- [ ] **HTTPS configurado** (si aplica)
+- [ ] **Monitoreo activo**: logs y recursos
 
 ---
 
 ## 📞 Soporte
 
-Si encuentras problemas, revisa:
-- Logs del backend: `pm2 logs` o `docker logs backend`
-- Consola del navegador (F12)
-- Archivo `TROUBLESHOOTING.md`
+**Logs**: `docker-compose logs -f`  
+**Estado**: `docker-compose ps`  
+**Docs completas**: [README.md](README.md#-despliegue-con-docker-producción)
+

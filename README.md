@@ -3,7 +3,25 @@
 Sistema completo de registro y gestión de actividades para Security Operations Center (SOC).
 
 **Stack:** Angular 17 + Express + MongoDB  
-**Puerto Backend:** 3000 | **Puerto Frontend:** 4200
+**Despliegue:** Docker Compose (Frontend + Backend + MongoDB)  
+**Producción:** ✅ Listo para deploy con Docker
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Con Docker (Recomendado para producción)
+cp .env.docker.example .env  # Configurar variables
+docker-compose up -d          # Levantar servicios
+docker-compose exec backend npm run seed  # Crear admin
+
+# Sin Docker (Desarrollo)
+cd backend && npm install && npm start
+cd frontend && npm install && npm start
+```
+
+**Acceso:** http://localhost (Docker) o http://localhost:4200 (desarrollo)
 
 ---
 
@@ -102,7 +120,81 @@ BitacoraSOC/
 
 ---
 
-## 📚 Documentación Técnica
+## � Despliegue con Docker (Producción)
+
+### Requisitos
+- Docker 20.10+
+- Docker Compose 2.0+
+
+### Instalación
+
+```bash
+# 1. Clonar repositorio
+git clone <repo-url>
+cd BitacoraSOC
+
+# 2. Configurar variables de entorno
+cp .env.docker.example .env
+
+# 3. Editar .env y cambiar:
+#    - MONGO_ROOT_PASSWORD (contraseña MongoDB)
+#    - JWT_SECRET (32+ caracteres aleatorios)
+#    - ENCRYPTION_KEY (exactamente 32 caracteres)
+#    - FRONTEND_PORT (puerto público, default: 80)
+
+# 4. Generar secrets seguros (Linux/Mac)
+openssl rand -base64 32  # Para JWT_SECRET
+openssl rand -hex 16     # Para ENCRYPTION_KEY
+
+# 5. Construir y levantar servicios
+docker-compose up -d
+
+# 6. Ver logs
+docker-compose logs -f
+
+# 7. Crear usuario administrador inicial
+docker-compose exec backend npm run seed
+```
+
+### Servicios incluidos
+- **Frontend:** Nginx sirviendo Angular (puerto configurable)
+- **Backend:** Node.js + Express (puerto interno 3000)
+- **MongoDB:** Base de datos con persistencia
+
+### Volúmenes persistentes
+- `mongodb_data`: Datos de la base de datos
+- `backend_uploads`: Logos y archivos subidos
+- `backend_logs`: Logs del sistema
+
+### Comandos útiles
+
+```bash
+# Ver estado
+docker-compose ps
+
+# Detener servicios
+docker-compose stop
+
+# Reiniciar servicios
+docker-compose restart
+
+# Ver logs de un servicio específico
+docker-compose logs -f backend
+
+# Backup de MongoDB
+docker-compose exec mongodb mongodump --uri="mongodb://admin:PASSWORD@localhost:27017/bitacora_soc?authSource=admin" --out=/data/backup
+
+# Actualizar servicios
+docker-compose pull
+docker-compose up -d --build
+
+# Limpiar todo (¡cuidado! elimina volúmenes)
+docker-compose down -v
+```
+
+---
+
+## �📚 Documentación Técnica
 
 Para detalles técnicos completos, consulta:
 
@@ -120,11 +212,19 @@ Para detalles técnicos completos, consulta:
 - **Historial de Checklists:** Vista completa de todos los checklists del equipo (entrada/salida de turno)
 - **Gestión de Usuarios:** Edición y activación/desactivación de cuentas
 - **Reportes para Users:** Acceso a reportes de overview para usuarios normales
+- **Docker Ready:** Configuración completa para despliegue en contenedores
 
 ### 🐛 Correcciones
 - Fix: Validación de IDs en servicios de checklist (generación automática de ObjectId)
 - Fix: Normalización de items y children en plantillas al cargar checklist activo
 - Mejora: Badges de estado con colores consistentes (admin: pink, user: blue, guest: orange)
+
+### 🐳 Docker
+- Multi-stage builds para imágenes optimizadas
+- Health checks en todos los servicios
+- Persistencia con volúmenes (MongoDB, uploads, logs)
+- Nginx optimizado con gzip y cache control
+- Variables de entorno seguras con .env
 
 ---
 

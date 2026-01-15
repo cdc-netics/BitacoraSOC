@@ -84,6 +84,11 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '../uploads')));
 
+// Health check para Docker
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // Rutas de API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
