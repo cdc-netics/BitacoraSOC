@@ -43,3 +43,14 @@ backups/
 # Angular
 .angular/
 frontend/.angular/
+
+# Datos de empresa (NO SUBIR)
+# Solo mantener archivos *-ejemplo.* para documentación
+backend/scripts/*.csv
+backend/scripts/*-data.json
+backend/scripts/*-import.json
+entradas-*.json
+eventos-*.json
+!backend/scripts/entradas-ejemplo.csv
+!backend/scripts/entradas-ejemplo.json
+!backend/scripts/eventos-ejemplo.json
