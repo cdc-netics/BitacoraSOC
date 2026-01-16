@@ -54,3 +54,8 @@ eventos-*.json
 !backend/scripts/entradas-ejemplo.csv
 !backend/scripts/entradas-ejemplo.json
 !backend/scripts/eventos-ejemplo.json
+
+# Imágenes grandes (usar CDN o issues de GitHub)
+docs/images/screenshots/*.png
+docs/images/screenshots/*.jpg
+!docs/images/screenshots/README.md
