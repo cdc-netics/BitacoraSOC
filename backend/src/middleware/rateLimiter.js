@@ -24,11 +24,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Rate limiter para login
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 intentos por ventana
+  max: isProduction ? 5 : 1000, // 5 en producción, 1000 en desarrollo
   message: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.',
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false
+  skipSuccessfulRequests: false,
+  skip: () => !isProduction // Deshabilitado en desarrollo
 });
 
 // Rate limiter general para API
