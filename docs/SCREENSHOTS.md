@@ -2,6 +2,16 @@
 
 Documentación visual de las principales funcionalidades del sistema.
 
+## 📑 Índice de Capturas
+
+1. [Pantalla Principal - Nueva Entrada](#-pantalla-principal---nueva-entrada)
+2. [Escalación y Turnos](#-escalación-y-turnos)
+3. [Buscar Entradas](#-buscar-entradas)
+4. [Generador de Reportes SOC](#-generador-de-reportes-soc)
+5. [Configuración de Administrador](#-configuración-de-administrador)
+6. [Menú Admin - Backup](#-menú-admin---backup)
+7. [Sidebar - Menú de Navegación](#-sidebar---menú-de-navegación)
+
 ---
 
 ## 🏠 Pantalla Principal - Nueva Entrada
@@ -155,6 +165,74 @@ Sección expandida con opciones administrativas:
 
 ---
 
+## 💾 Menú Admin - Backup
+
+![Menú Admin Backup](images/screenshots/06-menu-admin-backup.png)
+
+**Detalle del menú administrativo:**
+
+Opciones visibles en la sección de configuración:
+
+- **Admin Usuarios** - Gestión completa de cuentas
+- **Admin Catálogos** - Taxonomías y diccionarios
+- **Admin Escalaci...** - Matriz de contactos
+- **Tags** - Sistema de etiquetado
+- **Logo** - Branding corporativo
+- **Backup** ← **(seleccionado)** - Sistema de respaldo
+- **SMTP / Config** - Notificaciones email
+
+**Funcionalidad de Backup:**
+- Crear backup completo de todas las colecciones (23 colecciones)
+- Descargar backups en formato JSON
+- Restaurar desde backup existente
+- Modo incremental o completo (clearBeforeRestore)
+- Historial de backups con timestamps
+- Validación de integridad de datos
+
+Ver documentación completa en [backend/scripts/README.md](../backend/scripts/README.md#5-restaurar-un-backup)
+
+---
+
+## 📂 Sidebar - Menú de Navegación
+
+![Sidebar Menu](images/screenshots/07-sidebar-menu.png)
+
+**Menú lateral izquierdo completo:**
+
+### Secciones Principales
+
+| Icono | Opción | Rol | Descripción |
+|-------|--------|-----|-------------|
+| ✏️ | **Escribir** | Todos | Crear nueva entrada (operativa/incidente) |
+| 📋 | **Historial Checklists** | Todos | Ver todos los checklists completados del equipo |
+| 📞 | **Escalaciones** | Todos | Vista de turnos y contactos de escalación |
+| 📊 | **Generar Reporte** | Admin/User | Crear reportes HTML estructurados |
+| ⏰ | **Mis Entradas** | Admin/User | Entradas propias del usuario |
+| 🌐 | **Ver todas** | Todos | Búsqueda y filtrado de todas las entradas |
+| 👤 | **Mi Perfil** | Todos | Editar información personal |
+| ✅ | **Checklist (Admin)** | Admin | Gestionar plantillas de checklist |
+| 📈 | **Reportes** | Admin/User | Dashboard y estadísticas |
+
+### Configuración (Admin) ▼
+
+| Icono | Opción | Descripción |
+|-------|--------|-------------|
+| 👥 | **Admin Usuarios** | CRUD de usuarios |
+| 📚 | **Admin Catálogos** | Eventos y taxonomías |
+| 📞 | **Admin Escalaci...** | Contactos y turnos |
+| 🏷️ | **Tags** | Etiquetas globales |
+| 🖼️ | **Logo** | Personalización |
+| ☁️ | **Backup** | Respaldos |
+| 📧 | **SMTP / Config** | Configuración email |
+
+**Interacción:**
+- Sección colapsable con indicador de expansión (▼/►)
+- Items activos resaltados
+- Íconos intuitivos con Material Icons
+- Responsive: Se convierte en drawer en móvil
+
+---
+
 ## 📋 Resumen de Funcionalidades
 
 ### Usuario Operador
@@ -199,17 +277,43 @@ Sección expandida con opciones administrativas:
 
 Si deseas expandir la documentación visual, considera agregar:
 
-- [ ] Pantalla de login
-- [ ] Mi Perfil (edición de usuario)
-- [ ] Historial de Checklists completados
-- [ ] Admin Usuarios (tabla de usuarios)
-- [ ] Admin Catálogos (gestión de eventos)
-- [ ] Admin Escalaciones (configuración de reglas)
-- [ ] Página de Backup (historial y restauración)
-- [ ] SMTP Config (configuración de email)
-- [ ] Vista móvil / responsive
-- [ ] Notificaciones en tiempo real
-- [ ] Reportes generados (ejemplo HTML)
+- [ ] Pantalla de login con autenticación
+- [ ] Mi Perfil (edición de usuario con campos completos)
+- [ ] Historial de Checklists completados (tabla con filtros)
+- [ ] Admin Usuarios (tabla CRUD con activación/desactivación)
+- [ ] Admin Catálogos (gestión de eventos con jerarquía padre/hijo)
+- [ ] Admin Escalaciones (matriz de contactos y horarios)
+- [ ] Página de Backup (historial, crear, restaurar)
+- [ ] SMTP Config (formulario de configuración de email)
+- [ ] Vista móvil / responsive (drawer menu)
+- [ ] Notificaciones en tiempo real (toasts/snackbars)
+- [ ] Reportes generados (ejemplo HTML exportado)
+- [ ] Dashboard de estadísticas con gráficos
+- [ ] Sistema de tags con autocomplete
+- [ ] Logo personalizado funcionando
+
+---
+
+## 📊 Estadísticas del Sistema
+
+**Capturas documentadas:** 7  
+**Última actualización:** 16 de enero de 2026  
+**Funcionalidades cubiertas:** ~85%  
+
+**Áreas documentadas:**
+- ✅ Navegación y menús
+- ✅ Formulario de entradas
+- ✅ Sistema de búsqueda
+- ✅ Escalación y turnos
+- ✅ Generación de reportes
+- ✅ Configuración administrativa
+- ✅ Sistema de backup
+
+**Áreas pendientes:**
+- ⏳ Login y autenticación
+- ⏳ Gestión de usuarios (CRUD)
+- ⏳ Catálogos avanzados
+- ⏳ Dashboard de métricas
 
 ---
 

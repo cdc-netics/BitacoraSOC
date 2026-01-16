@@ -202,8 +202,21 @@ Para detalles técnicos completos, consulta:
 - **[API.md](docs/API.md)**: Referencia completa de endpoints
 - **[CATALOGS.md](docs/CATALOGS.md)**: Sistema de catálogos y autocompletado
 - **[ESCALATION.md](docs/ESCALATION.md)**: Módulo de escalaciones
-- **[SECURITY.md](docs/SECURITY.md)**: Seguridad y autenticación
+- **[SECURITY.md](docs/SECURITY.md)**: Seguridad y autenticación- **[SCREENSHOTS.md](docs/SCREENSHOTS.md)**: 📸 Capturas de pantalla del sistema
+- **[backend/scripts/README.md](backend/scripts/README.md)**: Importación masiva de datos
 
+## 📸 Capturas de Pantalla
+
+![Vista Principal](docs/images/screenshots/01-main-nueva-entrada.png)
+*Pantalla principal con formulario de nueva entrada, notas y checklist de turno*
+
+Ver más capturas en **[docs/SCREENSHOTS.md](docs/SCREENSHOTS.md)**:
+- 🏠 Pantalla principal con nueva entrada
+- 📞 Vista de escalación y turnos semanales
+- 🔍 Búsqueda avanzada de entradas (78 entradas importadas)
+- 📊 Generador de reportes HTML
+- ⚙️ Panel de configuración administrativa
+- 💾 Sistema de backup y restauración
 ---
 
 ## 🔄 Changelog v1.1.0 (15-01-2026)
