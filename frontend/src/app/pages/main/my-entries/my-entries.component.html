@@ -9,7 +9,7 @@
       <!-- Date Column -->
       <ng-container matColumnDef="date">
         <th mat-header-cell *matHeaderCellDef>Fecha</th>
-        <td mat-cell *matCellDef="let entry">{{ formatDate(entry.entryDate) }}</td>
+        <td mat-cell *matCellDef="let entry">{{ entry.entryDate | date:'dd/MM/yyyy' }}</td>
       </ng-container>
 
       <!-- Time Column -->

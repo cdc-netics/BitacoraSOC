@@ -126,6 +126,16 @@ export class AllEntriesComponent implements OnInit {
     });
   }
 
+  viewEntry(entry: Entry): void {
+    const author = entry.createdByUsername || 'N/A';
+    const date = entry.entryDate;
+    const time = entry.entryTime;
+    const type = entry.entryType === 'incidente' ? '🚨 INCIDENTE' : '📋 Operativa';
+    const tags = entry.tags?.join(', ') || 'Sin tags';
+    
+    alert(`${type}\n\nFecha: ${date} ${time}\nAutor: ${author}\nTags: ${tags}\n\n${entry.content}`);
+  }
+
   clearSearch(): void {
     this.searchForm.reset({
       query: '',
