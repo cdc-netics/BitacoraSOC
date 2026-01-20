@@ -11,9 +11,11 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EntryService } from '../../../services/entry.service';
 import { Entry } from '../../../models/entry.model';
 import { AuthService } from '../../../services/auth.service';
+import { EntryDetailDialogComponent } from './entry-detail-dialog.component';
 
 @Component({
   selector: 'app-all-entries',
@@ -30,7 +32,9 @@ import { AuthService } from '../../../services/auth.service';
     MatPaginatorModule,
     MatIconModule,
     MatChipsModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDialogModule,
+    EntryDetailDialogComponent
   ],
   templateUrl: './all-entries.component.html',
   styleUrl: './all-entries.component.scss'
@@ -55,7 +59,8 @@ export class AllEntriesComponent implements OnInit {
     private fb: FormBuilder,
     private entryService: EntryService,
     private authService: AuthService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {
     this.searchForm = this.fb.group({
       query: [''],
@@ -130,10 +135,23 @@ export class AllEntriesComponent implements OnInit {
     const author = entry.createdByUsername || 'N/A';
     const date = entry.entryDate;
     const time = entry.entryTime;
-    const type = entry.entryType === 'incidente' ? '🚨 INCIDENTE' : '📋 Operativa';
+    const type = entry.entryType === 'incidente' ? 'INCIDENTE' : 'Operativa';
     const tags = entry.tags?.join(', ') || 'Sin tags';
-    
-    alert(`${type}\n\nFecha: ${date} ${time}\nAutor: ${author}\nTags: ${tags}\n\n${entry.content}`);
+
+    const details = `Fecha: ${date} ${time}
+Autor: ${author}
+Tags: ${tags}`;
+
+    this.dialog.open(EntryDetailDialogComponent, {
+      data: {
+        title: `Entrada ${type}`,
+        details,
+        content: entry.content || ''
+      },
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '85vh'
+    });
   }
 
   clearSearch(): void {

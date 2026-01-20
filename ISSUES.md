@@ -170,3 +170,4 @@ La actualización se realizará de forma incremental, versión por versión, par
 -   **Pruebas Automatizadas:** Considerar añadir un framework de pruebas (como Jest) al backend.
 -   **Consistencia en Nombres:** Estandarizar el nombrado de archivos a `kebab-case`.
 -   **Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso".
+-   **existe un limite de caracteres**  lo eventos que voy subieno al verlo no los puedo ver completos   ya que el msgbox tiene un limite de caracteres supuestamente.

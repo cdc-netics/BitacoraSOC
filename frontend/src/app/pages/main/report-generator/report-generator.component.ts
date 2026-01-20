@@ -224,7 +224,7 @@ export class ReportGeneratorComponent {
     const plainText = this.getPlainTextFromHtml(html);
     const clipboardItem = (window as any).ClipboardItem;
 
-    if (navigator.clipboard && clipboardItem) {
+    if (navigator?.clipboard && clipboardItem && navigator.clipboard.write) {
       const htmlBlob = new Blob([html], { type: 'text/html' });
       const textBlob = new Blob([plainText], { type: 'text/plain' });
       const item = new clipboardItem({
@@ -240,11 +240,26 @@ export class ReportGeneratorComponent {
       return;
     }
 
-    navigator.clipboard.writeText(html).then(() => {
-      this.snackBar.open('✅ HTML copiado al portapapeles', 'Cerrar', { duration: 2000 });
-    }).catch(() => {
-      this.snackBar.open('Error al copiar. Selecciona y copia manualmente.', 'Cerrar', { duration: 3000 });
-    });
+    if (this.copyHtmlWithExecCommand(html)) {
+      this.snackBar.open('Tabla copiada con formato', 'Cerrar', { duration: 2000 });
+      return;
+    }
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(plainText).then(() => {
+        this.snackBar.open('Tabla copiada como texto', 'Cerrar', { duration: 2000 });
+      }).catch(() => {
+        this.snackBar.open('Error al copiar. Selecciona y copia manualmente.', 'Cerrar', { duration: 3000 });
+      });
+      return;
+    }
+
+    if (this.copyTextWithExecCommand(plainText)) {
+      this.snackBar.open('Tabla copiada como texto', 'Cerrar', { duration: 2000 });
+      return;
+    }
+
+    this.snackBar.open('Error al copiar. Selecciona y copia manualmente.', 'Cerrar', { duration: 3000 });
   }
 
   copyMarkdown(): void {
@@ -254,13 +269,77 @@ export class ReportGeneratorComponent {
     }
 
     const markdown = this.getMarkdownFromHtml(this.generatedHtml);
-    navigator.clipboard.writeText(markdown).then(() => {
-      this.snackBar.open('✅ Markdown copiado', 'Cerrar', { duration: 2000 });
-    }).catch(() => {
-      this.snackBar.open('Error al copiar Markdown.', 'Cerrar', { duration: 3000 });
-    });
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(markdown).then(() => {
+        this.snackBar.open('✅ Markdown copiado', 'Cerrar', { duration: 2000 });
+      }).catch(() => {
+        this.snackBar.open('Error al copiar Markdown.', 'Cerrar', { duration: 3000 });
+      });
+      return;
+    }
+
+    if (this.copyTextWithExecCommand(markdown)) {
+      this.snackBar.open('Markdown copiado', 'Cerrar', { duration: 2000 });
+      return;
+    }
+
+    this.snackBar.open('Error al copiar Markdown.', 'Cerrar', { duration: 3000 });
   }
 
+  private copyHtmlWithExecCommand(html: string): boolean {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.opacity = '0';
+    container.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(container);
+
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    const selection = window.getSelection();
+    if (!selection) {
+      document.body.removeChild(container);
+      return false;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+
+    selection.removeAllRanges();
+    document.body.removeChild(container);
+    return copied;
+  }
+
+  private copyTextWithExecCommand(text: string): boolean {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, text.length);
+
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+
+    document.body.removeChild(textarea);
+    return copied;
+  }
   private getPlainTextFromHtml(html: string): string {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
