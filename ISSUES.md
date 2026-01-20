@@ -1,224 +1,108 @@
-# 🐛 Issues Detectados - Bitácora SOC
+# Reporte de Análisis y Mejoras: Bitácora SOC
 
-**Fecha:** 18 de Diciembre 2025  
-**Versión:** 1.0.0
+## Resumen General
+
+Este documento detalla los hallazgos del análisis del código, problemas conocidos y propuestas de mejora para el proyecto "Bitácora SOC".
+
+En general, el código está bien estructurado. Las siguientes secciones se dividen en:
+1.  **Problemas y Depuración:** Bugs o comportamientos inesperados.
+2.  **Propuestas de Mejora y Nuevas Funcionalidades:** Sugerencias para mejorar la UX y añadir características.
+3.  **Propuestas Arquitectónicas:** Cambios de mayor escala en la estructura de la aplicación.
+4.  **Observaciones Técnicas Adicionales:** Otros puntos de mejora a nivel de código.
+
 
 ---
 
-## 📧 1. SMTP No Funciona (Estilo Passbolt)
+## 1. Problemas y Depuración (Bugs)
 
-**Estado:** ❌ No implementado correctamente
+### a. Problemas de visibilidad en el tema oscuro (Dark Mode)
+- **Descripción:** Al activar el tema oscuro, varios textos se vuelven ilegibles debido a un bajo contraste. Esto afecta a elementos generales de la interfaz y es particularmente notorio en el menú desplegable para seleccionar el tema, donde las opciones no son visibles.
+- **Solución Sugerida:** Revisar y corregir la paleta de colores del tema oscuro. Asegurarse de que los colores de fuente se inviertan correctamente para garantizar un contraste adecuado sobre fondos oscuros.
 
-**Problema:**
-- La configuración SMTP actual no funciona como se especificó en el promp
-- Debería ser estilo Passbolt (con prueba de envío, validación de conexión)
-
-**Esperado:**
-- Formulario con: Host, Puerto, Usuario, Contraseña, From, SSL/TLS
-- Botón "Probar conexión" que envíe email de prueba
-- Guardar configuración solo si la prueba es exitosa
-- Mostrar estado de conexión (conectado/desconectado)
+### b. Las notas no se guardan (Potencialmente resuelto)
+- **Reporte:** El contenido introducido en las notas no se guardaba.
+- **Diagnóstico:** El código de autoguardado parecía correcto, sugiriendo un error de ejecución o de entorno.
+- **Pasos para Verificar:** Confirmar si el problema persiste. Si es así, revisar la consola del navegador (F12) en busca de errores y la pestaña de Red (Network) para verificar las peticiones `PUT` a la API de notas.
 
 ---
 
-## ✅ 2. Checklist - Múltiples Problemas
+## 2. Propuestas de Mejora y Nuevas Funcionalidades
 
-### 2.1 Duplicación de UI ---DONE
-**Problema:**
-- Existe un link "Checklist" y abajo otro link que también muestra el campo de entradas
-- Confusión entre "Escribir" y "Checklist"
-ELIMIANR EL PRINCIPAL, DEJAR EL CHECKLIST Y CAMBIARLE EL NOMBRE A ESCRIBIR
+### a. Reordenar y Clarificar Menú Lateral
+- **Descripción:** El menú lateral puede ser más intuitivo.
+- **Propuestas:**
+    - Mover el enlace "Checklist (Admin)" para que aparezca directamente debajo de "Configuraciones (Admin)".
+    - Corregir la etiqueta "Escalaciones" a "Escalación".
 
-**Esperado:**
-- "Escribir" → Solo para crear entradas de bitácora
-- "Checklist" → Solo para marcar servicios verificados
+### b. Visualizador de Logs de Auditoría
+- **Descripción:** El backend registra la actividad de los usuarios (`AuditLog`), pero no hay una interfaz para que un administrador pueda consultar esta información. La trazabilidad es fundamental.
+- **Propuesta:**
+    - Crear una nueva sección en el área de administración llamada "Logs de Auditoría" o "Trazabilidad".
+    - Esta vista debe mostrar un registro de eventos: inicios de sesión (éxito/fallo), dirección IP, fecha/hora, y acciones de CRUD sobre registros importantes.
+    - Implementar filtros por usuario, rango de fechas y tipo de acción.
+    - Asegurarse de que el middleware de auditoría (`audit.js`) se aplique a todas las rutas críticas del backend.
 
-### 2.2 Configuración de Servicios NO Funciona  ---DONE
-**Estado:** ❌ No implementado
+### c. Funcionalidad de "Purgar Datos" Segura
+- **Descripción:** No existe una forma de eliminar todos los datos de la aplicación de forma masiva.
+- **Propuesta:**
+    - Añadir un botón en "Backup y Exportación" llamado "Purgar Todos los Datos".
+    - Implementar un mecanismo de confirmación de alta seguridad para prevenir la activación accidental (ej. requerir escribir una frase de confirmación y/o re-autenticación).
 
-**Problema:**
-- El admin no puede configurar qué servicios aparecen en el checklist ---DONE
-- No hay opción para agregar/quitar servicios ---DONE
+### d. Gestión de Tags: Ver Entradas por Tag
+- **Problema:** La página de gestión de tags no permite ver las entradas asociadas a él.
+- **Propuesta:**
+    - En la tabla de "Tags", hacer que el contador de uso sea un enlace.
+    - Este enlace redirigirá a la vista "Todas las Entradas", filtrada por el tag seleccionado.
+    - **Backend:** Requiere un endpoint `GET /api/entries?tag=nombre-del-tag`.
 
-**Esperado:**
-- En Configuración → Sección "Checklist"
-- Lista editable de servicios (agregar, editar, eliminar) ---DONE
-- Cada servicio con: nombre, descripción, orden
-- Activar/desactivar servicios
+### e. "Mis Entradas" y "Ver Todas": Mejorar Visualización de Contenido
+- **Problema:** El contenido de las entradas está truncado o se muestra en un `alert()` poco funcional.
+- **Propuesta:**
+    - Añadir un botón de "Ver" (`visibility`) que abra una ventana modal (`MatDialog`) para mostrar el contenido completo y formateado de la entrada.
+    - Reutilizar este componente de diálogo en ambas secciones ("Mis Entradas" y "Ver Todas").
 
-### 2.3 Menú Acordeón NO Funciona --DONE
-**Estado:** ❌ No implementado
+### f. Reportes y Estadísticas: Añadir Gráficos
+- **Problema:** La sección de "Reportes y Estadísticas" necesita ser más visual.
+- **Propuesta:**
+    - Añadir un gráfico de líneas que muestre la tendencia de entradas creadas por día (últimos 30 días).
+    - **Implementación:** Usar una librería como **NGX-Charts** y consumir los datos del endpoint `GET /api/reports/overview` (campo `entriesTrend`).
 
-**Problema:**
-- El checklist no se muestra en formato acordeón/expandible ---DONE
-- Debería mostrar categorías colapsables con servicios dentro ---DONE
+### g. Módulo de Recuperación de Contraseña
+- **Problema:** No hay opción para recuperar contraseñas olvidadas.
+- **Propuesta:**
+    - Implementar un flujo completo de "Olvidé mi contraseña" con envío de correo electrónico y un token de reseteo con tiempo de expiración.
+    - **Backend:** Nuevos endpoints (`/forgot-password`, `/reset-password`) y campos en el modelo `User`.
+    - **Frontend:** Nuevas vistas para solicitar y completar el reseteo.
 
-**Esperado:**
-- Acordeón con categorías (ej: "Firewalls", "Servidores", "Backups") ---DONE
-- Cada categoría expandible con sus servicios ---DONE
-- Estado visual: ✅ verificado, ⏳ pendiente, ❌ con problemas
-
----
-
-## 🏷️ 3. Gestión de Tags - No Sincroniza ---DONE
-
-**Estado:** ❌ Bug
-
-**Problema:**
-- Los tags creados con `#` en las entradas NO se guardan en la gestión de tags
-- La gestión de tags está desconectada del sistema de entradas
-
-**Pasos para reproducir:**
-1. Crear entrada con `#nuevo-tag`
-2. Ir a Gestión de Tags
-3. El tag `nuevo-tag` NO aparece
-
-**Esperado:**
-- Tags creados en entradas deben aparecer automáticamente en gestión
-- Gestión de tags muestra todos los tags existentes con contador de uso
-- Poder renombrar/eliminar tags (afecta todas las entradas)
+### h. Reorganización de la Página de Configuración
+- **Problema:** La página de configuración es poco clara y mezcla opciones.
+- **Propuesta:**
+    - Mover el "Cooldown Checklist" a la página de "Checklist (Admin)".
+    - Clarificar el texto de la opción "Enviar solo si hay servicios en rojo".
+    - Reestructurar la página de Ajustes para separar la configuración de SMTP y el "Modo Invitado".
 
 ---
 
-## 📋 4. Ver Todas las Entradas - Orden Incorrecto --DONE
+## 3. Propuestas Arquitectónicas
 
-**Estado:** ❌ Bug
-
-**Problema:**
-- Las entradas están ordenadas de forma incorrecta
-- Se muestra la más antigua primero
-
-**Esperado:**
-- Ordenar por fecha descendente (más reciente primero)
-- La última entrada escrita debe aparecer arriba
-
-**Archivo a modificar:** `backend/src/routes/entries.routes.js` o controller
-
----
-
-## ⚙️ 5. Menú Desorganizado --DONE
-
-**Estado:** ⚠️ UX Problem
-
-**Problema:**
-- Estos items están como links separados en el menú:
-  - Logo
-  - Backup  
-  - Tags
-  - Admin Usuarios
-- Debería estar todo dentro de "Configuración"
-
-**Estructura actual (incorrecta):**
-```
-├── Escribir
-├── Mis Entradas
-├── Ver todas
-├── Mi Perfil
-├── Admin Usuarios    ← Mover a Config
-├── Tags              ← Mover a Config
-├── Reportes
-├── Logo              ← Mover a Config
-├── Backup            ← Mover a Config
-├── Checklist
-└── Configuración
-    └── SMTP
-    └── Modo Invitado
-```
-
-**Estructura esperada:**
-```
-├── Escribir
-├── Mis Entradas
-├── Ver todas
-├── Mi Perfil
-├── Checklist
-├── Reportes
-└── Configuración (Admin)
-    ├── General
-    │   ├── Logo
-    │   └── Modo Invitado
-    ├── Usuarios
-    ├── Tags
-    ├── Checklist (servicios)
-    ├── SMTP
-    └── Backup
-```
+### a. Sistema de Permisos y Roles Granulares (RBAC)
+- **Problema:** El sistema actual de roles (`admin`, `user`, `guest`) es insuficiente. Se necesita poder asignar permisos específicos a grupos de usuarios.
+- **Propuesta:**
+    1.  **Backend:** Introducir modelos para `Permission` (ej. `view-reports`) y `Role`. Un `Role` agrupará varios `Permission`. El `User` se asignará a un `Role`.
+    2.  **Etiquetas de Rol:** Los roles deben ser personalizables, permitiendo crear etiquetas como "N1", "N2", "N3", "Auditor", "Custom", etc.
+    3.  **UI de Administración:** Crear una interfaz para que el admin pueda:
+        - Crear/editar roles.
+        - Asignar permisos a cada rol.
+        - Asignar usuarios a un rol.
+    4.  **Aplicación de Permisos:** Actualizar los `guards` de rutas y la lógica de visibilidad de menús para que se basen en permisos específicos, no en roles fijos.
 
 ---
 
-## 👤 6. Perfil de Usuario - Sin Probar --DONE
+## 4. Observaciones Técnicas Adicionales
 
-**Estado:** ⏳ Pendiente de prueba
-
-**Funcionalidades a verificar:**
-- [ DONE ] Cambio de tema (light/dark/sepia/pastel) Verificar color de header (Azul-Rosa)
-- [ ] Cambio de contraseña ---DONE
-- [ ] Ver datos del usuario actual ---DONE
-- [ ] Guardar preferencias ---DONE
-
----
-
-## 📞 Escalaciones - Pendientes
-
-### 7. Validación de teléfonos ausente
-
-**Estado:** ⚠️ Falta de validación
-
-**Problema:**
-- Los formularios de contactos (`frontend/src/app/pages/escalation/escalation-admin/escalation-admin.component.ts` y `frontend/src/app/pages/escalation/escalation-admin-simple/escalation-admin-simple.component.ts`) permiten cualquier texto en teléfono sin validar dígitos ni longitud.
-- Los esquemas backend (`backend/src/models/Contact.js`, `backend/src/models/ExternalPerson.js` y campo `emergencyPhone` en `backend/src/models/EscalationRule.js`) aceptan cadenas sin restricciones, por lo que pueden guardarse caracteres inválidos.
-
-**Esperado:**
-- Validación de números en frontend (regex para `+56` o dígitos, longitud mínima/máxima, normalización).
-- Validaciones en backend para rechazar textos no numéricos y limitar longitud; ideal sanitizar/normalizar antes de guardar.
-
-### 8. CRUD admin incompleto
-
-**Estado:** ❌ Sin UI funcional
-
-**Problema:**
-- En `frontend/src/app/pages/escalation/escalation-admin/escalation-admin.component.ts` las acciones de agregar/editar reglas, ciclos, asignaciones y overrides están como placeholders que solo muestran un mensaje ("Funcionalidad en desarrollo") y no permiten CRUD desde la interfaz.
-- Esto obliga a usar la API manualmente y deja al módulo admin sin gestión completa de reglas y turnos.
-
-**Esperado:**
-- Implementar formularios y diálogos para crear/editar reglas de escalación, ciclos de rotación, asignaciones y overrides directamente desde la UI admin, con validación y feedback.
-
-### 9. Teléfono de emergencia no se muestra en vista simple
-
-**Estado:** ❌ Bug funcional
-
-**Problema:**
-- En la vista Excel/simple (`frontend/src/app/pages/escalation/escalation-simple/escalation-simple.component.ts`) se pinta `service.emergencyPhone`, pero el endpoint `getServices` no devuelve ese campo; la información está en `EscalationRule`. Resultado: el número de emergencia nunca aparece para los analistas.
-
-**Esperado:**
-- Traer y mostrar el teléfono de emergencia real por servicio (consultar reglas de escalación o extender el endpoint para incluirlo); agregar fallback claro si no existe.
-
----
-
-## 📊 Resumen de Prioridades
-
-| # | Issue | Prioridad | Complejidad |
-|---|-------|-----------|-------------|
-| 1 | SMTP estilo Passbolt | 🔴 Alta | Media |
-| 2 | Checklist configurable | 🔴 Alta | Alta |
-| 3 | Tags no sincroniza | 🔴 Alta | Media |
-| 4 | Orden de entradas | 🟢 Baja | Baja |
-| 5 | Reorganizar menú | 🟡 Media | Media |
-| 6 | Probar perfil | 🟢 Baja | - |
-| 7 | Escalaciones: Validar teléfonos | 🟡 Media | Baja |
-| 8 | Escalaciones: CRUD admin incompleto | 🔴 Alta | Media |
-| 9 | Escalaciones: Teléfono emergencia no visible | 🟡 Media | Media |
-| 10 | CRUD de  Lista de Eventos, Log Sources y Tipos de Operación en admin catalogos | 🟡 Media | Media |
----
-
-## 🔧 Próximos Pasos
-
-1. 🟢 **Inmediato:** Arreglar orden de entradas (descendente)
-2. 🟢**Corto plazo:** Sincronizar tags entre entradas y gestión
-3. 🟢 **Medio plazo:** Reorganizar menú de configuración
-4. 🟢**Largo plazo:** Implementar checklist configurable + SMTP Passbolt
-5. 🟢**Escalaciones:** Validar teléfonos, habilitar CRUD admin completo y mostrar teléfono de emergencia en la vista simple
-6. localhost reparar
-
-
-*Documento generado para tracking de issues - Bitácora SOC*
+-   **Archivo de Backup:** Eliminar `backend/src/routes/backup.js.bak`.
+-   **Validación de Variables de Entorno:** Añadir validación al inicio del servidor (ej. usando Joi o Zod) para asegurar que las variables de entorno requeridas están presentes.
+-   **Pruebas Automatizadas:** Considerar añadir un framework de pruebas (como Jest) al backend.
+-   **Consistencia en Nombres:** Estandarizar el nombrado de archivos a `kebab-case`.
+-   **Análisis de Actualización a Angular 20:** La versión actual es 17.0.0. Planificar una actualización incremental (`17 -> 18 -> 19 -> 20`) usando `ng update` y revisando los "breaking changes" en cada paso.
+-  **titulo escalamiento**   en el lateral esta mal escrito hay que reparar eso

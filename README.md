@@ -1,22 +1,22 @@
-# 📋 Bitácora SOC v1.1.0
+# Bitácora SOC v1.1.0
 
 Sistema completo de registro y gestión de actividades para Security Operations Center (SOC).
 
 **Stack:** Angular 17 + Express + MongoDB  
 **Despliegue:** Docker Compose (Frontend + Backend + MongoDB)  
-**Producción:** ✅ Listo para deploy con Docker
+**Producción:** Listo para deploy con Docker
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
-# Con Docker (Recomendado para producción)
+# Con Docker (recomendado para producción)
 cp .env.docker.example .env  # Configurar variables
 docker-compose up -d          # Levantar servicios
 docker-compose exec backend npm run seed  # Crear admin
 
-# Sin Docker (Desarrollo)
+# Sin Docker (desarrollo)
 cd backend && npm install && npm start
 cd frontend && npm install && npm start
 ```
@@ -25,56 +25,56 @@ cd frontend && npm install && npm start
 
 ---
 
-## ✨ Funcionalidades Principales
+## Funcionalidades principales
 
-### 👥 Gestión de Usuarios
-- **3 Roles:** Admin, User, Guest
+### Gestión de usuarios
+- **3 roles:** Admin, User, Guest
 - **Admin:** CRUD completo de usuarios, edición de perfil, activar/desactivar cuentas
 - **User:** Registro de entradas, checklists, ver reportes
 - **Guest:** Solo lectura (entradas y escalaciones)
 
-### 📝 Bitácora de Entradas
+### Bitácora de entradas
 - Registro de incidentes, mantenimientos y eventos generales
 - Autocompletado inteligente con catálogos personalizables
 - Tags y búsqueda por fecha
 - Filtros por tipo, fuente de logs y operación
 - Vista completa para todos, "Mis Entradas" para admins
 
-### ✅ Checklists de Turno
+### Checklists de turno
 - Plantillas personalizables con estructura padre/hijo
 - Check de inicio y cierre de turno
 - Estados: Verde (OK), Rojo (Con problema - observación obligatoria)
-- **Historial Completo:** Todos los usuarios ven todos los checklists del equipo
+- **Historial completo:** Todos los usuarios ven todos los checklists del equipo
 - Validación automática de servicios
 
-### 📞 Escalaciones y Contactos
+### Escalaciones y contactos
 - Directorio de contactos por cliente/servicio
 - Matriz de escalación por nivel y horario
 - Búsqueda rápida de contactos
 - Gestión de clientes y servicios
 
-### 📊 Reportes
+### Reportes
 - Vista general con estadísticas
 - Exportación CSV de entradas y checklists
 - Gráficos de actividad
 - Accesible para admin y user
 
-### ⚙️ Administración (Admin)
+### Administración (Admin)
 - **Catálogos:** Eventos, fuentes de logs, tipos de operación
 - **Plantillas de Checklist:** Editor visual con preview
 - **Configuración SMTP:** Email para notificaciones
 - **Backup/Restore:** Exportar e importar datos
-- **Logo Personalizado:** Branding del sistema
+- **Logo personalizado:** Branding del sistema
 - **Tags:** Etiquetas personalizadas
 
-### 📌 Notas
+### Notas
 - **Nota del Admin:** Visible para todos (solo admin edita)
 - **Nota Personal:** Privada de cada usuario
 - Autosave automático
 
 ---
 
-## � Instalación Rápida
+## Instalación rápida
 
 ```powershell
 # 1. Backend
@@ -90,37 +90,35 @@ npm install
 npm start       # Puerto 4200
 ```
 
-> ⚠️ **Importante:** Cambiar la contraseña del administrador después del primer login.
+> **Importante:** Cambiar la contraseña del administrador después del primer login.
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del proyecto
 
 ```
 BitacoraSOC/
-├── backend/              # API REST Express
-│   ├── src/
-│   │   ├── models/      # Modelos MongoDB (User, Entry, ChecklistTemplate, etc.)
-│   │   ├── routes/      # Endpoints API
-│   │   ├── middleware/  # Auth, validación, rate limiting
-│   │   ├── utils/       # Logger, audit, encryption
-│   │   └── server.js    # Entry point
-│   └── package.json     # v1.1.0
-│
-├── frontend/            # Angular 17 SPA
-│   ├── src/app/
-│   │   ├── pages/       # Componentes principales
-│   │   ├── services/    # HTTP services
-│   │   ├── models/      # Interfaces TypeScript
-│   │   └── guards/      # Protección de rutas
-│   └── package.json     # v1.1.0
-│
-└── docs/                # Documentación técnica detallada
+|-- backend/              # API REST Express
+|   |-- src/
+|   |   |-- models/       # Modelos MongoDB (User, Entry, ChecklistTemplate, etc.)
+|   |   |-- routes/       # Endpoints API
+|   |   |-- middleware/   # Auth, validación, rate limiting
+|   |   `-- utils/        # Logger, audit, encryption
+|   |-- server.js         # Entry point
+|   `-- package.json      # v1.1.0
+|-- frontend/             # Angular 17 SPA
+|   |-- src/app/
+|   |   |-- pages/        # Componentes principales
+|   |   |-- services/     # HTTP services
+|   |   |-- models/       # Interfaces TypeScript
+|   |   `-- guards/       # Protección de rutas
+|   `-- package.json      # v1.1.0
+`-- docs/                 # Documentación técnica detallada
 ```
 
 ---
 
-## � Despliegue con Docker (Producción)
+## Despliegue con Docker (producción)
 
 ### Requisitos
 - Docker 20.10+
@@ -194,7 +192,7 @@ docker-compose down -v
 
 ---
 
-## �📚 Documentación Técnica
+## Documentación técnica
 
 Para detalles técnicos completos, consulta:
 
@@ -202,37 +200,39 @@ Para detalles técnicos completos, consulta:
 - **[API.md](docs/API.md)**: Referencia completa de endpoints
 - **[CATALOGS.md](docs/CATALOGS.md)**: Sistema de catálogos y autocompletado
 - **[ESCALATION.md](docs/ESCALATION.md)**: Módulo de escalaciones
-- **[SECURITY.md](docs/SECURITY.md)**: Seguridad y autenticación- **[SCREENSHOTS.md](docs/SCREENSHOTS.md)**: 📸 Capturas de pantalla del sistema
+- **[SECURITY.md](docs/SECURITY.md)**: Seguridad y autenticación
+- **[SCREENSHOTS.md](docs/SCREENSHOTS.md)**: Capturas de pantalla del sistema
 - **[backend/scripts/README.md](backend/scripts/README.md)**: Importación masiva de datos
 
-## 📸 Capturas de Pantalla
+## Capturas de pantalla
 
 ![Vista Principal](docs/images/screenshots/01-main-nueva-entrada.png)
 *Pantalla principal con formulario de nueva entrada, notas y checklist de turno*
 
 Ver más capturas en **[docs/SCREENSHOTS.md](docs/SCREENSHOTS.md)**:
-- 🏠 Pantalla principal con nueva entrada
-- 📞 Vista de escalación y turnos semanales
-- 🔍 Búsqueda avanzada de entradas (78 entradas importadas)
-- 📊 Generador de reportes HTML
-- ⚙️ Panel de configuración administrativa
-- 💾 Sistema de backup y restauración
+- Pantalla principal con nueva entrada
+- Vista de escalación y turnos semanales
+- Búsqueda avanzada de entradas (78 entradas importadas)
+- Generador de reportes HTML
+- Panel de configuración administrativa
+- Sistema de backup y restauración
+
 ---
 
-## 🔄 Changelog v1.1.0 (15-01-2026)
+## Changelog v1.1.0 (15-01-2026)
 
-### ✅ Nuevas Funcionalidades
+### Nuevas funcionalidades
 - **Historial de Checklists:** Vista completa de todos los checklists del equipo (entrada/salida de turno)
 - **Gestión de Usuarios:** Edición y activación/desactivación de cuentas
 - **Reportes para Users:** Acceso a reportes de overview para usuarios normales
 - **Docker Ready:** Configuración completa para despliegue en contenedores
 
-### 🐛 Correcciones
+### Correcciones
 - Fix: Validación de IDs en servicios de checklist (generación automática de ObjectId)
 - Fix: Normalización de items y children en plantillas al cargar checklist activo
 - Mejora: Badges de estado con colores consistentes (admin: pink, user: blue, guest: orange)
 
-### 🐳 Docker
+### Docker
 - Multi-stage builds para imágenes optimizadas
 - Health checks en todos los servicios
 - Persistencia con volúmenes (MongoDB, uploads, logs)
@@ -241,11 +241,11 @@ Ver más capturas en **[docs/SCREENSHOTS.md](docs/SCREENSHOTS.md)**:
 
 ---
 
-## 🐛 Issues y Roadmap
+## Issues y roadmap
 
 El estado actual de bugs conocidos y tareas pendientes se mantiene en **[ISSUES.md](ISSUES.md)**.
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto se distribuye bajo la **Business Source License 1.1 (BSL 1.1)**.
 Ver archivo **[LICENSE.md](LICENSE.md)** para más detalles sobre permisos de uso comercial y no comercial.
