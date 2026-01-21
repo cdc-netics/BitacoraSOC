@@ -42,7 +42,7 @@
 | B4-3 | Observaciones | Pruebas automatizadas backend | Pendiente |  |
 | B4-4 | Observaciones | Consistencia en nombres (kebab-case) | Pendiente |  |
 | B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Reparado |  |
-
+| B4-6 | Observaciones | Login, poder entrar con  correo como con nombre de usuario | Pendiente |  |
 
 ## Prioridad #1: Estrategia Detallada de Actualización a Angular 20
 
@@ -214,3 +214,4 @@ La actualización se realizará de forma incremental, versión por versión, par
 -   **Pruebas Automatizadas:** Considerar añadir un framework de pruebas (como Jest) al backend.
 -   **Consistencia en Nombres:** Estandarizar el nombrado de archivos a `kebab-case`.
 -   **Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso".
+-   **login con correo como con nombre de usuario:** mejorar esa situacion para que login tambien se pueda usar el correo como usuario

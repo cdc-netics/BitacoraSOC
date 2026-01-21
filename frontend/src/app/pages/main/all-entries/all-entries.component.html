@@ -61,7 +61,7 @@
       <table mat-table [dataSource]="entries" class="entries-table">
         <ng-container matColumnDef="entryDate">
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
-          <td mat-cell *matCellDef="let entry">{{ entry.entryDate | date:'dd/MM/yyyy' }}</td>
+          <td mat-cell *matCellDef="let entry">{{ entry.entryDate | date:'dd/MM/yyyy':'UTC' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="entryTime">

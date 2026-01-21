@@ -16,8 +16,8 @@ import { AuthService } from '../../../services/auth.service';
 })
 export class EntriesComponent implements OnInit {
   entryForm: FormGroup;
-  today = new Date().toISOString().split('T')[0];
-  nowTime = new Date().toTimeString().slice(0, 5);
+  today = '';
+  nowTime = '';
   isSubmitting = false;
 
   constructor(
@@ -30,6 +30,10 @@ export class EntriesComponent implements OnInit {
       content: ['', [Validators.required, Validators.maxLength(50000)]],
       entryType: ['operativa', Validators.required]
     });
+
+    const now = new Date();
+    this.today = this.getLocalDateString(now);
+    this.nowTime = this.getLocalTimeString(now);
   }
 
   ngOnInit(): void {
@@ -42,8 +46,8 @@ export class EntriesComponent implements OnInit {
     }
 
     const now = new Date();
-    const entryDate = now.toISOString().split('T')[0];
-    const entryTime = now.toTimeString().slice(0, 5);
+    const entryDate = this.getLocalDateString(now);
+    const entryTime = this.getLocalTimeString(now);
 
     const data: CreateEntryRequest = {
       ...this.entryForm.value,
@@ -79,6 +83,19 @@ export class EntriesComponent implements OnInit {
     if (!matches) return [];
     
     return matches.map(tag => tag.substring(1).toLowerCase());
+  }
+
+  private getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private getLocalTimeString(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
   }
 
   private logAction(action: string, result: 'ok' | 'error', data: Record<string, unknown> = {}): void {
