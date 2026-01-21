@@ -3,12 +3,16 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Version del build (inyectada desde Docker Compose/CI)
+ARG APP_VERSION=dev
+
 # Copiar dependencias
 COPY package*.json ./
 RUN npm ci && npm cache clean --force
 
 # Copiar código y compilar para producción
 COPY . .
+RUN sed -i "s|__APP_VERSION__|${APP_VERSION}|g" src/environments/environment*.ts
 RUN npm run build -- --configuration production
 
 # Stage 2: Servir con Nginx
@@ -25,7 +29,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1/health || exit 1
 
 # Nginx se ejecuta en foreground por defecto
 CMD ["nginx", "-g", "daemon off;"]

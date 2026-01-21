@@ -29,6 +29,7 @@ const { logger } = require('./utils/logger');
 const app = express();
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 3000;
+const APP_VERSION = process.env.APP_VERSION || 'dev';
 
 // Conectar a MongoDB
 connectDB();
@@ -87,9 +88,16 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '../uploads')));
 
+const getHealthPayload = () => ({
+  status: 'ok',
+  version: APP_VERSION,
+  timestamp: new Date().toISOString(),
+  timezone: process.env.TZ || 'America/Santiago'
+});
+
 // Health check para Docker
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.status(200).json(getHealthPayload());
 });
 
 // Rutas de API
@@ -110,11 +118,7 @@ app.use('/api/escalation', require('./routes/escalation')); // Módulo de escala
 
 // Health check (ANTES del fallback SPA)
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    timezone: process.env.TZ || 'America/Santiago'
-  });
+  res.json(getHealthPayload());
 });
 
 // Servir frontend compilado (SPA) si existe dist

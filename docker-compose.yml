@@ -27,6 +27,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
     container_name: bitacora-backend
     restart: unless-stopped
     ports:
@@ -47,6 +49,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      APP_VERSION: ${APP_VERSION:-dev}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_SECURE: ${SMTP_SECURE:-false}
@@ -72,6 +75,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
     container_name: bitacora-frontend
     restart: unless-stopped
     depends_on:
@@ -81,7 +86,7 @@ services:
     networks:
       - bitacora-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 3s
       retries: 3

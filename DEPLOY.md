@@ -1,354 +1,185 @@
-# 🚀 Guía de Despliegue Docker - Bitácora SOC v1.1.0
+# Bitacora SOC - Docker Deploy Guide
 
-## ⚡ Quick Start (5 minutos)
+> Nota: Los comandos usan `docker compose`. Si tu instalacion usa `docker-compose`, reemplaza el comando.
 
+## Requisitos
+- Docker Desktop / Docker Engine
+- Git
+
+## Quick Start (primer despliegue)
 ```bash
-# 1. Configurar variables de entorno
-cp .env.docker.example .env
-nano .env  # Cambiar TODAS las contraseñas y secrets
+# 1. Clonar y entrar
+cd /ruta/del/proyecto
 
-# 2. Generar secrets seguros
+# 2. Variables de entorno
+cp .env.docker.example .env
+nano .env  # Cambia TODAS las credenciales y secrets
+
+# 3. Generar secrets (ejemplos)
 echo "JWT_SECRET=$(openssl rand -base64 32)"
 echo "ENCRYPTION_KEY=$(openssl rand -hex 16)"
 
-# 3. Levantar todos los servicios
-docker-compose up -d
+# 4. Levantar servicios
+docker compose up -d --build
 
-# 4. Crear usuario administrador inicial (IMPORTANTE)
-docker exec bitacora-backend node src/scripts/seed.js
-# Usuario: admin
-# Contraseña: la que configuraste en ADMIN_PASSWORD del .env
+# 5. Crear admin inicial (IMPORTANTE)
+docker compose exec backend node src/scripts/seed.js
 
-# 5. Acceder: http://localhost:4200 (o http://IP-SERVIDOR:4200)
+# 6. Abrir UI
+# http://IP-SERVIDOR:PUERTO
 ```
 
----
+## Version automatica (recomendado)
+Para evitar editar numeros a mano, usa los scripts que calculan la version desde Git:
 
-## 📋 Servicios Incluidos
-
-- **Frontend**: Angular + Nginx (puerto configurable, default: 4200)
-- **Backend**: Node.js + Express (puerto interno: 3000)
-- **MongoDB**: Base de datos con persistencia
-
-**Health Checks configurados**:
-- MongoDB: Ping cada 10s
-- Backend: HTTP GET a `/health` cada 5s (30s de gracia inicial)
-- Frontend: Depende de backend healthy
-
----
-
-## ⚠️ Notas Importantes de Despliegue
-
-### Health Check del Backend
-El backend tiene configurado un health check que verifica `http://127.0.0.1:3000/health`:
-- **start_period**: 30s - Da tiempo a MongoDB para conectar
-- **interval**: 5s - Verifica cada 5 segundos
-- **retries**: 5 - 5 intentos antes de marcar unhealthy
-
-**IMPORTANTE**: Usar `127.0.0.1` en lugar de `localhost` para evitar problemas con resolución IPv6.
-
-### Orden de inicio
-1. **MongoDB** inicia primero y debe estar `(healthy)`
-2. **Backend** espera a MongoDB healthy, luego inicia (30-40s para healthy)
-3. **Frontend** espera a Backend healthy, luego inicia
-
-Si ves "dependency failed to start", es porque el backend aún no pasó su health check. Espera 40-50 segundos.
-
-### Usuario Administrador
-El usuario admin **NO se crea automáticamente**. Debes ejecutar:
 ```bash
-docker exec bitacora-backend node src/scripts/seed.js
+# PowerShell (Windows)
+.\scripts\compose-up.ps1
+
+# Bash (Linux/Mac)
+sh ./scripts/compose-up.sh
 ```
 
-Las credenciales se toman del `.env`:
-- Usuario: `ADMIN_USERNAME`
-- Contraseña: `ADMIN_PASSWORD`
-- Email: `ADMIN_EMAIL`
+Esto inyecta `APP_VERSION` al build (ej: `v1.2.3-5-gabc1234`) y lo muestra en login y /health.
 
----
-
-## 🔧 Configuración Obligatoria (.env)
-
+## Actualizar la aplicacion
+### Actualizacion normal (recomendada)
 ```bash
-# Puerto público
+cd /ruta/del/proyecto
+git pull origin main
+
+# Reconstruye solo lo necesario y reinicia servicios
+docker compose up -d --build
+```
+
+### Rebuild forzado (sin cache y recreando contenedores)
+```bash
+cd /ruta/del/proyecto
+git pull origin main
+
+docker compose build --no-cache
+docker compose up -d --force-recreate
+```
+Alternativa automatica:
+```bash
+# PowerShell
+.\scripts\compose-rebuild.ps1
+
+# Bash
+sh ./scripts/compose-rebuild.sh
+```
+
+### Solo cambios de .env (sin rebuild)
+```bash
+cd /ruta/del/proyecto
+docker compose up -d
+```
+
+## Variables clave (.env)
+```bash
+# Puerto publico del frontend
 FRONTEND_PORT=80
 
 # MongoDB
-MONGO_ROOT_PASSWORD=cambiar_por_password_fuerte_123
+MONGO_ROOT_PASSWORD=tu_password_seguro
+MONGO_DATABASE=bitacora_soc
 
-# Backend - GENERAR NUEVOS VALORES
-JWT_SECRET=$(openssl rand -base64 32)
-ENCRYPTION_KEY=$(openssl rand -hex 16)
+# Backend - generar valores nuevos
+JWT_SECRET=...
+ENCRYPTION_KEY=...
 
-# SMTP (opcional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=tu-email@gmail.com
-SMTP_PASS=tu-app-password
+# Version (opcional si usas scripts)
+APP_VERSION=dev
+
+# Admin inicial
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=Admin123!
+ADMIN_EMAIL=admin@bitacora.local
 ```
 
----
+## Health checks (importante)
+- Backend y frontend tienen health checks en sus Dockerfile.
+- En algunos entornos, `localhost` resuelve a IPv6 (`::1`) y el health check marca `unhealthy`.
+- Solucion: usar `127.0.0.1` en los health checks y reconstruir imagenes.
 
-## 🐳 Comandos Docker Útiles
-
-### Estado y logs
+## Comandos utiles
 ```bash
-# Ver servicios activos
-docker-compose ps
+# Estado
+docker compose ps
 
-# Ver logs en tiempo real
-docker-compose logs -f
-
-# Logs de un servicio específico
-docker-compose logs -f backend
-docker-compose logs -f frontend
-
-# Últimas 100 líneas
-docker-compose logs --tail=100 backend
-```
-
-### Control de servicios
-```bash
-# Detener
-docker-compose stop
+# Logs
+docker compose logs -f
+docker compose logs -f backend
+docker compose logs -f frontend
 
 # Reiniciar
-docker-compose restart
-docker-compose restart backend
+docker compose restart
 
-# Reiniciar desde cero
-
-# NOTA: Después de docker-compose down, el backend puede tardar 30-40 segundos
-# en pasar el health check. El frontend no iniciará hasta que backend esté healthy.
-# Monitorear con: docker ps | grep backend
-# Debe mostrar "(healthy)" antes de que el frontend inicie.
-docker-compose down
-docker-compose up -d
+docker compose restart backend
 ```
 
-### Backups
-
-#### MongoDB
+## Backups
+### MongoDB
 ```bash
-# Backup manual
-docker-compose exec mongodb mongodump \
+docker compose exec mongodb mongodump \
   --uri="mongodb://admin:PASSWORD@localhost/bitacora_soc?authSource=admin" \
   --out=/data/backup/$(date +%Y%m%d)
 
-# Copiar al host
 docker cp bitacora-mongodb:/data/backup ./backups/
 ```
 
-#### Archivos (logos, logs)
+### Archivos (logos, logs)
 ```bash
-# Ver volúmenes
+# Ver volumenes
 docker volume ls
 
-# Backup de uploads
+# Backup uploads
 docker run --rm -v bitacorasoc_backend_uploads:/source \
   -v $(pwd)/backups:/backup alpine \
   tar czf /backup/uploads-$(date +%Y%m%d).tar.gz -C /source .
 ```
 
-### Actualizar aplicación
+## Troubleshooting
+### Backend/Frontend unhealthy
 ```bash
-# 1. Detener
-docker-compose down
-
-# 2. Actualizar código
-git pull
-
-# 3. Reconstruir (sin caché)
-docker-compose build --no-cache
-
-# 4. Levantar nueva versión
-docker-compose up -d
-
-# 5. Verificar
-docker-compose logs -f
+# Verificar respuesta directa
+docker compose exec backend wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health
 ```
+Si responde OK pero sigue unhealthy, revisa el health check (localhost vs 127.0.0.1).
 
-### Monitoreo
+### Error 401 en login
 ```bash
-# Recursos en tiempo real
-docker stats
+# Eliminar admin y recrear
 
-# Espacio en disco
-docker system df
+docker compose exec backend node -e "const mongoose=require('mongoose'); const User=require('./src/models/User'); mongoose.connect(process.env.MONGODB_URI).then(async()=>{ await User.deleteOne({username:'admin'}); console.log('Usuario admin eliminado'); process.exit(0); })"
 
-# Limpieza (libera espacio)
-docker system prune -a
-```
-
----
-
-## 🛡️ Seguridad Post-Despliegue
-
-### 1. Cambiar contraseña del administrador
-```bash
-# Después del primer login, ir a "Mi Perfil" y cambiar contraseña
-```
-
-### 2. Verificar variables críticas
-```bash
-# Revisar que no estén valores por defecto
-docker-compose config | grep -E "JWT_SECRET|MONGO_ROOT_PASSWORD|ENCRYPTION_KEY"
-```
-
-### 3. Firewall (opcional pero recomendado)
-```bash
-# Ubuntu/Debian (UFW)
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw enable
-
-# CentOS/RHEL (firewalld)
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --reload
-```
-
-### 4. HTTPS con Let's Encrypt
-```bash
-# Instalar Certbot
-sudo apt install certbot
-
-# Obtener certificado
-sudo certbot certonly --standalone -d tu-dominio.com
-
-# Modificar nginx.conf para usar HTTPS
-# Certificados en: /etc/letsencrypt/live/tu-dominio.com/
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Backend unhealthy (contenedor no pasa health check)
-```bash
-# El problema común es que Docker health check usa localhost en lugar de 127.0.0.1
-# Verificar manualmente si el backend responde:
-docker exec bitacora-backend wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health
-
-# Si responde "remote file exists", el backend está OK
-# El health check en docker-compose.yml debe usar 127.0.0.1:
-# test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
-
-# Ajustar tiempos de health check si tarda mucho:
-# interval: 5s (verifica cada 5 segundos)
-# start_period: 30s (da 30 segundos antes del primer check)
-# retries: 5 (intenta 5 veces antes de marcar unhealthy)
-```
-
-### Error 401 Unauthorized en login
-```bash
-# El usuario admin aún no existe o tiene contraseña incorrecta
-# Recrear usuario admin con credenciales del .env:
-
-# 1. Eliminar usuario existente
-docker exec bitacora-backend node -e "const mongoose = require('mongoose'); const User = require('./src/models/User'); mongoose.connect(process.env.MONGODB_URI).then(async () => { await User.deleteOne({username: 'admin'}); console.log('Usuario admin eliminado'); process.exit(0); })"
-
-# 2. Crear nuevo usuario con .env
-docker exec bitacora-backend node src/scripts/seed.js
-
-# Ahora puedes hacer login con:
-# Usuario: admin
-# Contraseña: (la que está en ADMIN_PASSWORD del .env)
-```
-
-### Servicios no inician
-```bash
-# Ver logs detallados
-docker-compose logs backend
-docker-compose logs mongodb
-
-# Verificar salud de contenedores
-docker-compose ps
-```
-
-### Error de conexión a MongoDB
-```bash
-# Verificar que MongoDB esté healthy
-docker-compose ps | grep mongodb
-
-# Ver logs de MongoDB
-docker-compose logs mongodb
-
-# Reiniciar MongoDB
-docker-compose restart mongodb
+docker compose exec backend node src/scripts/seed.js
 ```
 
 ### Frontend no carga
 ```bash
-# Verificar build de Angular
-docker-compose logs frontend
+docker compose logs -f frontend
 
-# Ver archivos servidos por Nginx
-docker-compose exec frontend ls -la /usr/share/nginx/html
+docker compose exec frontend ls -la /usr/share/nginx/html
 
-# Test de configuración Nginx
-docker-compose exec frontend nginx -t
+docker compose exec frontend nginx -t
 ```
 
-### Puerto 80 ocupado
+### Puerto ocupado
 ```bash
-# Ver qué proceso usa el puerto
-sudo netstat -tulpn | grep :80
-
-# Cambiar puerto en .env
+# Cambiar en .env
 FRONTEND_PORT=8080
 
-# Reiniciar
-docker-compose down
-docker-compose up -d
+docker compose up -d
 ```
 
-### Limpiar completamente (¡CUIDADO! Borra datos)
-```bash
-# Detener y eliminar contenedores, redes y volúmenes
-docker-compose down -v
+## Produccion (checklist)
+- .env configurado y secretos seguros
+- Servicios healthy
+- Admin inicial creado y password cambiado
+- Backups configurados
+- Firewall/HTTPS configurado si aplica
 
-# Limpiar imágenes
-docker system prune -a
-```
-
----
-
-## 📊 Volúmenes Persistentes
-
-Los siguientes datos persisten entre reinicios:
-
-- **mongodb_data**: Todos los datos de la aplicación
-- **backend_uploads**: Logos y archivos subidos  
-- **backend_logs**: Logs del sistema
-
-```bash
-# Ver volúmenes
-docker volume ls
-
-# Inspeccionar un volumen
-docker volume inspect bitacorasoc_mongodb_data
-```
-
----
-
-## ✅ Checklist de Producción
-
-- [ ] **.env configurado** con valores seguros
-- [ ] **JWT_SECRET y ENCRYPTION_KEY** generados aleatoriamente
-- [ ] **MONGO_ROOT_PASSWORD** cambiado
-- [ ] **Servicios levantados**: `docker-compose ps` muestra todos "healthy"
-- [ ] **Admin inicial creado**: `docker-compose exec backend npm run seed`
-- [ ] **Password admin cambiado** desde la interfaz
-- [ ] **Backups configurados** (cron job)
-- [ ] **Firewall configurado** (solo puertos necesarios)
-- [ ] **HTTPS configurado** (si aplica)
-- [ ] **Monitoreo activo**: logs y recursos
-
----
-
-## 📞 Soporte
-
-**Logs**: `docker-compose logs -f`  
-**Estado**: `docker-compose ps`  
-**Docs completas**: [README.md](README.md#-despliegue-con-docker-producción)
-
+## Soporte rapido
+- Logs: `docker compose logs -f`
+- Estado: `docker compose ps`

@@ -1,4 +1,4 @@
-# Bitácora SOC v1.1.0
+# Bitácora SOC
 
 Sistema completo de registro y gestión de actividades para Security Operations Center (SOC).
 
@@ -105,14 +105,14 @@ BitacoraSOC/
 |   |   |-- middleware/   # Auth, validación, rate limiting
 |   |   `-- utils/        # Logger, audit, encryption
 |   |-- server.js         # Entry point
-|   `-- package.json      # v1.1.0
+|   `-- package.json
 |-- frontend/             # Angular 17 SPA
 |   |-- src/app/
 |   |   |-- pages/        # Componentes principales
 |   |   |-- services/     # HTTP services
 |   |   |-- models/       # Interfaces TypeScript
 |   |   `-- guards/       # Protección de rutas
-|   `-- package.json      # v1.1.0
+|   `-- package.json
 `-- docs/                 # Documentación técnica detallada
 ```
 

@@ -39,6 +39,7 @@ export class LoginComponent implements OnInit {
   hidePassword = true;
   logoUrl: string = '';
   private backendBaseUrl = environment.backendBaseUrl;
+  appVersion = environment.appVersion === '__APP_VERSION__' ? 'dev' : environment.appVersion;
 
   constructor(
     private fb: FormBuilder,
