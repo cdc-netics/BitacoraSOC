@@ -1,5 +1,49 @@
 # Plan de Trabajo: Bitácora SOC
 
+## Estado general (tabla de control)
+
+| ID | Seccion | Tarea | Estado | Notas |
+| --- | --- | --- | --- | --- |
+| P1 | Actualizacion Angular 20 | Plan general de actualizacion | Pendiente |  |
+| F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Pendiente |  |
+| F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Pendiente |  |
+| F0-3 | Fase 0 (Preparacion) | Verificar pruebas | Pendiente |  |
+| F1-1 | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Pendiente |  |
+| F1-2 | Fase 1 (Angular 18) | Analisis y migracion | Pendiente |  |
+| F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Pendiente |  |
+| F1-4 | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | Pendiente |  |
+| F1-5 | Fase 1 (Angular 18) | Commit upgrade 18 | Pendiente |  |
+| F2-1 | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Pendiente |  |
+| F2-2 | Fase 2 (Angular 19) | Analisis y migracion | Pendiente |  |
+| F2-3 | Fase 2 (Angular 19) | Revision breaking changes | Pendiente |  |
+| F2-4 | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Pendiente |  |
+| F2-5 | Fase 2 (Angular 19) | Commit upgrade 19 | Pendiente |  |
+| F3-1 | Fase 3 (Angular 20) | ng update core/cli 20 + material 20 | Pendiente |  |
+| F3-2 | Fase 3 (Angular 20) | Analisis y migracion | Pendiente |  |
+| F3-3 | Fase 3 (Angular 20) | Revision breaking changes | Pendiente |  |
+| F3-4 | Fase 3 (Angular 20) | Verificacion final | Pendiente |  |
+| F3-5 | Fase 3 (Angular 20) | Commit upgrade 20 | Pendiente |  |
+| F4-1 | Fase 4 (Post-actualizacion) | Revision de dependencias externas | Pendiente |  |
+| F4-2 | Fase 4 (Post-actualizacion) | Limpieza de codigo | Pendiente |  |
+| F4-3 | Fase 4 (Post-actualizacion) | Merge rama | Pendiente |  |
+| B1a | Bugs | Visibilidad en tema oscuro | Pendiente |  |
+| B1b | Bugs | Notas no se guardan | Pendiente | Potencialmente resuelto, falta verificacion |
+| B2a | Mejoras | Reordenar y clarificar menu lateral | En proceso | Corregido texto "Escalacion"; falta mover "Checklist (Admin)" |
+| B2b | Mejoras | Visualizador de logs de auditoria | Pendiente |  |
+| B2c | Mejoras | Purgar datos segura | Pendiente |  |
+| B2d | Mejoras | Gestion de tags: ver entradas por tag | Pendiente |  |
+| B2e | Mejoras | Mis entradas / Ver todas: contenido completo | En proceso | Dialogo listo en "Ver todas", falta "Mis entradas" |
+| B2f | Mejoras | Reportes: graficos | Pendiente |  |
+| B2g | Mejoras | Recuperacion de contrasena | Pendiente |  |
+| B2h | Mejoras | Reorganizacion pagina configuracion | Pendiente |  |
+| B3a | Arquitectura | RBAC granular | Pendiente |  |
+| B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
+| B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
+| B4-3 | Observaciones | Pruebas automatizadas backend | Pendiente |  |
+| B4-4 | Observaciones | Consistencia en nombres (kebab-case) | Pendiente |  |
+| B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Reparado |  |
+
+
 ## Prioridad #1: Estrategia Detallada de Actualización a Angular 20
 
 **Justificación:** Para asegurar la estabilidad, seguridad y mantenibilidad a largo plazo del proyecto, la actualización del framework es la máxima prioridad. Abordar esta tarea primero nos proporcionará una base moderna y sólida sobre la cual implementar futuras mejoras y correcciones de manera eficiente, evitando la acumulación de deuda técnica. **Todas las demás tareas de este documento quedan en espera hasta que esta actualización se complete.**
@@ -170,4 +214,3 @@ La actualización se realizará de forma incremental, versión por versión, par
 -   **Pruebas Automatizadas:** Considerar añadir un framework de pruebas (como Jest) al backend.
 -   **Consistencia en Nombres:** Estandarizar el nombrado de archivos a `kebab-case`.
 -   **Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso".
--   **existe un limite de caracteres**  lo eventos que voy subieno al verlo no los puedo ver completos   ya que el msgbox tiene un limite de caracteres supuestamente.
