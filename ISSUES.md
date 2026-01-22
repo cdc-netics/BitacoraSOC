@@ -44,6 +44,7 @@
 | B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Reparado |  |
 | B4-6 | Observaciones | Login, poder entrar con  correo como con nombre de usuario | Pendiente |  |
 | B4-7 | Observaciones | Aviso analistas de checklist | Pendiente |  |
+| C1-1 | Revisiones de seguridad y auditoria | Analisis de seguridad general | Pendiente |  |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
@@ -217,4 +218,29 @@ La actualización se realizará de forma incremental, versión por versión, par
 -   **B4-5** **Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso".
 -   **B4-6** **login con correo como con nombre de usuario:** mejorar esa situacion para que login tambien se pueda usar el correo como usuario
 -   **B4-7** **Aviso analistas de checklist:**  (depende de B3a): Avisar al analista de turno (etiqueta N1_NO_HABIL) y a usuarios con etiqueta N2 cuando el checklist no se realiza antes de 09:30 (el horario se puede cambiar, solo admins pueden hacerlo). En Administracion de Escalaciones, los turnos se definen con etiquetas de cargo (B3a) y se respeta la regla: N1 nunca es admin; N2/N3 pueden ser admin si el admin lo habilita. esto evita enviar correos a admins que no sean N2.
+
+---
+
+### 5. Revisiones de seguridad y auditoria
+
+#### **C1-1** **Analisis de seguridad general (revision + reparacion segura)**
+- **Objetivo:** revisar backend + frontend y aplicar hardening sin romper flujos (evitar CSP/CORS tan restrictivos que dejen el sistema inutilizable).
+- **Hallazgos concretos en el codigo (sugerencias puntuales):**
+    - **Rate limit de login no aplicado:** existe `loginLimiter` en `backend/src/middleware/rateLimiter.js`, pero no se usa en `backend/src/routes/auth.js`. Agregarlo en `POST /api/auth/login` y un limiter suave en `POST /api/auth/refresh` para evitar abuso sin bloquear usuarios reales.
+    - **Logs sensibles en auth:** hay `console.log` con detalles de login en `backend/src/routes/auth.js` y `frontend/src/app/services/auth.service.ts`. Dejar solo en `NODE_ENV !== 'production'` o eliminarlos para no filtrar info en logs.
+    - **CORS en prod puede abrirse con `*`:** en `backend/src/server.js` se permite `*` si `ALLOWED_ORIGINS` lo contiene. Como el requisito SOC es "sin *", bloquearlo en produccion y dejar el wildcard solo en desarrollo, con log de advertencia si se detecta.
+    - **CSP deshabilitado:** `helmet` tiene `contentSecurityPolicy: false` en `backend/src/server.js`. Habilitar CSP primero en `Report-Only` (1-2 semanas) y con allowlist realista (`img-src 'self' data:`, `style-src 'self' 'unsafe-inline'` si Angular lo requiere) para no romper UI.
+    - **Uploads de logo con SVG:** `backend/src/routes/config.js` permite `svg`. Si se mantiene, sanitizar o convertir a PNG antes de guardar; si no, restringir a `png/jpg`. Para `logoUrl` externa, exigir `https` y (ideal) allowlist de dominios.
+    - **Path traversal en backups:** `backend/src/routes/backup.js` arma paths con `filename`/`id` directo. Usar `path.basename` + validar extension `.json` para evitar `../` y accesos fuera de `backups/`.
+    - **Import de backups sin validacion de archivo:** `POST /api/backup/import` acepta cualquier archivo. Validar MIME/extension y limpiar el temporal siempre, aunque falle el parse.
+    - **Autorizaciones inconsistentes:** `GET /api/reports/overview` y `GET /api/notes/admin` solo usan `authenticate` aunque los comentarios sugieren admin. Definir si deben ser admin y ajustar para no exponer datos globales por error.
+    - **Sesion JWT de guests:** `POST /api/auth/refresh` permite renovar tokens de invitados indefinidamente (comentado). Limitar ventana de refresh o bloquear guests para evitar sesiones eternas.
+    - **JWT en localStorage:** en `frontend/src/app/services/auth.service.ts` el token vive en localStorage. Mitigar XSS (evitar `[innerHTML]` con datos no confiables y revisar sanitizacion) o planificar migracion a cookies httpOnly con CSRF si se requiere mayor robustez.
+    - **Password hashing y politicas:** `backend/src/models/User.js` usa bcrypt con 8 rounds y password min 6. Evaluar subir costo de hash (con migracion progresiva en login/cambio de clave) y reglas basicas de complejidad sin afectar usuarios existentes.
+- **Plan de reparacion segura (no romper):**
+    - Implementar cambios con feature flags o en staging primero; CSP en `Report-Only` con recoleccion de reportes antes de bloquear.
+    - CORS/headers: aplicar allowlist y dejar override solo en desarrollo; agregar logs para diagnosticar bloqueos reales.
+    - Validar endpoints nuevos de a poco (empezar por backups/auth), con mensajes de error claros para no romper integraciones.
+    - Documentar rollback rapido (ej: volver a CSP deshabilitado si algo critico falla).
+- **Validacion minima:** smoke tests de login/logout, carga de logo, reportes, backups/restore y creacion de entradas; revisar logs de CSP y CORS antes de endurecer.
 
