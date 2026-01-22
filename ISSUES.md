@@ -145,12 +145,13 @@ La actualización se realizará de forma incremental, versión por versión, par
     - Corregir el texto "Escalaciones" a "Escalación" para que sea consistente.
 
 #### **B2b** **Visualizador de Logs de Auditoría**
-- **Descripción:** El backend registra la actividad de los usuarios (`AuditLog`), pero no hay una interfaz para que un administrador pueda consultar esta información. La trazabilidad es fundamental.
+- **Descripción:** El backend registra la actividad de los usuarios (`AuditLog`), pero no hay una interfaz para que un administrador/auditor pueda consultar esta información. La trazabilidad es fundamental.
 - **Propuesta:**
     - Crear una nueva sección en el área de administración llamada "Logs de Auditoría" o "Trazabilidad".
     - Esta vista debe mostrar un registro de eventos: inicios de sesión (éxito/fallo), dirección IP, fecha/hora, y acciones de CRUD sobre registros importantes.
     - Implementar filtros por usuario, rango de fechas y tipo de acción.
     - Asegurarse de que el middleware de auditoría (`audit.js`) se aplique a todas las rutas críticas del backend.
+    - estos log no seran las entradas  que va agregando el n1  todos los dias, pero si podre ver que el user agrego una nueva entrada mas no su conetanido ya que eos esta en otro sector, tambien  si realizo el checklist mas no su contenido  ya que tambein eso se puede ver en otra seccion del desarrollo
 
 #### **B2c** **Funcionalidad de "Purgar Datos" Segura**
 - **Descripción:** No existe una forma de eliminar todos los datos de la aplicación de forma masiva.
@@ -174,8 +175,11 @@ La actualización se realizará de forma incremental, versión por versión, par
 #### **B2f** **Reportes y Estadísticas: Añadir Gráficos**
 - **Problema:** La sección de "Reportes y Estadísticas" necesita ser más visual.
 - **Propuesta:**
-    - Añadir un gráfico de líneas que muestre la tendencia de entradas creadas por día (últimos 30 días).
+    - Añadir un gráfico de líneas que muestre la tendencia de entradas creadas por día (últimos 7/15/30 o custom días).
     - **Implementación:** Usar una librería como **NGX-Charts** y consumir los datos del endpoint `GET /api/reports/overview` (campo `entriesTrend`).
+    - Poder ver los  incidentes  tambien graficamente
+    - Graficas  por tag  qu tiene el sistema  asi ver  que tag por tendencia (líneas múltiples) comparar 3–5 tags (seleccionables) y ver su curva. 
+    - Un mapa de calor día vs hora para ver: horas muertas, picos reales  de entradas
 
 #### **B2g** **Módulo de Recuperación de Contraseña**
 - **Problema:** No hay opción para recuperar contraseñas olvidadas.
