@@ -243,3 +243,33 @@ La actualización se realizará de forma incremental, versión por versión, par
 - **Validacion minima:** smoke tests de login/logout, carga de logo, reportes, backups/restore y creacion de entradas; revisar logs de CSP y CORS antes de endurecer.
 
 
+### 6. Complementos
+
+#### **D1-1** **Modulo de complementos (plugins)**
+- **Objetivo:** habilitar herramientas "extra" (no core) sin incrustarlas en el codigo principal, con activacion/desactivacion rapida por admin y sin romper dependencias del sistema.
+- **Casos de uso:** migrar planillas Excel con macros a micro-apps web (ej: generador de consultas AQL, plantillas de analisis, validadores, calculadoras SOC).
+- **Principios de diseno:**
+    - **Aislado:** cada complemento vive separado del core (carpeta y rutas propias).
+    - **Controlado:** solo el admin habilita/deshabilita; usuarios solo usan lo habilitado.
+    - **No intrusivo:** no toca modelos principales si no es necesario; si necesita datos, lo hace via API dedicada.
+- **Arquitectura propuesta:**
+    - **Manifest:** archivo por complemento (`complement.json`) con `id`, `name`, `version`, `description`, `roles`, `entryRoute`, `configSchema`, `dependencies`.
+    - **Backend loader:** registra rutas solo para complementos habilitados; expone `GET /api/complements` (lista) y `GET/PUT /api/complements/:id/config` (admin).
+    - **Frontend loader:** menu dinamico basado en `GET /api/complements`; cada complemento con su modulo lazy-loaded.
+- **Seguridad y gobernanza (para no dejar la embarrada):**
+    - Nada de "subir codigo" desde UI; los complementos deben venir versionados desde el repo.
+    - Permisos por complemento (roles permitidos) y auditoria de uso (quien, cuando, que accion).
+    - Inputs validados y rate-limit en endpoints sensibles (especialmente si genera queries o exportaciones).
+- **Modo admin por complemento:** cada complemento puede traer su propia UI admin para cargar/configurar datos (ej: plantillas, consultas validadas, parametros), separada del core.
+    - Si necesita datos persistentes, usar **colecciones propias** o una **mini base** separada (mismo MongoDB pero namespace propio) para no mezclar con datos core.
+- **Primer complemento recomendado (piloto):**
+    - **Generador AQL:** plantillas guardadas, editor con validacion basica, ejemplos por escenario, y export a texto/clipboard.
+    - Esto es solo un ejemplo: **Base de ejemplos AQL:** consultas curadas y documentadas por el admin, versionadas por fecha/autor y separadas del core.
+    - Evitar ejecucion directa en prod; si se permite, usar modo read-only o ambiente controlado.
+**Nota:** AQL es un ejemplo ilustrativo; el modulo sirve para cualquier complemento futuro.
+- **Plan de implementacion seguro:**
+    1. Definir modelo `Complement` (enabled, config, allowedRoles, updatedBy).
+    2. Implementar loader backend con allowlist y feature flag global.
+    3. Crear UI admin (activar/desactivar + config) y UI usuario (catalogo de complementos).
+    4. Implementar el primer complemento (AQL) y documentar buenas practicas.
+    5. Tests de smoke + auditoria basica de uso/errores.
