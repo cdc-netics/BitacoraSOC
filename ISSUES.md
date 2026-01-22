@@ -120,7 +120,6 @@ La actualización se realizará de forma incremental, versión por versión, par
 3.  **F4-3** **Merge:** Una vez que la rama `feature/angular-20-upgrade` sea 100% estable y probada, fusionarla con la rama de desarrollo principal.
 
 ---
----
 
 ## Backlog de Tareas (Post-Actualización a Angular 20)
 
@@ -219,7 +218,6 @@ La actualización se realizará de forma incremental, versión por versión, par
 -   **B4-6** **login con correo como con nombre de usuario:** mejorar esa situacion para que login tambien se pueda usar el correo como usuario
 -   **B4-7** **Aviso analistas de checklist:**  (depende de B3a): Avisar al analista de turno (etiqueta N1_NO_HABIL) y a usuarios con etiqueta N2 cuando el checklist no se realiza antes de 09:30 (el horario se puede cambiar, solo admins pueden hacerlo). En Administracion de Escalaciones, los turnos se definen con etiquetas de cargo (B3a) y se respeta la regla: N1 nunca es admin; N2/N3 pueden ser admin si el admin lo habilita. esto evita enviar correos a admins que no sean N2.
 
----
 
 ### 5. Revisiones de seguridad y auditoria
 
@@ -243,4 +241,5 @@ La actualización se realizará de forma incremental, versión por versión, par
     - Validar endpoints nuevos de a poco (empezar por backups/auth), con mensajes de error claros para no romper integraciones.
     - Documentar rollback rapido (ej: volver a CSP deshabilitado si algo critico falla).
 - **Validacion minima:** smoke tests de login/logout, carga de logo, reportes, backups/restore y creacion de entradas; revisar logs de CSP y CORS antes de endurecer.
+
 
