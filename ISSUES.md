@@ -36,7 +36,7 @@
 | B2f | Mejoras | Reportes: graficos | Pendiente |  |
 | B2g | Mejoras | Recuperacion de contrasena | Pendiente |  |
 | B2h | Mejoras | Reorganizacion pagina configuracion | Pendiente |  |
-| B3a | Arquitectura | RBAC granular | Pendiente |  |
+| B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
 | B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
 | B4-3 | Observaciones | Pruebas automatizadas backend | Pendiente |  |
@@ -195,17 +195,13 @@ La actualización se realizará de forma incremental, versión por versión, par
 
 ### 3. Propuestas Arquitectónicas
 
-#### **B3a** **Sistema de Permisos y Roles Granulares (RBAC)**
-- **Problema:** El sistema actual de roles (`admin`, `user`, `guest`) es insuficiente. Se necesita poder asignar permisos específicos a grupos de usuarios.
+#### **B3a** **Etiquetas de Cargo + Rol Auditor (sobre roles existentes)**
+- **Contexto:** Ya existen los roles base (`user` y `admin`); no es necesario rehacer RBAC completo.
 - **Propuesta:**
-    1.  **Backend:** Introducir modelos para `Permission` (ej. `view-reports`) y `Role`. Un `Role` agrupará varios `Permission`. El `User` se asignará a un `Role`.
-    2.  **Etiquetas de Rol:** Los roles deben ser personalizables, permitiendo crear etiquetas como "N1", "N2", "N3", "Auditor", "Custom", etc.
-    3.  **UI de Administración:** Crear una interfaz para que el admin pueda:
-        - Crear/editar roles.
-        - Asignar permisos a cada rol.
-        - Asignar usuarios a un rol.
-    4.  **Aplicación de Permisos:** Actualizar los `guards` de rutas y la lógica de visibilidad de menús para que se basen en permisos específicos, no en roles fijos.
-
+    1.  **Etiquetas de cargo:** Crear/editar etiquetas como "N1", "N2", "N3", "Custom", etc. Deben estar conectadas a los roles existentes.
+    2.  **Reglas de combinacion:** Un usuario con etiqueta "N1" nunca puede ser `admin`. Las etiquetas "N2" y "N3" si pueden ser `admin` solo si un admin lo habilita.
+    3.  **Rol/Usuario Auditor:** Usuario con etiqueta/rol "Auditor" con acceso de solo lectura a todo lo que ve un admin, sin modificar nada.
+    4.  **UI de administracion:** El admin puede crear/editar etiquetas y asignarlas a los usuarios.
 ---
 
 ### 4. Observaciones Técnicas Adicionales
@@ -216,4 +212,5 @@ La actualización se realizará de forma incremental, versión por versión, par
 -   **B4-4** **Consistencia en Nombres:** Estandarizar el nombrado de archivos a `kebab-case`.
 -   **B4-5** **Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso".
 -   **B4-6** **login con correo como con nombre de usuario:** mejorar esa situacion para que login tambien se pueda usar el correo como usuario
--   **B4-7** **Aviso analistas de checklist:**  Tiene que avisar - Via correo Electronico- al analista de turno y a los n2  cuanod el checklist no se realiza  antes de 09:30 (el horario se puede cambiar solo los admin pueden hacerlo), en  Administración de Escalaciones  cuando   hago los turnos podriamos ocuar el rol de N1_NO_HABIL  para saber quien esta de turno  y  n2,  igual con el tema de  usuarios de los roles generales de usuarios  habria que agregar  si los admin  son N2  asi no enviar  correos a otros admin que no son N2
+-   **B4-7** **Aviso analistas de checklist:**  (depende de B3a): Avisar al analista de turno (etiqueta N1_NO_HABIL) y a usuarios con etiqueta N2 cuando el checklist no se realiza antes de 09:30 (el horario se puede cambiar, solo admins pueden hacerlo). En Administracion de Escalaciones, los turnos se definen con etiquetas de cargo (B3a) y se respeta la regla: N1 nunca es admin; N2/N3 pueden ser admin si el admin lo habilita. esto evita enviar correos a admins que no sean N2.
+
