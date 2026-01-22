@@ -45,6 +45,7 @@
 | B4-6 | Observaciones | Login, poder entrar con  correo como con nombre de usuario | Pendiente |  |
 | B4-7 | Observaciones | Aviso analistas de checklist | Pendiente |  |
 | C1-1 | Revisiones de seguridad y auditoria | Analisis de seguridad general | Pendiente |  |
+| D1-1 | Complementos | Modulo de complementos (plugins) | Pendiente |  |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
