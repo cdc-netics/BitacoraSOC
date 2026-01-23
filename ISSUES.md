@@ -36,6 +36,7 @@
 | B2f | Mejoras | Reportes: graficos | Pendiente |  |
 | B2g | Mejoras | Recuperacion de contrasena | Pendiente |  |
 | B2h | Mejoras | Reorganizacion pagina configuracion | Pendiente |  |
+| B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Pendiente |  |
 | B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
 | B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
@@ -195,6 +196,31 @@ La actualización se realizará de forma incremental, versión por versión, par
     - Mover el "Cooldown Checklist" a la página de "Checklist (Admin)".
     - Clarificar el texto de la opción "Enviar solo si hay servicios en rojo".
     - Reestructurar la página de Ajustes para separar la configuración de SMTP y el "Modo Invitado".
+
+#### **B2i** **Selector de Cliente en “Nueva Entrada” + Cliente en búsqueda y resultados (sin depender de tags)**
+- **Contexto:** En la pantalla **Nueva Entrada** hay espacio libre en el panel derecho para mostrar los **clientes (Log Sources)**. Los clientes se gestionan en **Catalog Admin → 🖥️ Log Sources / Clientes**.
+- **Objetivo:** Seleccionar cliente al crear entrada, guardar `clientId` como campo estructurado, autoinyectar tag del cliente y permitir filtro/columna por cliente sin depender solo de tags.
+- **Alcance funcional:**
+    1. **Nueva Entrada:** agregar bloque “Cliente” con combo/autocomplete; al seleccionar se setea `clientId`; se agrega el tag del cliente si no existe; al cambiar se reemplaza solo el tag de cliente.
+    2. **Modelo de datos:** agregar `clientId` y opcional `clientName`/`clientTag` en `Entry` para filtrado consistente.
+    3. **Buscar Entradas:** filtro “Cliente” con opción “Todos”; filtrar por `clientId`; botón “Limpiar” también lo resetea.
+    4. **Resultados:** columna “Cliente” (ideal código corto con tooltip de descripción).
+- **Backend/API:**
+    - Reutilizar `GET /api/catalog/log-sources` (listado/autocomplete) y devolver también `tag`/`slug`.
+    - `POST /api/entries` acepta `clientId`, valida activo y (opcional) inyecta `clientTag` en `tags`.
+    - `GET /api/entries` agrega filtro por `clientId`.
+- **Migración:** agregar `clientId` en DB; opcional job para mapear histórico desde tags usando `tag/slug`.
+- **Permisos:** lectura de clientes para cualquier rol que crea/ve entradas; catálogo sigue solo admin.
+- **Definition of Done:**
+    - [ ] Bloque “Cliente” visible en “Nueva Entrada” y carga desde catálogo (sin hardcode).
+    - [ ] Selección agrega tag del cliente y guarda `clientId`.
+    - [ ] Cambio de cliente reemplaza solo el tag de cliente.
+    - [ ] Filtro “Cliente” en búsqueda + columna en resultados.
+    - [ ] DB guarda `clientId` en nuevas entradas.
+- **Implementación sugerida (código):**
+    - **Backend:** `backend/src/models/CatalogLogSource.js` agregar `tag`/`slug`; `backend/src/routes/catalog.js` incluir `tag` en `.select`; `backend/src/models/Entry.js` agregar `clientId`/`clientName` + índices; `backend/src/routes/entries.js` validar `clientId`, inyectar tag y filtrar.
+    - **Frontend:** `frontend/src/app/models/catalog.model.ts` agregar `tag`; `frontend/src/app/pages/main/entries/entries.component.html` agregar selector (ideal `app-entity-autocomplete`); `frontend/src/app/pages/main/entries/entries.component.ts` manejar `clientId` y merge de tag; `frontend/src/app/models/entry.model.ts` y `frontend/src/app/services/entry.service.ts` agregar `clientId`; `frontend/src/app/pages/main/all-entries/all-entries.component.html` y `frontend/src/app/pages/main/all-entries/all-entries.component.ts` añadir filtro/columna.
+- **Nota técnica:** hoy los tags se extraen del `content`; para el tag cliente se puede (a) insertar `#tag` en el texto en UI o (b) permitir `clientTag` en backend y mergear con `extractHashtags`.
 
 ---
 
