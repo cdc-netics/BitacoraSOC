@@ -34,7 +34,7 @@ export class EscalationService {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   /**
-   * Obtener información de escalación para un servicio (quién informar AHORA)
+   * Obtener información de escalamiento para un servicio (quién informar AHORA)
    */
   getEscalationView(serviceId: string, nowIso?: string): Observable<EscalationView> {
     let params = new HttpParams();
@@ -148,7 +148,7 @@ export class EscalationService {
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 🔧 CRUD ADMIN - Reglas de Escalación
+  // 🔧 CRUD ADMIN - Reglas de Escalamiento
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   getRules(serviceId?: string): Observable<EscalationRule[]> {

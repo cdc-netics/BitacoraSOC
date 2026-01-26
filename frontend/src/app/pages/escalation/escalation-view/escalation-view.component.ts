@@ -21,7 +21,7 @@ export class EscalationViewComponent implements OnInit {
   filteredClients: Observable<Client[]>;
   filteredServices: Observable<Service[]>;
 
-  // Vista de escalación
+  // Vista de escalamiento
   escalationData: EscalationView | null = null;
   loading = false;
   error: string | null = null;
@@ -99,7 +99,7 @@ export class EscalationViewComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading escalation data:', err);
-        this.error = 'Error al cargar información de escalación';
+        this.error = 'Error al cargar información de escalamiento';
         this.loading = false;
       }
     });

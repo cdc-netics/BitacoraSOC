@@ -1,6 +1,6 @@
 <div class="container">
   <mat-card class="page-header">
-    <h1>📞 Escalación y Turnos</h1>
+    <h1>📞 Escalamiento y Turnos</h1>
     <p>Vista simplificada de contactos y turnos de la semana</p>
   </mat-card>
 
@@ -97,9 +97,9 @@
     </div>
   </mat-card>
 
-  <!-- SECCIÓN 2: TABLA DE ESCALACIÓN -->
+  <!-- SECCIÓN 2: TABLA DE ESCALAMIENTO -->
   <mat-card class="section-card">
-    <h2>📋 Contactos de Escalación</h2>
+    <h2>📋 Contactos de Escalamiento</h2>
     <p class="subtitle">Lista de contactos por servicio</p>
 
     <!-- Selector de Cliente -->
@@ -167,7 +167,7 @@
     <!-- Sin datos -->
     <div *ngIf="!loading && (!selectedClient || allClients.length === 0)" class="no-data-message">
       <mat-icon>warning</mat-icon>
-      <p>No hay datos de escalación disponibles</p>
+      <p>No hay datos de escalamiento disponibles</p>
     </div>
   </mat-card>
 
@@ -179,7 +179,7 @@
       <table class="excel-table">
         <thead>
           <tr>
-            <th rowspan="2" class="header-service">Escalación</th>
+            <th rowspan="2" class="header-service">Escalamiento</th>
             <th rowspan="2" class="header-service">Servicio</th>
             <th colspan="2" class="header-contacts">Envíos de correos</th>
             <th rowspan="2" class="header-phone">Correo</th>

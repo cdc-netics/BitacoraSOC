@@ -4,7 +4,7 @@
     <mat-card-header>
       <mat-card-title>
         <mat-icon>admin_panel_settings</mat-icon>
-        Administración de Escalaciones
+        Administración de Escalamientos
       </mat-card-title>
       <mat-card-subtitle>
         Gestión de clientes, servicios, contactos, reglas y turnos
@@ -327,7 +327,7 @@
     </mat-tab>
 
     <!-- TAB 4: REGLAS DE ESCALACIÓN -->
-    <mat-tab label="Reglas de Escalación">
+    <mat-tab label="Reglas de Escalamiento">
       <div class="tab-content">
         <div class="tab-header">
           <button mat-raised-button color="primary" (click)="addRule()">
@@ -391,7 +391,7 @@
 
         <div *ngIf="!loadingRules && rules.length === 0" class="no-data">
           <mat-icon>info</mat-icon>
-          <p>No hay reglas de escalación registradas</p>
+          <p>No hay reglas de escalamiento registradas</p>
         </div>
       </div>
     </mat-tab>

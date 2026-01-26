@@ -37,6 +37,7 @@
 | B2g | Mejoras | Recuperacion de contrasena | Pendiente |  |
 | B2h | Mejoras | Reorganizacion pagina configuracion | Pendiente |  |
 | B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Pendiente |  |
+| B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Pendiente |  |
 | B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
 | B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
@@ -221,6 +222,21 @@ La actualización se realizará de forma incremental, versión por versión, par
     - **Backend:** `backend/src/models/CatalogLogSource.js` agregar `tag`/`slug`; `backend/src/routes/catalog.js` incluir `tag` en `.select`; `backend/src/models/Entry.js` agregar `clientId`/`clientName` + índices; `backend/src/routes/entries.js` validar `clientId`, inyectar tag y filtrar.
     - **Frontend:** `frontend/src/app/models/catalog.model.ts` agregar `tag`; `frontend/src/app/pages/main/entries/entries.component.html` agregar selector (ideal `app-entity-autocomplete`); `frontend/src/app/pages/main/entries/entries.component.ts` manejar `clientId` y merge de tag; `frontend/src/app/models/entry.model.ts` y `frontend/src/app/services/entry.service.ts` agregar `clientId`; `frontend/src/app/pages/main/all-entries/all-entries.component.html` y `frontend/src/app/pages/main/all-entries/all-entries.component.ts` añadir filtro/columna.
 - **Nota técnica:** hoy los tags se extraen del `content`; para el tag cliente se puede (a) insertar `#tag` en el texto en UI o (b) permitir `clientTag` en backend y mergear con `extractHashtags`.
+
+#### **B2j** **Tabla RACI por cliente en Escalamiento**
+- **Contexto:** En `/main/escalation/view` se usa `frontend/src/app/pages/escalation/escalation-simple/escalation-simple.component.ts` con un combo de cliente y una tabla de contactos. Se requiere agregar una tabla RACI debajo, reutilizando el mismo selector de cliente.
+- **Objetivo:** Mostrar la matriz RACI de cada cliente (y opcionalmente por servicio) con un formato similar a la tabla de contactos de escalamiento.
+- **UI propuesta:**
+    - Nueva sección “📋 RACI” debajo de “Contactos de Escalamiento”.
+    - Reusar `selectedClient`/`selectedClientData` para filtrar.
+    - Mostrar mensaje tipo “No hay datos de RACI disponibles” si no hay registros.
+- **Admin:** Agregar un menú/pestaña “RACI” en `frontend/src/app/pages/escalation/escalation-admin-simple/escalation-admin-simple.component.html` para crear/editar/borrar RACI, análogo al flujo de contactos.
+- **Backend/API:**
+    - Nuevo modelo `RaciEntry` (o similar) con `clientId`, `serviceId` (opcional), `actividad`/`proceso`, `responsable`, `aprobador`, `consultado`, `informado`, `notas`, `active`.
+    - Lectura: `GET /api/escalation/raci?clientId=...` (analyst/admin).
+    - Admin: `GET/POST/PUT/DELETE /api/escalation/admin/raci`.
+- **Frontend:** Extender `frontend/src/app/services/escalation.service.ts` y `frontend/src/app/models/escalation.model.ts` con modelos y métodos RACI.
+- **Preguntas abiertas:** ¿RACI debe referenciar contactos (IDs) o texto libre? ¿Es por cliente completo o por servicio? ¿Se necesitan emails/teléfonos visibles en la tabla?
 
 ---
 

@@ -139,7 +139,7 @@ export class EscalationSimpleComponent implements OnInit {
       this.cdr.detectChanges();
     } catch (err) {
       console.error('Error loading escalation:', err);
-      this.showError('Error al cargar datos de escalación');
+      this.showError('Error al cargar datos de escalamiento');
       this.loading = false;
     }
   }
