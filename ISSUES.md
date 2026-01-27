@@ -38,6 +38,7 @@
 | B2h | Mejoras | Reorganizacion pagina configuracion | Pendiente |  |
 | B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Pendiente |  |
 | B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Pendiente |  |
+| B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Pendiente |  |
 | B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
 | B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
@@ -237,6 +238,11 @@ La actualización se realizará de forma incremental, versión por versión, par
     - Admin: `GET/POST/PUT/DELETE /api/escalation/admin/raci`.
 - **Frontend:** Extender `frontend/src/app/services/escalation.service.ts` y `frontend/src/app/models/escalation.model.ts` con modelos y métodos RACI.
 - **Preguntas abiertas:** ¿RACI debe referenciar contactos (IDs) o texto libre? ¿Es por cliente completo o por servicio? ¿Se necesitan emails/teléfonos visibles en la tabla?
+
+#### **B2k** **Checklist: borrado admin + ocultar iconos + rehacer checklist diario**
+- Solo admins pueden borrar un checklist.
+- Usuarios normales no ven iconos/acciones de borrado.
+- Si se borra el checklist del día, se puede crear nuevamente para ese mismo día.
 
 ---
 
