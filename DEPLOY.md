@@ -29,6 +29,55 @@ docker compose exec backend node src/scripts/seed.js
 # http://IP-SERVIDOR:PUERTO
 ```
 
+## Desarrollo local (sin Docker)
+> Requiere: Node.js 18+, MongoDB 6+ y (opcional) Angular CLI `npm install -g @angular/cli`
+
+### 1) Backend
+```powershell
+cd backend
+copy .env.example .env
+# Editar .env: MONGODB_URI, JWT_SECRET, ENCRYPTION_KEY, ALLOWED_ORIGINS
+
+npm install
+npm run dev     # API en http://localhost:3000
+npm run seed    # Crea admin inicial (si no existe)
+```
+
+### 2) Frontend
+```powershell
+cd ..\frontend
+npm install
+npm start       # UI en http://localhost:4200
+```
+
+**Tip:** si accedes desde otra PC/IP, ajusta:
+- `backend\.env` → `ALLOWED_ORIGINS=http://TU_IP:4200`
+- `frontend\src\environments\environment.ts` → `apiUrl: 'http://TU_IP:3000/api'`
+
+### 3) Cargar data local
+**Opción A: Restaurar backup JSON (recomendado si ya tienes backup)**
+```powershell
+# Ver backups disponibles
+Get-ChildItem backend\backups
+
+# Restaurar (requiere token de admin)
+curl -X POST http://localhost:3000/api/backup/restore `
+  -H "Authorization: Bearer TU_TOKEN" `
+  -H "Content-Type: application/json" `
+  -d "{`"filename`":`"backup-AAAA-MM-DDTHH-MM-SS-fffZ.json`",`"clearBeforeRestore`":true}"
+```
+> El archivo debe estar dentro de `backend/backups/`.
+
+**Opción B: Importar CSV/JSON**
+```powershell
+# CSV -> JSON
+node backend\scripts\csv-to-json-entries.js ruta\archivo.csv salida.json
+
+# Importar entradas
+node backend\scripts\import-entries.js salida.json nombre-usuario
+```
+Para más detalle: `docs/SETUP.md` y `backend/scripts/README.md`.
+
 ## Version automatica (recomendado)
 Para evitar editar numeros a mano, usa los scripts que calculan la version desde Git:
 
