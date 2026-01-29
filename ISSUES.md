@@ -39,6 +39,8 @@
 | B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Pendiente |  |
 | B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Pendiente |  |
 | B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Pendiente |  |
+| B2l | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Pendiente | Ej: GLPI, payload y auth configurables |
+| B2m | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Pendiente | Ticket diario con titulo configurable |
 | B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
 | B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
@@ -244,6 +246,47 @@ La actualización se realizará de forma incremental, versión por versión, par
 - Usuarios normales no ven iconos/acciones de borrado.
 - Si se borra el checklist del día, se puede crear nuevamente para ese mismo día.
 
+
+#### **B2l** **Integracion API generica / Webhooks (GLPI y otros)**
+- **Objetivo:** Permitir integrar la Bitacora con servicios externos via API para enviar entradas, checklists o resumenes automaticos.
+- **Requisitos clave:**
+    - Soportar distintos tipos de API (REST/HTTP) con metodo, URL, headers y body configurables.
+    - Autenticacion flexible: API Key, Bearer, Basic, OAuth2 (client credentials).
+    - Plantillas de payload con variables (ej: `{{date}}`, `{{entries}}`, `{{checklist}}`, `{{shift}}`) y soporte JSON / form-data.
+    - Reintentos + cola si el servicio externo falla (no bloquear la app).
+- **UI/Admin:**
+    - Nueva seccion "Integraciones" (similar a SMTP) para crear/editar/testear conectores.
+    - Boton "Probar envio" y vista de historial de envios (ok/fail).
+- **Backend (sugerido):**
+    - Nuevo modelo `IntegrationConfig` (y opcional `IntegrationDelivery`/`OutboundJob` para cola/reintentos).
+    - Rutas nuevas `/api/integrations` (CRUD + `/test` + `/deliveries`).
+    - Util `integrationDispatcher` para enviar requests (reusar patron de `backend/src/utils/logForwarder.js`).
+    - Cifrar secretos como en `backend/src/routes/smtp.js` (`utils/encryption`).
+- **Ejemplo GLPI:**
+    - Conector predefinido para crear ticket desde entradas del dia.
+    - Titulo personalizable (ej: `Ticket CSC {{date}}`).
+    - Cuerpo con resumen + listado de entradas (formato HTML o texto).
+- **Archivos relevantes para implementar:** `backend/src/routes/entries.js`, `backend/src/routes/checklist.js`, `backend/src/utils/logForwarder.js`, `backend/src/routes/smtp.js`.
+
+#### **B2m** **Estado de turno + cierre automatico (envio via integracion)**
+- **Objetivo:** Registrar el estado del turno y, al hacer "cierre de turno", enviar automaticamente checklist + entradas del periodo a una integracion (ej: GLPI).
+- **Flujo propuesto:**
+    1. Al registrar `POST /api/checklist/check` con `type = cierre`, construir resumen del turno.
+    2. Determinar rango de entradas: desde el ultimo `inicio` del usuario (o 00:00 si no existe) hasta la hora de cierre.
+    3. Enviar el payload a la integracion seleccionada (si falla, reintentos en cola).
+- **Datos que deben viajar:**
+    - Checklist cierre (servicios, rojos, observaciones).
+    - Entradas del periodo (y/o resumen por tipo + tags top).
+    - Metadatos del turno: analista, fechas, estado general.
+- **UI:**
+    - Mostrar "Estado de turno" (ultimo inicio/cierre y si el cierre fue enviado).
+    - Confirmacion de envio y estado (ok/pendiente/fallo).
+    - Configuracion admin: elegir envio via API o via correo; si es correo permitir multiples destinatarios.
+    - Nota: el envio por correo requiere SMTP configurado previamente.
+- **Backend (sugerido):**
+    - Servicio `shiftClosureService` que arma el payload y dispara `integrationDispatcher`.
+    - Guardar un registro `ShiftClosure` para evitar doble envio.
+- **Archivos relevantes:** `frontend/src/app/pages/main/checklist/checklist.component.ts`, `frontend/src/app/pages/main/checklist/checklist.component.html`, `backend/src/routes/checklist.js`, `backend/src/models/ShiftCheck.js`, `backend/src/models/Entry.js`.
 ---
 
 ### 3. Propuestas Arquitectónicas
@@ -322,3 +365,4 @@ La actualización se realizará de forma incremental, versión por versión, par
     3. Crear UI admin (activar/desactivar + config) y UI usuario (catalogo de complementos).
     4. Implementar el primer complemento (AQL) y documentar buenas practicas.
     5. Tests de smoke + auditoria basica de uso/errores.
+
