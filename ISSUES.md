@@ -5,9 +5,9 @@
 | ID | Seccion | Tarea | Estado | Notas |
 | --- | --- | --- | --- | --- |
 | P1 | Actualizacion Angular 20 | Plan general de actualizacion | Pendiente |  |
-| F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Pendiente |  |
-| F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Pendiente |  |
-| F0-3 | Fase 0 (Preparacion) | Verificar pruebas | Pendiente |  |
+| F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Completado | Rama `feature/angular-20-upgrade` creada |
+| F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Completado | Reinstaladas dependencias en backend y frontend |
+| F0-3 | Fase 0 (Preparacion) | Verificar pruebas | Completado | `ng test` no configurado (sin target de test) |
 | F1-1 | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Pendiente |  |
 | F1-2 | Fase 1 (Angular 18) | Analisis y migracion | Pendiente |  |
 | F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Pendiente |  |
