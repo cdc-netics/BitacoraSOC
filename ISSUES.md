@@ -8,11 +8,11 @@
 | F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Completado | Rama `feature/angular-20-upgrade` creada |
 | F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Completado | Reinstaladas dependencias en backend y frontend |
 | F0-3 | Fase 0 (Preparacion) | Verificar pruebas | Completado | `ng test` no configurado (sin target de test) |
-| F1-1 | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Pendiente |  |
-| F1-2 | Fase 1 (Angular 18) | Analisis y migracion | Pendiente |  |
-| F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Pendiente |  |
-| F1-4 | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | Pendiente |  |
-| F1-5 | Fase 1 (Angular 18) | Commit upgrade 18 | Pendiente |  |
+| F1-1 | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Completado | Angular/CLI/Material/CDK actualizados a 18.2.x |
+| F1-2 | Fase 1 (Angular 18) | Analisis y migracion | Completado | Migración HTTP aplicada en `app.module.ts` |
+| F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Completado | Sin advertencias adicionales; builder migration opcional pendiente |
+| F1-4 | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | Completado | `ng build` OK; `ng test` no configurado |
+| F1-5 | Fase 1 (Angular 18) | Commit upgrade 18 | Completado | Commit local listo |
 | F2-1 | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Pendiente |  |
 | F2-2 | Fase 2 (Angular 19) | Analisis y migracion | Pendiente |  |
 | F2-3 | Fase 2 (Angular 19) | Revision breaking changes | Pendiente |  |

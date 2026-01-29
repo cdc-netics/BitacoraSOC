@@ -1,7 +1,7 @@
 import { NgModule, LOCALE_ID, Injectable } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { registerLocaleData } from '@angular/common';
 import localeEsCL from '@angular/common/locales/es-CL';
@@ -49,56 +49,49 @@ export class CustomDateAdapter extends NativeDateAdapter {
   }
 }
 
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    HttpClientModule,
-    ReactiveFormsModule,
-    FormsModule,
-    AppRoutingModule,
-    
-    // Material modules
-    MatToolbarModule,
-    MatSidenavModule,
-    MatListModule,
-    MatIconModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCardModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatRadioModule,
-    MatChipsModule,
-    MatAutocompleteModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-    MatExpansionModule,
-    MatCheckboxModule,
-    MatSlideToggleModule,
-    MatMenuModule,
-    MatBadgeModule,
-    MatTooltipModule
-  ],
-  providers: [
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptor,
-      multi: true
-    },
-    { provide: LOCALE_ID, useValue: 'es-CL' },
-    { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
-    { provide: DateAdapter, useClass: CustomDateAdapter }
-  ],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        BrowserAnimationsModule,
+        ReactiveFormsModule,
+        FormsModule,
+        AppRoutingModule,
+        // Material modules
+        MatToolbarModule,
+        MatSidenavModule,
+        MatListModule,
+        MatIconModule,
+        MatButtonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCardModule,
+        MatSelectModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatRadioModule,
+        MatChipsModule,
+        MatAutocompleteModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule,
+        MatDialogModule,
+        MatSnackBarModule,
+        MatProgressSpinnerModule,
+        MatExpansionModule,
+        MatCheckboxModule,
+        MatSlideToggleModule,
+        MatMenuModule,
+        MatBadgeModule,
+        MatTooltipModule], providers: [
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: AuthInterceptor,
+            multi: true
+        },
+        { provide: LOCALE_ID, useValue: 'es-CL' },
+        { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
+        { provide: DateAdapter, useClass: CustomDateAdapter },
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule { }
