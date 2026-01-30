@@ -41,6 +41,7 @@
 | B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Pendiente |  |
 | B2l | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Pendiente | Ej: GLPI, payload y auth configurables |
 | B2m | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Pendiente | Ticket diario con titulo configurable |
+| B2n | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Pendiente | Uso, entradas, tags, checklists, incidentes |
 | B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
 | B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
@@ -288,6 +289,25 @@ La actualización se realizará de forma incremental, versión por versión, par
     - Guardar un registro `ShiftClosure` para evitar doble envio.
 - **Archivos relevantes:** `frontend/src/app/pages/main/checklist/checklist.component.ts`, `frontend/src/app/pages/main/checklist/checklist.component.html`, `backend/src/routes/checklist.js`, `backend/src/models/ShiftCheck.js`, `backend/src/models/Entry.js`.
 ---
+
+#### **B2n** **Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.)**
+- **Objetivo:** Exponer metricas de uso (entradas por cliente/tag, checklists, incidentes, actividad por usuario/turno) de forma simple y consumible por herramientas BI.
+- **Alcance propuesto:**
+    - Dataset agregado: entradas por dia/cliente/tag, checklists por estado, incidentes por severidad/estado, actividad por usuario/turno.
+    - Dataset detallado opcional: entradas y checklists con campos normalizados (sin contenido sensible).
+    - Rango de fechas, filtros por cliente/tag/usuario/estado.
+- **Opciones de entrega:**
+    1. **API de reportes/metricas** (JSON): `GET /api/metrics/*` con endpoints agregados y paginacion.
+    2. **Exportacion programada** (CSV/JSON) a almacenamiento o endpoint externo (reutilizar B2l integraciones).
+    3. **Conector directo BI**: vista "read-only" con token dedicado y permisos de solo lectura.
+- **Seguridad:**
+    - Campos anonimizados o sin texto libre (contenido de entradas fuera).
+    - Roles: solo admin o rol auditor.
+    - Rate limit y logging de accesos.
+- **Sugerencia tecnica:**
+    - Crear un modelo/vista `metrics` en backend (aggregation pipeline) con cache por dia.
+    - Reutilizar indices existentes y agregar indices en `clientId`, `createdAt`, `tags`, `severity`.
+    - Exponer un endpoint de "schema" para que BI pueda descubrir campos.
 
 ### 3. Propuestas Arquitectónicas
 
