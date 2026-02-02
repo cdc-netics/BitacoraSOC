@@ -244,6 +244,32 @@ mat-sidenav {
     background-color: var(--surface-color) !important;
   }
   
+  /* Menu items */
+  .mat-mdc-menu-item {
+    color: var(--text-primary) !important;
+    
+    &:hover {
+      background-color: var(--hover-bg) !important;
+    }
+    
+    mat-icon {
+      color: var(--text-primary) !important;
+    }
+    
+    .mdc-list-item__primary-text {
+      color: var(--text-primary) !important;
+    }
+  }
+  
+  /* Select and autocomplete options */
+  .mat-mdc-option {
+    color: var(--text-primary) !important;
+    
+    &:hover {
+      background-color: var(--hover-bg) !important;
+    }
+  }
+  
   /* Checkbox */
   .mat-mdc-checkbox .mdc-checkbox__background {
     border-color: var(--text-secondary) !important;
