@@ -117,10 +117,10 @@
 
       ::ng-deep .mdc-radio {
         margin-right: 8px;
-        --mdc-radio-unselected-icon-color: var(--text-primary);
-        --mdc-radio-selected-icon-color: var(--primary-color);
-        --mdc-radio-disabled-unselected-icon-color: var(--border-color);
-        --mdc-radio-disabled-selected-icon-color: var(--border-color);
+        --mat-radio-unselected-icon-color: var(--text-primary);
+        --mat-radio-selected-icon-color: var(--primary-color);
+        --mat-radio-disabled-unselected-icon-color: var(--border-color);
+        --mat-radio-disabled-selected-icon-color: var(--border-color);
       }
 
       .entry-type-label {
