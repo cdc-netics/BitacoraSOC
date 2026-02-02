@@ -13,11 +13,11 @@
 | F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Completado | Sin advertencias adicionales; builder migration opcional pendiente |
 | F1-4 | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | Completado | `ng build` OK; `ng test` no configurado |
 | F1-5 | Fase 1 (Angular 18) | Commit upgrade 18 | Completado | Commit local listo |
-| F2-1 | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Pendiente |  |
-| F2-2 | Fase 2 (Angular 19) | Analisis y migracion | Pendiente |  |
-| F2-3 | Fase 2 (Angular 19) | Revision breaking changes | Pendiente |  |
-| F2-4 | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Pendiente |  |
-| F2-5 | Fase 2 (Angular 19) | Commit upgrade 19 | Pendiente |  |
+| F2-1 | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Bloqueado | Bug en @angular/build 19.2.x con NgModules |
+| F2-2 | Fase 2 (Angular 19) | Analisis y migracion | Bloqueado | Dependiente de F2-1 |
+| F2-3 | Fase 2 (Angular 19) | Revision breaking changes | Bloqueado | Dependiente de F2-1 |
+| F2-4 | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Bloqueado | Dependiente de F2-1 |
+| F2-5 | Fase 2 (Angular 19) | Commit upgrade 19 | Bloqueado | Dependiente de F2-1 |
 | F3-1 | Fase 3 (Angular 20) | ng update core/cli 20 + material 20 | Pendiente |  |
 | F3-2 | Fase 3 (Angular 20) | Analisis y migracion | Pendiente |  |
 | F3-3 | Fase 3 (Angular 20) | Revision breaking changes | Pendiente |  |
@@ -90,14 +90,57 @@ La actualización se realizará de forma incremental, versión por versión, par
     - Ejecutar `ng test`.
 5.  **F1-5** **Commit:** Una vez estable, hacer commit de la actualización a la v18: `git commit -m "feat(ng): Upgrade to Angular 18"`.
 
-#### Fase 2: Actualización a Angular 19
+#### Fase 2: Actualización a Angular 19 ⚠️ **BLOQUEADO**
+
+**PROBLEMA DETECTADO (2026-02-02):**
+
+Angular 19.2.x con el nuevo builder `@angular/build:application` tiene un bug donde detecta incorrectamente TODOS los componentes basados en NgModules como componentes `standalone`, causando errores de compilación:
+
+```
+ERROR TS-996008: Component AppComponent is standalone, and cannot be declared in an NgModule. 
+Did you mean to import it instead?
+```
+
+**Componentes afectados:** 
+- AppComponent, LoginComponent, MainLayoutComponent, EntriesComponent, ChecklistComponent, ReportsComponent, UsersComponent, SettingsComponent, ProfileComponent, MyEntriesComponent, TagsComponent, LogoComponent, BackupComponent, ChecklistAdminComponent, ChecklistHistoryComponent, CatalogAdminComponent, ReportGeneratorComponent, EntityAutocompleteComponent
+- En resumen: TODOS los componentes declarados en NgModules
+
+**Detalles técnicos:**
+- El nuevo `@angular/build:application` builder reemplaza a `@angular-devkit/build-angular`
+- Está optimizado para aplicaciones standalone (el nuevo estándar de Angular 19+)
+- Tiene problemas de compatibilidad con proyectos legacy basados en NgModules
+- El compilador falla en la detección de componentes standalone vs NgModule-based
+
+**Soluciones evaluadas:**
+1. ❌ Ajustar tsconfig (probado, no funciona)
+2. ❌ Usar builder anterior (no disponible en Angular 19)
+3. ✅ **Migrar todo el proyecto a Standalone Components** (solución correcta pero requiere migración masiva)
+4. ✅ Esperar fix oficial de Angular CLI (recomendado)
+5. ✅ Saltar Angular 19 e intentar upgrade directo a Angular 20
+
+**Decisión tomada:** Mantener Angular 18.2.x (estable) y evaluar:
+- Esperar Angular 19.3+ con fix
+- Evaluar migración a standalone components como proyecto aparte
+- Intentar salto directo a Angular 20 cuando esté disponible
+
+**Referencias:**
+- https://angular.dev/tools/cli/build-system-migration
+- https://github.com/angular/angular-cli/issues (tracking del bug)
+
+---
+
 1.  **F2-1** **Ejecutar Comandos de Actualización:**
     ```bash
     ng update @angular/core@19 @angular/cli@19
     ng update @angular/material@19
     ```
+    **Estado:** ✅ Ejecutado exitosamente  
+    **Resultado:** ❌ Bug detectado en compilación  
+    **Revertido:** ✅ Proyecto vuelto a Angular 18.2.x
+    
 2.  **F2-2** **Análisis y Migración:**
-    - Repetir el proceso de revisión de migraciones automáticas.
+    - ❌ Bloqueado por bug del compilador
+    - Migraciones automáticas se aplicaron pero el build falla
 3.  **F2-3** **Revisión Manual de Breaking Changes:**
     - Consultar la guía oficial de v18 a v19.
     - **Análisis de `ng-content` y Vistas:** Se ha revisado el código y no se han encontrado usos de la directiva `<ng-content>`. Por lo tanto, no se esperan problemas de migración relacionados con la proyección de contenido. El manejo de vistas en la aplicación utiliza patrones estándar que no deberían verse afectados por cambios en la v19.
