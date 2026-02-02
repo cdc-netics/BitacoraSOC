@@ -30,7 +30,7 @@
   --background-color: #11131a;
   --surface-color: #1a1d27;
   --text-primary: #f7f9ff;
-  --text-secondary: #c7ccda;
+  --text-secondary: #d0d5e3;
   --border-color: #2f3547;
   --sidebar-bg: #1a1d27;
   --sidebar-text: #f7f9ff;
@@ -394,6 +394,25 @@ mat-sidenav {
   /* Role badge */
   .role-badge {
     color: var(--text-secondary) !important;
+  }
+  
+  /* Card subtitles */
+  .mat-mdc-card-subtitle {
+    color: var(--text-secondary) !important;
+  }
+  
+  /* Table headers - improve contrast */
+  .mat-mdc-header-cell {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    background-color: var(--surface-color) !important;
+  }
+  
+  /* Warning boxes in dark mode */
+  .warning-box, [style*="background: #fff3cd"], [style*="background:#fff3cd"] {
+    background-color: #3d3316 !important;
+    color: #f5e6a3 !important;
+    border-color: #5a4a1f !important;
   }
 }
 
