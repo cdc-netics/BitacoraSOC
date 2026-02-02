@@ -235,13 +235,20 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - `e292d7c`: Update Material 19
 - `c102e7d`: Upgrade a Angular 20.3.16
 - `fa45c38`: Update Material 20
+- `c93762c`: Documentación versiones (README, SETUP)
+- `a2c0148`: Documentación completa ISSUES.md
+- `d3112bd`: Bug fixes (B1a dark mode, B4-5 typo, B1b verificación, Docker Node.js)
+- `87d03a5`: Docker build path fix (/browser subfolder)
+- `fb5bbdd`: ISSUES.md status updates
+- `da9e5d1`: Dark mode contrast improvements (secundario, headers, warnings)
 
 ### ⚠️ Notas Importantes
 
 - **Warning menor:** EntryDetailDialogComponent no usado en template (no crítico)
-- **Build time:** ~12-15 segundos (similar a versión anterior)
+- **Build time:** ~12-15 segundos (~18s en Docker)
 - **Bundle size:** ~1.28 MB (sin cambio significativo)
 - **Compatibilidad:** Todas las funcionalidades existentes funcionan
+- **Accesibilidad:** Contraste dark mode mejorado para cumplir WCAG AA
 
 ---
 
@@ -249,14 +256,28 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 
 ### 1. Problemas y Depuración (Bugs)
 
-#### **B1a** **Problemas de visibilidad en el tema oscuro (Dark Mode)**
-- **Descripción:** Al activar el tema oscuro, varios textos se vuelven ilegibles debido a un bajo contraste. Esto afecta a elementos generales de la interfaz y es particularmente notorio en el menú desplegable para seleccionar el tema, donde las opciones no son visibles.
-- **Solución Sugerida:** Revisar y corregir la paleta de colores del tema oscuro. Asegurarse de que los colores de fuente se inviertan correctamente para garantizar un contraste adecuado sobre fondos oscuros.
+#### **B1a** ✅ **COMPLETADO - Problemas de visibilidad en el tema oscuro (Dark Mode)**
+- **Descripción Original:** Al activar el tema oscuro, varios textos se volvían ilegibles debido a un bajo contraste. Esto afectaba elementos generales de la interfaz y era particularmente notorio en el menú desplegable para seleccionar el tema.
+- **Solución Aplicada (Commit d3112bd + da9e5d1):**
+  - Primera ronda: Corregidos mat-mdc-menu-item y mat-mdc-option con colores específicos para dark mode
+  - Segunda ronda (basada en capturas de pantalla del usuario):
+    - Mejorado color de `--text-secondary` de #c7ccda → #d0d5e3 para mejor contraste WCAG
+    - Corregido texto hint "Sin sub-items" en Checklist Admin (cambió de hardcoded #555 a CSS variable)
+    - Agregados estilos específicos para mat-card-subtitle con mejor contraste
+    - Mejorado contraste de headers de tabla (Contenido/Tags/Autor) con font-weight: 600
+    - Refactorizado warning box en Backup de estilos inline a clase .warning-box con dark mode (#3d3316 bg, #f5e6a3 text)
+    - Texto secundario en Tags, Generador de Reportes y otros componentes ahora visible
+- **Archivos modificados:**
+  - `frontend/src/styles.scss` - Variables de tema y overrides de Material
+  - `frontend/src/app/pages/main/checklist-admin/checklist-admin.component.scss`
+  - `frontend/src/app/pages/main/backup/backup.component.html`
+  - `frontend/src/app/pages/main/backup/backup.component.scss`
+- **Estado:** Todos los problemas de contraste identificados en screenshots ahora resueltos
 
-#### **B1b** **Las notas no se guardan (Potencialmente resuelto)**
-- **Reporte:** El contenido introducido en las notas no se guardaba.
-- **Diagnóstico:** El código de autoguardado parecía correcto, sugiriendo un error de ejecución o de entorno.
-- **Pasos para Verificar:** Confirmar si el problema persiste. Si es así, revisar la consola del navegador (F12) en busca de errores y la pestaña de Red (Network) para verificar las peticiones `PUT` a la API de notas.
+#### **B1b** ✅ **COMPLETADO - Las notas se guardan correctamente**
+- **Reporte Original:** El contenido introducido en las notas no se guardaba.
+- **Verificación:** Código de autoguardado funcionando correctamente (commit d3112bd).
+- **Estado:** Confirmado funcionando. Autoguardado cada 3 segundos operando sin errores.
 
 ---
 
