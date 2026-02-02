@@ -136,6 +136,22 @@ body {
   caret-color: var(--text-primary) !important;
 }
 
+/* Material inputs transparent ONLY in light mode (not dark) */
+[data-theme="light"] .mat-mdc-input-element {
+  background-color: transparent !important;
+}
+
+/* But white inputs should stay white */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+  &:not(.mat-mdc-input-element) {
+    background-color: var(--surface-color) !important;
+    color: var(--text-primary) !important;
+  }
+}
+
 .mat-mdc-form-field .mdc-text-field__input::placeholder {
   color: var(--text-secondary) !important;
 }

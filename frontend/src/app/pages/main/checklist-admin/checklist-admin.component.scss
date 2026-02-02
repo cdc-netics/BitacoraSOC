@@ -129,3 +129,54 @@
     }
   }
 }
+
+// === DARK MODE FIXES ===
+:host-context([data-theme="dark"]) {
+  .hint {
+    color: var(--text-secondary) !important;
+  }
+
+  .item-row,
+  .child-row {
+    border-color: var(--border-color) !important;
+    background-color: var(--surface-color) !important;
+  }
+
+  .children-block {
+    background-color: var(--background-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  ::ng-deep {
+    // Force text visibility
+    input,
+    textarea,
+    .mat-mdc-input-element {
+      background-color: var(--surface-color) !important;
+      color: var(--text-primary) !important;
+      caret-color: var(--text-primary) !important;
+    }
+
+    textarea::placeholder,
+    input::placeholder {
+      color: var(--text-secondary) !important;
+    }
+
+    .mat-mdc-form-field-label,
+    .mat-mdc-floating-label {
+      color: var(--text-secondary) !important;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      background-color: var(--surface-color) !important;
+    }
+
+    .mat-mdc-form-field {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__trailing,
+      .mdc-notched-outline__notch {
+        border-color: var(--border-color) !important;
+      }
+    }
+  }
+}
