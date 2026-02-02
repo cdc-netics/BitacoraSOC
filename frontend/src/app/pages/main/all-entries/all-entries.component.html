@@ -26,7 +26,7 @@
             <mat-select formControlName="clientId">
               <mat-option [value]="">-- Todos --</mat-option>
               <mat-option *ngFor="let source of logSources" [value]="source._id">
-                {{ source.code }} - {{ source.name }}
+                {{ source.name }}
               </mat-option>
             </mat-select>
           </mat-form-field>

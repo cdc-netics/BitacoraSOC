@@ -77,7 +77,7 @@
               <mat-select formControlName="clientId">
                 <mat-option [value]="null">-- Ninguno --</mat-option>
                 <mat-option *ngFor="let source of logSources" [value]="source._id">
-                  {{ source.code }} - {{ source.name }}
+                  {{ source.name }}
                 </mat-option>
               </mat-select>
               <mat-hint>Selecciona el origen de la entrada (opcional)</mat-hint>
