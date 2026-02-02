@@ -2,56 +2,56 @@
 
 ## Estado general (tabla de control)
 
-| ID | Seccion | Tarea | Estado | Notas |
+| ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
-| P1 | Actualizacion Angular 20 | Plan general de actualizacion | Pendiente |  |
-| F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Completado | Rama `feature/angular-20-upgrade` creada |
-| F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Completado | Reinstaladas dependencias en backend y frontend |
-| F0-3 | Fase 0 (Preparacion) | Verificar pruebas | Completado | `ng test` no configurado (sin target de test) |
-| F1-1 | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Completado | Angular/CLI/Material/CDK actualizados a 18.2.x |
-| F1-2 | Fase 1 (Angular 18) | Analisis y migracion | Completado | Migración HTTP aplicada en `app.module.ts` |
-| F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Completado | Sin advertencias adicionales; builder migration opcional pendiente |
-| F1-4 | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | Completado | `ng build` OK; `ng test` no configurado |
-| F1-5 | Fase 1 (Angular 18) | Commit upgrade 18 | Completado | Commit local listo |
-| F2-1 | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Completado | Migrado a standalone components primero |
-| F2-2 | Fase 2 (Angular 19) | Analisis y migracion | Completado | Migraciones automáticas aplicadas |
-| F2-3 | Fase 2 (Angular 19) | Revision breaking changes | Completado | Sin breaking changes críticos |
-| F2-4 | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Completado | Build OK con standalone components |
-| F2-5 | Fase 2 (Angular 19) | Commit upgrade 19 | Completado | Commit 8afdb02 + e292d7c |
-| F3-1 | Fase 3 (Angular 20) | ng update core/cli 20 + material 20 | Completado | Angular 20.3.16 + Material 20.2.14 |
-| F3-2 | Fase 3 (Angular 20) | Analisis y migracion | Completado | Migraciones de v19 a v20 aplicadas |
-| F3-3 | Fase 3 (Angular 20) | Revision breaking changes | Completado | TypeScript 5.9.3, sin breaking changes |
-| F3-4 | Fase 3 (Angular 20) | Verificacion final | Completado | Build exitoso, advertencia menor |
-| F3-5 | Fase 3 (Angular 20) | Commit upgrade 20 | Completado | Commits c102e7d + fa45c38 |
-| F4-1 | Fase 4 (Post-actualizacion) | Revision de dependencias externas | Completado | animejs@3.2.2 funcionando OK |
-| F4-2 | Fase 4 (Post-actualizacion) | Limpieza de codigo | Completado | Código limpio, solo 1 warning menor |
-| F4-3 | Fase 4 (Post-actualizacion) | Merge rama | Pendiente | Listo para merge |
-| B1a | Bugs | Visibilidad en tema oscuro | Pendiente |  |
-| B1b | Bugs | Notas no se guardan | Pendiente | Potencialmente resuelto, falta verificacion |
-| B2a | Mejoras | Reordenar y clarificar menu lateral | En proceso | Corregido texto "Escalacion"; falta mover "Checklist (Admin)" |
-| B2b | Mejoras | Visualizador de logs de auditoria | Pendiente |  |
-| B2c | Mejoras | Purgar datos segura | Pendiente |  |
-| B2d | Mejoras | Gestion de tags: ver entradas por tag | Pendiente |  |
-| B2e | Mejoras | Mis entradas / Ver todas: contenido completo | En proceso | Dialogo listo en "Ver todas", falta "Mis entradas" |
-| B2f | Mejoras | Reportes: graficos | Pendiente |  |
-| B2g | Mejoras | Recuperacion de contrasena | Pendiente |  |
-| B2h | Mejoras | Reorganizacion pagina configuracion | Pendiente |  |
-| B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Pendiente |  |
-| B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Pendiente |  |
-| B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Pendiente |  |
-| B2l | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Pendiente | Ej: GLPI, payload y auth configurables |
-| B2m | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Pendiente | Ticket diario con titulo configurable |
-| B2n | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Pendiente | Uso, entradas, tags, checklists, incidentes |
-| B3a | Arquitectura | Etiquetas de cargo + rol auditor | Pendiente |  |
-| B4-1 | Observaciones | Eliminar backup.js.bak | Pendiente |  |
-| B4-2 | Observaciones | Validacion de variables de entorno | Pendiente |  |
-| B4-3 | Observaciones | Pruebas automatizadas backend | Pendiente |  |
-| B4-4 | Observaciones | Consistencia en nombres (kebab-case) | Pendiente |  |
-| B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Reparado |  |
-| B4-6 | Observaciones | Login, poder entrar con  correo como con nombre de usuario | Pendiente |  |
-| B4-7 | Observaciones | Aviso analistas de checklist | Pendiente |  |
-| C1-1 | Revisiones de seguridad y auditoria | Analisis de seguridad general | Pendiente |  |
-| D1-1 | Complementos | Modulo de complementos (plugins) | Pendiente |  |
+| P1 | Pendiente | Actualizacion Angular 20 | Plan general de actualizacion |  |
+| F0-1 | Completado | Fase 0 (Preparacion) | Crear rama aislada | Rama `feature/angular-20-upgrade` creada |
+| F0-2 | Completado | Fase 0 (Preparacion) | Limpieza del entorno | Reinstaladas dependencias en backend y frontend |
+| F0-3 | Completado | Fase 0 (Preparacion) | Verificar pruebas | `ng test` no configurado (sin target de test) |
+| F1-1 | Completado | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Angular/CLI/Material/CDK actualizados a 18.2.x |
+| F1-2 | Completado | Fase 1 (Angular 18) | Analisis y migracion | Migración HTTP aplicada en `app.module.ts` |
+| F1-3 | Completado | Fase 1 (Angular 18) | Revision breaking changes | Sin advertencias adicionales; builder migration opcional pendiente |
+| F1-4 | Completado | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | `ng build` OK; `ng test` no configurado |
+| F1-5 | Completado | Fase 1 (Angular 18) | Commit upgrade 18 | Commit local listo |
+| F2-1 | Completado | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Migrado a standalone components primero |
+| F2-2 | Completado | Fase 2 (Angular 19) | Analisis y migracion | Migraciones automáticas aplicadas |
+| F2-3 | Completado | Fase 2 (Angular 19) | Revision breaking changes | Sin breaking changes críticos |
+| F2-4 | Completado | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Build OK con standalone components |
+| F2-5 | Completado | Fase 2 (Angular 19) | Commit upgrade 19 | Commit 8afdb02 + e292d7c |
+| F3-1 | Completado | Fase 3 (Angular 20) | ng update core/cli 20 + material 20 | Angular 20.3.16 + Material 20.2.14 |
+| F3-2 | Completado | Fase 3 (Angular 20) | Analisis y migracion | Migraciones de v19 a v20 aplicadas |
+| F3-3 | Completado | Fase 3 (Angular 20) | Revision breaking changes | TypeScript 5.9.3, sin breaking changes |
+| F3-4 | Completado | Fase 3 (Angular 20) | Verificacion final | Build exitoso, advertencia menor |
+| F3-5 | Completado | Fase 3 (Angular 20) | Commit upgrade 20 | Commits c102e7d + fa45c38 |
+| F4-1 | Completado | Fase 4 (Post-actualizacion) | Revision de dependencias externas | animejs@3.2.2 funcionando OK |
+| F4-2 | Completado | Fase 4 (Post-actualizacion) | Limpieza de codigo | Código limpio, solo 1 warning menor |
+| F4-3 | Pendiente | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
+| B1a | Completado | Bugs | Visibilidad en tema oscuro | Commit d3112bd: Agregados estilos mat-menu-item y options en dark mode |
+| B1b | Completado | Bugs | Notas no se guardan | Verificado: autosave con debounce 3s funciona correctamente |
+| B2a | En proceso | Mejoras | Reordenar y clarificar menu lateral | Completado: Corregido 'Escalamiento' a 'Escalación' (d3112bd); Pendiente: mover Checklist Admin |
+| B2b | Pendiente | Mejoras | Visualizador de logs de auditoria |  |
+| B2c | Pendiente | Mejoras | Purgar datos segura |  |
+| B2d | Pendiente | Mejoras | Gestion de tags: ver entradas por tag |  |
+| B2e | En proceso | Mejoras | Mis entradas / Ver todas: contenido completo | Dialogo listo en "Ver todas", falta "Mis entradas" |
+| B2f | Pendiente | Mejoras | Reportes: graficos |  |
+| B2g | Pendiente | Mejoras | Recuperacion de contrasena |  |
+| B2h | Pendiente | Mejoras | Reorganizacion pagina configuracion |  |
+| B2i | Pendiente | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda |  |
+| B2j | Pendiente | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) |  |
+| B2k | Pendiente | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario |  |
+| B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
+| B2m | Pendiente | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Ticket diario con titulo configurable |
+| B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
+| B3a | Pendiente | Arquitectura | Etiquetas de cargo + rol auditor |  |
+| B4-1 | Pendiente | Observaciones | Eliminar backup.js.bak |  |
+| B4-2 | Pendiente | Observaciones | Validacion de variables de entorno |  |
+| B4-3 | Pendiente | Observaciones | Pruebas automatizadas backend |  |
+| B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) |  |
+| B4-5 | Completado | Observaciones | Error tipografico "escalamiento" lateral | Commit d3112bd: Corregido en ambos menús |
+| B4-6 | Pendiente | Observaciones | Login, poder entrar con  correo como con nombre de usuario |  |
+| B4-7 | Pendiente | Observaciones | Aviso analistas de checklist |  |
+| C1-1 | Pendiente | Revisiones de seguridad y auditoria | Analisis de seguridad general |  |
+| D1-1 | Pendiente | Complementos | Modulo de complementos (plugins) |  |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
