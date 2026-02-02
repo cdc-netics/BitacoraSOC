@@ -2,7 +2,7 @@
 
 Sistema completo de registro y gestión de actividades para Security Operations Center (SOC).
 
-**Stack:** Angular 17 + Express + MongoDB  
+**Stack:** Angular 20 + Express + MongoDB  
 **Despliegue:** Docker Compose (Frontend + Backend + MongoDB)  
 **Producción:** Listo para deploy con Docker
 

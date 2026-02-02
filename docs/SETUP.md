@@ -9,7 +9,7 @@ Guía detallada para instalar y configurar el sistema desde cero.
 - **Node.js** 18+ y npm
 - **MongoDB** 6+ (local o remoto)
 - **mongodump/mongorestore** (para backups)
-- **Angular CLI** `npm install -g @angular/cli`
+- **Angular CLI** 20+ `npm install -g @angular/cli`
 
 ---
 
@@ -41,7 +41,7 @@ npm install
 ```
 
 **Paquetes principales:**
-- @angular/core, @angular/material
+- @angular/core 20.3.16, @angular/material 20.2.14
 - anime.js (animaciones)
 
 ### 1.4 MongoDB
