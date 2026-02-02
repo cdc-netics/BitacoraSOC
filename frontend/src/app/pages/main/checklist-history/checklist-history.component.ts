@@ -6,15 +6,16 @@ import { ShiftCheck, ServiceCheck } from '../../../models/checklist.model';
 import { NgIf, NgFor, UpperCasePipe, DatePipe } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
-import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
+import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { MatDivider } from '@angular/material/divider';
 import { MatPaginator } from '@angular/material/paginator';
+import { MatIconButton } from '@angular/material/button';
 
 @Component({
     selector: 'app-checklist-history',
     templateUrl: './checklist-history.component.html',
     styleUrls: ['./checklist-history.component.scss'],
-    imports: [NgIf, MatProgressSpinner, MatIcon, MatAccordion, NgFor, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatDivider, MatPaginator, UpperCasePipe, DatePipe]
+    imports: [NgIf, MatProgressSpinner, MatIcon, MatAccordion, NgFor, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatDivider, MatPaginator, MatIconButton, UpperCasePipe, DatePipe]
 })
 export class ChecklistHistoryComponent implements OnInit {
   checks: ShiftCheck[] = [];
@@ -94,5 +95,26 @@ export class ChecklistHistoryComponent implements OnInit {
 
   getServicesWithIssues(check: ShiftCheck): number {
     return check.services.filter(s => s.status === 'rojo').length;
+  }
+
+  deleteCheck(check: ShiftCheck): void {
+    const checkId = String((check as any)._id || (check as any).id || '');
+    if (!checkId) return;
+    if (!confirm(`Eliminar checklist de ${this.getCheckTypeLabel(check.type)} (${this.getUserDisplay(check)})?`)) return;
+
+    this.checklistService.deleteCheck(checkId).subscribe({
+      next: () => {
+        this.snackBar.open('Checklist eliminado', 'Cerrar', { duration: 3000 });
+        this.checks = this.checks.filter(c => String((c as any)._id || (c as any).id) !== checkId);
+        this.totalChecks = Math.max(0, this.totalChecks - 1);
+        if (this.checks.length === 0 && this.currentPage > 1) {
+          this.currentPage -= 1;
+        }
+        this.loadHistory();
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Error eliminando checklist', 'Cerrar', { duration: 3000 });
+      }
+    });
   }
 }

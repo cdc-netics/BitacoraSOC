@@ -35,12 +35,13 @@ router.post('/',
     body('content').trim().notEmpty().withMessage('El contenido es requerido'),
     body('entryType').isIn(['operativa', 'incidente']).withMessage('Tipo de entrada inválido'),
     body('entryDate').isISO8601().withMessage('Fecha inválida'),
-    body('entryTime').matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage('Hora inválida (formato HH:mm)')
+    body('entryTime').matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage('Hora inválida (formato HH:mm)'),
+    body('clientId').optional().isMongoId().withMessage('ClientId inválido')
   ],
   validate,
   async (req, res) => {
     try {
-      const { content, entryType, entryDate, entryTime } = req.body;
+      const { content, entryType, entryDate, entryTime, clientId } = req.body;
 
       // 🕒 Forzar timezone Chile (America/Santiago)
       const entryDateObj = new Date(entryDate);
@@ -60,6 +61,7 @@ router.post('/',
         entryDate,
         entryTime,
         tags,
+        clientId: clientId || null,
         createdBy: req.user._id,
         createdByUsername: req.user.username,
         isGuestEntry: req.user.role === 'guest',
@@ -107,6 +109,7 @@ router.get('/',
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('search').optional().trim(),
     query('tags').optional(),
+    query('clientId').optional().isMongoId(),
     query('entryType').optional().isIn(['operativa', 'incidente']),
     query('startDate').optional().isISO8601(),
     query('endDate').optional().isISO8601(),
@@ -120,6 +123,7 @@ router.get('/',
         limit = 20,
         search,
         tags,
+        clientId,
         entryType,
         startDate,
         endDate,
@@ -142,6 +146,11 @@ router.get('/',
       if (tags) {
         const tagArray = tags.split(',').map(t => t.trim().toLowerCase());
         filters.tags = { $in: tagArray };
+      }
+
+      // Filtro por cliente (B2i)
+      if (clientId) {
+        filters.clientId = clientId;
       }
 
       // Filtro por tipo

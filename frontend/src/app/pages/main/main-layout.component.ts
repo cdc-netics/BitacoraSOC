@@ -78,7 +78,6 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { icon: 'history', label: 'Mis Entradas', route: '/main/my-entries', roles: ['admin'] },
     { icon: 'public', label: 'Ver todas', route: '/main/all-entries', roles: ['admin', 'user', 'guest'] },
     { icon: 'person', label: 'Mi Perfil', route: '/main/profile', roles: ['admin', 'user'] },
-    { icon: 'fact_check', label: 'Checklist (Admin)', route: '/main/checklist-admin', roles: ['admin'] },
     { icon: 'assessment', label: 'Reportes', route: '/main/reports', roles: ['admin', 'user'] }
   ];
 
@@ -89,7 +88,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
     { icon: 'image', label: 'Logo', route: '/main/logo', roles: ['admin'] },
     { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] },
-    { icon: 'settings', label: 'SMTP / Config', route: '/main/settings', roles: ['admin'] }
+    { icon: 'settings', label: 'SMTP / Config', route: '/main/settings', roles: ['admin'] },
+    { icon: 'fact_check', label: 'Checklist (Admin)', route: '/main/checklist-admin', roles: ['admin'] }
   ];
 
   visiblePrimaryMenu: MenuItem[] = [];

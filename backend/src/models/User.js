@@ -52,8 +52,14 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'user', 'guest'],
+    enum: ['admin', 'user', 'auditor', 'guest'],
     default: 'user'
+  },
+  // Etiqueta de cargo (N1, N2, TI, etc) - solo para users/auditors
+  cargoLabel: {
+    type: String,
+    trim: true,
+    default: null
   },
   isActive: {
     type: Boolean,

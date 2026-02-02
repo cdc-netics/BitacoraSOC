@@ -37,7 +37,7 @@ const generateToken = (userId, role) => {
 // POST /api/auth/login
 router.post('/login', 
   [
-    body('username').trim().notEmpty().withMessage('El usuario es requerido'),
+    body('username').trim().notEmpty().withMessage('El usuario o email es requerido'),
     body('password').notEmpty().withMessage('La contraseña es requerida')
   ],
   validate,
@@ -46,7 +46,10 @@ router.post('/login',
     try {
       const { username, password } = req.body;
 
-      const user = await User.findOne({ username });
+      // Buscar por username O email
+      const user = await User.findOne({ 
+        $or: [{ username }, { email: username }]
+      });
       console.log('🔵 Usuario encontrado:', !!user);
 
       if (!user || !user.isActive) {

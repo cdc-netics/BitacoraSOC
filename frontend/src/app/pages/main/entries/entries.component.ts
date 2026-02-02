@@ -6,38 +6,44 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EntryService } from '../../../services/entry.service';
+import { CatalogService } from '../../../services/catalog.service';
+import { CatalogLogSource } from '../../../models/catalog.model';
 import { CreateEntryRequest } from '../../../models/entry.model';
 import { AuthService } from '../../../services/auth.service';
 import { MatCard, MatCardContent } from '@angular/material/card';
 import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
-import { NgIf } from '@angular/common';
+import { NgIf, NgFor } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
+import { MatSelect, MatOption } from '@angular/material/select';
 
 @Component({
     selector: 'app-entries',
     templateUrl: './entries.component.html',
     styleUrls: ['./entries.component.scss'],
-    imports: [MatCard, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatButton, NgIf, MatIcon, MatProgressSpinner, MatRadioGroup, MatRadioButton]
+    imports: [MatCard, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatButton, NgIf, MatIcon, MatProgressSpinner, MatRadioGroup, MatRadioButton, MatSelect, MatOption, NgFor]
 })
 export class EntriesComponent implements OnInit {
   entryForm: FormGroup;
   today = '';
   nowTime = '';
   isSubmitting = false;
+  logSources: CatalogLogSource[] = [];
 
   constructor(
     private fb: FormBuilder,
     private entryService: EntryService,
+    private catalogService: CatalogService,
     private snackBar: MatSnackBar,
     private authService: AuthService
   ) {
     this.entryForm = this.fb.group({
       content: ['', [Validators.required, Validators.maxLength(50000)]],
-      entryType: ['operativa', Validators.required]
+      entryType: ['operativa', Validators.required],
+      clientId: [null] // Cliente/Log Source (B2i)
     });
 
     const now = new Date();
@@ -46,7 +52,15 @@ export class EntriesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Componente inicializado
+    // Cargar clientes disponibles
+    this.catalogService.searchLogSources('').subscribe(
+      (result) => {
+        this.logSources = result.items || [];
+      },
+      () => {
+        // Error silencioso, no es crítico
+      }
+    );
   }
 
   onSubmit(): void {

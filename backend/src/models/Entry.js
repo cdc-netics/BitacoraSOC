@@ -57,6 +57,16 @@ const entrySchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Cliente/Log Source (B2i)
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CatalogLogSource',
+    default: null
+  },
+  clientName: {
+    type: String,
+    default: null
+  },
   // Metadata
   ipAddress: String,
   userAgent: String
@@ -67,6 +77,7 @@ const entrySchema = new mongoose.Schema({
 // Índices para búsqueda y filtrado
 entrySchema.index({ content: 'text' });
 entrySchema.index({ tags: 1 });
+entrySchema.index({ clientId: 1 });
 entrySchema.index({ entryType: 1 });
 entrySchema.index({ createdAt: -1 });
 entrySchema.index({ entryDate: -1 });
@@ -76,5 +87,6 @@ entrySchema.index({ isGuestEntry: 1 });
 // Índice compuesto para filtros comunes
 entrySchema.index({ entryType: 1, createdAt: -1 });
 entrySchema.index({ tags: 1, createdAt: -1 });
+entrySchema.index({ clientId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Entry', entrySchema);

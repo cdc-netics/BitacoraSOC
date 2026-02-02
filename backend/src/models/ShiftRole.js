@@ -5,8 +5,8 @@ const shiftRoleSchema = new mongoose.Schema({
     type: String,
     required: true,
     uppercase: true,
-    trim: true,
-    enum: ['N2', 'TI', 'N1_NO_HABIL']
+    trim: true
+    // Flexible: permite N1, N2, TI, AUDITOR, etc. (sin enum fijo)
   },
   name: {
     type: String,
@@ -16,6 +16,16 @@ const shiftRoleSchema = new mongoose.Schema({
   description: {
     type: String,
     trim: true
+  },
+  // Nivel de escalada (1=junior, 2=senior, etc)
+  escalationLevel: {
+    type: Number,
+    default: 1
+  },
+  // Notificaciones automáticas (para B2m cierre turno)
+  notifyOnCheckClose: {
+    type: Boolean,
+    default: false
   },
   active: {
     type: Boolean,

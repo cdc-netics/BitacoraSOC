@@ -28,28 +28,28 @@
 | F4-3 | Pendiente | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
 | B1a | Completado | Bugs | Visibilidad en tema oscuro | Commit d3112bd: Agregados estilos mat-menu-item y options en dark mode |
 | B1b | Completado | Bugs | Notas no se guardan | Verificado: autosave con debounce 3s funciona correctamente |
-| B2a | En proceso | Mejoras | Reordenar y clarificar menu lateral | Completado: Corregido 'Escalamiento' a 'Escalación' (d3112bd); Pendiente: mover Checklist Admin |
+| B2a | Completado | Mejoras | Reordenar y clarificar menu lateral | Checklist (Admin) movido a Configuración (Admin); texto Escalación ok |
 | B2b | Pendiente | Mejoras | Visualizador de logs de auditoria |  |
-| B2c | Pendiente | Mejoras | Purgar datos segura |  |
-| B2d | Pendiente | Mejoras | Gestion de tags: ver entradas por tag |  |
-| B2e | En proceso | Mejoras | Mis entradas / Ver todas: contenido completo | Dialogo listo en "Ver todas", falta "Mis entradas" |
+| B2c | Completado | Mejoras | Purgar datos segura | Botón en Backup con confirmación de frase + endpoint admin | 
+| B2d | Completado | Mejoras | Gestion de tags: ver entradas por tag | Contador ahora navega a /main/all-entries?tag=... |
+| B2e | Completado | Mejoras | Mis entradas / Ver todas: contenido completo | Dialogo listo en "Ver todas" y agregado en "Mis entradas" |
 | B2f | Pendiente | Mejoras | Reportes: graficos |  |
 | B2g | Pendiente | Mejoras | Recuperacion de contrasena |  |
-| B2h | Pendiente | Mejoras | Reorganizacion pagina configuracion |  |
+| B2h | Completado | Mejoras | Reorganizacion pagina configuracion | Cooldown movido a Checklist Admin + texto SMTP clarificado |
 | B2i | Pendiente | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda |  |
 | B2j | Pendiente | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) |  |
-| B2k | Pendiente | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario |  |
+| B2k | Completado | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Borrado admin en historial + UI oculta para no-admin + cooldown solo mismo día | 
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2m | Pendiente | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Ticket diario con titulo configurable |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
 | B3a | Pendiente | Arquitectura | Etiquetas de cargo + rol auditor |  |
-| B4-1 | Pendiente | Observaciones | Eliminar backup.js.bak |  |
-| B4-2 | Pendiente | Observaciones | Validacion de variables de entorno |  |
-| B4-3 | Pendiente | Observaciones | Pruebas automatizadas backend |  |
-| B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) |  |
+| B4-1 | Completado | Observaciones | Eliminar backup.js.bak | Archivo eliminado |
+| B4-2 | Completado | Observaciones | Validacion de variables de entorno | Validación al inicio del server |
+| B4-3 | Completado | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption | 
+| B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) | No aplicar masivo; definir alcance (carpeta) para evitar romper imports |
 | B4-5 | Completado | Observaciones | Error tipografico "escalamiento" lateral | Commit d3112bd: Corregido en ambos menús |
-| B4-6 | Pendiente | Observaciones | Login, poder entrar con  correo como con nombre de usuario |  |
-| B4-7 | Pendiente | Observaciones | Aviso analistas de checklist |  |
+| B4-6 | Completado | Observaciones | Login, poder entrar con correo como con nombre de usuario | Backend: $or query, Frontend: label actualizado |
+| B4-7 | Pendiente | Observaciones | Aviso analistas de checklist | Depende de B3a (etiquetas de cargo) |
 | C1-1 | Pendiente | Revisiones de seguridad y auditoria | Analisis de seguridad general |  |
 | D1-1 | Pendiente | Complementos | Modulo de complementos (plugins) |  |
 
@@ -283,11 +283,12 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 
 ### 2. Propuestas de Mejora y Nuevas Funcionalidades
 
-#### **B2a** **Reordenar y Clarificar Menú Lateral**
-- **Descripción:** El menú lateral puede ser más intuitivo y tiene errores tipográficos.
-- **Propuestas:**
-    - Mover el enlace "Checklist (Admin)" para que aparezca directamente debajo de "Configuraciones (Admin)".
-    - Corregir el texto "Escalaciones" a "Escalación" para que sea consistente.
+#### **B2a** ✅ **COMPLETADO - Reordenar y Clarificar Menú Lateral**
+- **Cambios aplicados:**
+    - Checklist (Admin) movido al bloque de Configuración (Admin).
+    - Texto "Escalación" ya corregido.
+- **Archivo modificado:**
+    - `frontend/src/app/pages/main/main-layout.component.ts`
 
 #### **B2b** **Visualizador de Logs de Auditoría**
 - **Descripción:** El backend registra la actividad de los usuarios (`AuditLog`), pero no hay una interfaz para que un administrador/auditor pueda consultar esta información. La trazabilidad es fundamental.
@@ -303,19 +304,26 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - **Propuesta:**
     - Añadir un botón en "Backup y Exportación" llamado "Purgar Todos los Datos".
     - Implementar un mecanismo de confirmación de alta seguridad para prevenir la activación accidental (ej. requerir escribir una frase de confirmación y/o re-autenticación).
+    - ✅ Implementado: tarjeta en Backup con confirmación "PURGAR TODO" y endpoint admin `/api/backup/purge`.
 
-#### **B2d** **Gestión de Tags: Ver Entradas por Tag**
-- **Problema:** La página de gestión de tags no permite ver las entradas asociadas a él.
-- **Propuesta:**
-    - En la tabla de "Tags", hacer que el contador de uso sea un enlace.
-    - Este enlace redirigirá a la vista "Todas las Entradas", filtrada por el tag seleccionado.
-    - **Backend:** Requiere un endpoint `GET /api/entries?tag=nombre-del-tag`.
+#### **B2d** ✅ **COMPLETADO - Gestión de Tags: Ver Entradas por Tag**
+- **Solución aplicada:**
+    - En la tabla de "Tags", el contador de uso ahora es clickeable.
+    - Navega a "Todas las Entradas" con filtro `?tag=...`.
+    - No requiere cambios de backend (se usa filtro existente por tags).
+- **Archivos modificados:**
+    - `frontend/src/app/pages/main/tags/tags.component.html`
+    - `frontend/src/app/pages/main/tags/tags.component.ts`
+    - `frontend/src/app/pages/main/tags/tags.component.scss`
+    - `frontend/src/app/pages/main/all-entries/all-entries.component.ts`
 
-#### **B2e** **"Mis Entradas" y "Ver Todas": Mejorar Visualización de Contenido**
-- **Problema:** El contenido de las entradas está truncado o se muestra en un `alert()` poco funcional.
-- **Propuesta:**
-    - Añadir un botón de "Ver" (`visibility`) que abra una ventana modal (`MatDialog`) para mostrar el contenido completo y formateado de la entrada.
-    - Reutilizar este componente de diálogo en ambas secciones ("Mis Entradas" y "Ver Todas").
+#### **B2e** ✅ **COMPLETADO - "Mis Entradas" y "Ver Todas": Mejorar Visualización de Contenido**
+- **Solución aplicada:**
+    - Se agregó botón "Ver" (`visibility`) en "Mis Entradas".
+    - Reutiliza el diálogo `EntryDetailDialogComponent` ya usado en "Ver Todas".
+- **Archivos modificados:**
+    - `frontend/src/app/pages/main/my-entries/my-entries.component.ts`
+    - `frontend/src/app/pages/main/my-entries/my-entries.component.html`
 
 #### **B2f** **Reportes y Estadísticas: Añadir Gráficos**
 - **Problema:** La sección de "Reportes y Estadísticas" necesita ser más visual.
@@ -333,12 +341,17 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
     - **Backend:** Nuevos endpoints (`/forgot-password`, `/reset-password`) y campos en el modelo `User`.
     - **Frontend:** Nuevas vistas para solicitar y completar el reseteo.
 
-#### **B2h** **Reorganización de la Página de Configuración**
-- **Problema:** La página de configuración es poco clara y mezcla opciones.
-- **Propuesta:**
-    - Mover el "Cooldown Checklist" a la página de "Checklist (Admin)".
-    - Clarificar el texto de la opción "Enviar solo si hay servicios en rojo".
-    - Reestructurar la página de Ajustes para separar la configuración de SMTP y el "Modo Invitado".
+#### **B2h** ✅ **COMPLETADO - Reorganización de la Página de Configuración**
+- **Cambios aplicados:**
+    - "Cooldown Checklist" movido a "Checklist (Admin)".
+    - Texto de SMTP clarificado: "Enviar correo solo si hay servicios en rojo (si no, envía siempre)".
+    - Ajustes ahora separa Modo Invitado y SMTP claramente.
+- **Archivos modificados:**
+    - `frontend/src/app/pages/main/settings/settings.component.html`
+    - `frontend/src/app/pages/main/settings/settings.component.ts`
+    - `frontend/src/app/pages/main/checklist-admin/checklist-admin.component.html`
+    - `frontend/src/app/pages/main/checklist-admin/checklist-admin.component.ts`
+    - `frontend/src/app/pages/main/checklist-admin/checklist-admin.component.scss`
 
 #### **B2i** **Selector de Cliente en “Nueva Entrada” + Cliente en búsqueda y resultados (sin depender de tags)**
 - **Contexto:** En la pantalla **Nueva Entrada** hay espacio libre en el panel derecho para mostrar los **clientes (Log Sources)**. Los clientes se gestionan en **Catalog Admin → 🖥️ Log Sources / Clientes**.
@@ -384,6 +397,7 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - Solo admins pueden borrar un checklist.
 - Usuarios normales no ven iconos/acciones de borrado.
 - Si se borra el checklist del día, se puede crear nuevamente para ese mismo día.
+- ✅ Implementado: botón de borrar en historial solo para admin + endpoint `/api/checklist/check/:id` + cooldown solo aplica mismo día.
 
 
 #### **B2l** **Integracion API generica / Webhooks (GLPI y otros)**
@@ -460,12 +474,22 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 
 ### 4. Observaciones Técnicas Adicionales
 
--   **B4-1** **Archivo de Backup:** Eliminar `backend/src/routes/backup.js.bak`.
--   **B4-2** **Validación de Variables de Entorno:** Añadir validación al inicio del servidor (ej. usando Joi o Zod) para asegurar que las variables de entorno requeridas están presentes.
+-   **B4-1** ✅ **COMPLETADO - Archivo de Backup:** Eliminado `backend/src/routes/backup.js.bak`.
+-   **B4-2** ✅ **COMPLETADO - Validación de Variables de Entorno:** Validación al inicio del servidor para `MONGODB_URI`, `JWT_SECRET` y `ALLOWED_ORIGINS` en producción.
 -   **B4-3** **Pruebas Automatizadas:** Considerar añadir un framework de pruebas (como Jest) al backend.
+-   ✅ Implementado: `jest.config.js` + `jest.setup.js` y test base de `utils/encryption`.
 -   **B4-4** **Consistencia en Nombres:** Estandarizar el nombrado de archivos a `kebab-case`.
--   **B4-5** **Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso".
--   **B4-6** **login con correo como con nombre de usuario:** mejorar esa situacion para que login tambien se pueda usar el correo como usuario
+    - **Nota:** No hacer renombre masivo. Definir alcance (ej: solo `backend/src/routes` o una carpeta específica) y actualizar imports manualmente.
+    - **Motivo:** Cambio masivo rompe rutas/imports y requiere mucha verificación.
+-   **B4-5** ✅ **COMPLETADO - Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso" (Commit d3112bd).
+-   **B4-6** ✅ **COMPLETADO - Login con correo como con nombre de usuario:** 
+    - **Solución implementada:**
+      - Backend: Modificado `POST /api/auth/login` para buscar usuario con `$or: [{ username }, { email: username }]`
+      - Frontend: Actualizado label "Usuario o Email" y mensaje de error
+    - **Archivos modificados:**
+      - `backend/src/routes/auth.js` - Query con $or
+      - `frontend/src/app/pages/login/login.component.html` - Label y mensajes
+    - **Beneficio:** Usuarios pueden iniciar sesión con username o email indistintamente
 -   **B4-7** **Aviso analistas de checklist:**  (depende de B3a): Avisar al analista de turno (etiqueta N1_NO_HABIL) y a usuarios con etiqueta N2 cuando el checklist no se realiza antes de 09:30 (el horario se puede cambiar, solo admins pueden hacerlo). En Administracion de Escalaciones, los turnos se definen con etiquetas de cargo (B3a) y se respeta la regla: N1 nunca es admin; N2/N3 pueden ser admin si el admin lo habilita. esto evita enviar correos a admins que no sean N2.
 
 

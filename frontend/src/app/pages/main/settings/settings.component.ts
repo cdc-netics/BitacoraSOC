@@ -63,8 +63,7 @@ export class SettingsComponent implements OnInit {
     private snackBar: MatSnackBar
   ) {
     this.appConfigForm = this.fb.group({
-      guestEnabled: [false],
-      checklistCooldownHours: [24, [Validators.required, Validators.min(1)]]
+      guestEnabled: [false]
     });
 
     this.smtpForm = this.fb.group({
@@ -95,8 +94,7 @@ export class SettingsComponent implements OnInit {
     this.configService.getConfig().subscribe({
       next: (config) => {
         this.appConfigForm.patchValue({
-          guestEnabled: config.guestModeEnabled,
-          checklistCooldownHours: config.shiftCheckCooldownHours
+          guestEnabled: config.guestModeEnabled
         });
       },
       error: (err) => console.error('Error cargando config:', err)

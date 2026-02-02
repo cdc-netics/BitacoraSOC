@@ -49,7 +49,7 @@
             </button>
           </div>
 
-          <!-- Columna derecha: Clasificación -->
+          <!-- Columna derecha: Clasificación + Cliente -->
           <div class="entry-form-right">
             <h3>Clasificación de la Entrada</h3>
             <mat-radio-group formControlName="entryType" class="entry-type-selector">
@@ -70,6 +70,18 @@
               <strong>Operativa:</strong> Eventos rutinarios<br>
               <strong>Incidente:</strong> Eventos que requieren respuesta
             </p>
+
+            <!-- Cliente / Log Source (B2i) -->
+            <mat-form-field appearance="outline" class="full-width" style="margin-top: 20px;">
+              <mat-label>Cliente / Log Source</mat-label>
+              <mat-select formControlName="clientId">
+                <mat-option [value]="null">-- Ninguno --</mat-option>
+                <mat-option *ngFor="let source of logSources" [value]="source._id">
+                  {{ source.code }} - {{ source.name }}
+                </mat-option>
+              </mat-select>
+              <mat-hint>Selecciona el origen de la entrada (opcional)</mat-hint>
+            </mat-form-field>
           </div>
         </div>
       </form>

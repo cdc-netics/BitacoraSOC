@@ -6,12 +6,16 @@ const mongoose = require('mongoose');
 const ChecklistTemplate = require('../models/ChecklistTemplate');
 const ServiceCatalog = require('../models/ServiceCatalog');
 const ShiftCheck = require('../models/ShiftCheck');
+const ShiftClosure = require('../models/ShiftClosure');
+const Entry = require('../models/Entry');
 const AppConfig = require('../models/AppConfig');
 const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const captureMetadata = require('../middleware/metadata');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
+
+const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
 
 const ensureObjectId = (value) => (
   mongoose.Types.ObjectId.isValid(value) ? value : new mongoose.Types.ObjectId()
@@ -456,7 +460,7 @@ router.post('/check',
         }
       }
 
-      const lastCheck = await ShiftCheck.findOne({ userId }).sort({ createdAt: -1 });
+      const lastCheck = await ShiftCheck.findOne({}).sort({ createdAt: -1 });
       if (lastCheck && lastCheck.type === type) {
         const expectedType = type === 'inicio' ? 'cierre' : 'inicio';
 
@@ -464,7 +468,7 @@ router.post('/check',
           event: 'shiftcheck.block.consecutive',
           level: 'warn',
           result: { success: false, reason: `Consecutive ${type} blocked` },
-          metadata: { type, lastCheckType: lastCheck.type, expectedType }
+          metadata: { type, lastCheckType: lastCheck.type, expectedType, lastCheckUserId: lastCheck.userId }
         });
 
         return res.status(400).json({ message: `No puedes registrar dos "${type}" consecutivos. Debes hacer "${expectedType}" primero.` });
@@ -475,7 +479,8 @@ router.post('/check',
 
       if (lastCheck) {
         const hoursSinceLastCheck = (Date.now() - lastCheck.createdAt.getTime()) / (1000 * 60 * 60);
-        if (hoursSinceLastCheck < cooldownHours) {
+        const sameDay = isSameDay(lastCheck.createdAt, new Date());
+        if (sameDay && hoursSinceLastCheck < cooldownHours) {
           const remainingHours = (cooldownHours - hoursSinceLastCheck).toFixed(1);
 
           await audit(req, {
@@ -486,7 +491,8 @@ router.post('/check',
               type,
               cooldownHours,
               hoursSinceLastCheck: hoursSinceLastCheck.toFixed(2),
-              remainingHours
+              remainingHours,
+              sameDay
             }
           });
 
@@ -608,5 +614,159 @@ router.get('/check/history', authenticate, async (req, res) => {
     res.status(500).json({ message: 'Error al obtener historial' });
   }
 });
+
+// DELETE /api/checklist/check/:id - Eliminar checklist (admin)
+router.delete('/check/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🗑️ DELETE INICIADO para check ID:', id);
+    
+    const check = await ShiftCheck.findById(id);
+    console.log('📋 Check encontrado:', check ? `Sí (${check._id}, type: ${check.type})` : 'NO ENCONTRADO');
+
+    if (!check) {
+      console.log('❌ Check no existe en DB');
+      return res.status(404).json({ message: 'Checklist no encontrado' });
+    }
+
+    const deleteResult = await ShiftCheck.findByIdAndDelete(id);
+    console.log('✅ findByIdAndDelete ejecutado');
+    console.log('   Resultado:', deleteResult ? `Eliminado: ${deleteResult._id}` : 'Retornó null');
+
+    // Verificar que se eliminó realmente
+    const checkAfterDelete = await ShiftCheck.findById(id);
+    console.log('🔍 Verificación post-delete:', checkAfterDelete ? '❌ AÚN EXISTE!' : '✅ Confirmado eliminado');
+
+    await audit(req, {
+      event: 'shiftcheck.delete',
+      level: 'warn',
+      result: { success: true, checkId: id, type: check.type, userId: check.userId }
+    });
+
+    console.log('📝 Auditado correctamente');
+    res.json({ message: 'Checklist eliminado' });
+  } catch (error) {
+    console.error('❌ ERROR EN DELETE:', error.message);
+    logger.error({ err: error }, 'Error eliminando checklist');
+    res.status(500).json({ message: 'Error eliminando checklist' });
+  }
+});
+
+// POST /api/checklist/closure - Registrar cierre de turno (B2m)
+router.post('/closure',
+  authenticate,
+  [
+    body('checkId').isMongoId().withMessage('checkId requerido'),
+    body('observaciones').optional().trim(),
+    body('servicesDown').optional().isArray().withMessage('servicesDown debe ser array')
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { checkId, observaciones, servicesDown } = req.body;
+      const userId = req.user._id;
+
+      // Obtener el check de cierre
+      const closureCheck = await ShiftCheck.findById(checkId);
+      if (!closureCheck || closureCheck.userId.toString() !== userId.toString()) {
+        return res.status(404).json({ message: 'Check no encontrado o no pertenece al usuario' });
+      }
+
+      // Obtener check de inicio para delimitar turno
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const startCheck = await ShiftCheck.findOne({
+        userId,
+        type: 'inicio',
+        createdAt: { $gte: today, $lt: tomorrow }
+      });
+
+      const shiftStartAt = startCheck?.createdAt || today;
+      const shiftEndAt = new Date();
+
+      // Contar entradas del turno
+      const entries = await Entry.find({
+        createdBy: userId,
+        createdAt: { $gte: shiftStartAt, $lte: shiftEndAt }
+      }).select('entryType');
+
+      const totalEntries = entries.length;
+      const totalIncidents = entries.filter(e => e.entryType === 'incidente').length;
+
+      // Crear registro de cierre
+      const closure = new ShiftClosure({
+        userId,
+        shiftStartAt,
+        shiftEndAt,
+        closureCheckId: checkId,
+        summary: {
+          totalEntries,
+          totalIncidents,
+          servicesDown: servicesDown || [],
+          observaciones: observaciones || ''
+        }
+      });
+
+      await closure.save();
+
+      // Auditar cierre de turno
+      await audit(req, {
+        event: 'shift.closure',
+        level: 'info',
+        result: { success: true, closureId: closure._id },
+        metadata: {
+          totalEntries,
+          totalIncidents,
+          servicesDownCount: (servicesDown || []).length
+        }
+      });
+
+      res.status(201).json({
+        message: 'Turno cerrado exitosamente',
+        closure
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Error registrando cierre de turno');
+      res.status(500).json({ message: 'Error al registrar cierre de turno' });
+    }
+  }
+);
+
+// GET /api/checklist/closures - Obtener cierres de turno del usuario (B2m)
+router.get('/closures',
+  authenticate,
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { limit = 10, page = 1 } = req.query;
+      const skip = (page - 1) * limit;
+
+      const [closures, total] = await Promise.all([
+        ShiftClosure.find({ userId })
+          .sort({ shiftEndAt: -1 })
+          .skip(skip)
+          .limit(parseInt(limit))
+          .lean(),
+        ShiftClosure.countDocuments({ userId })
+      ]);
+
+      res.json({
+        closures,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Error obteniendo cierres de turno');
+      res.status(500).json({ message: 'Error al obtener cierres de turno' });
+    }
+  }
+);
 
 module.exports = router;

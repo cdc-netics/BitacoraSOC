@@ -64,4 +64,17 @@
 mat-chip {
   background-color: var(--primary-color) !important;
   color: white !important;
+
+.tag-count-link {
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
+}
 }

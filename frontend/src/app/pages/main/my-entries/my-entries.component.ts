@@ -10,12 +10,14 @@ import { MatChipSet, MatChip } from '@angular/material/chips';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { EntryDetailDialogComponent } from '../all-entries/entry-detail-dialog.component';
 
 @Component({
     selector: 'app-my-entries',
     templateUrl: './my-entries.component.html',
     styleUrls: ['./my-entries.component.scss'],
-    imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe]
+  imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe, MatDialogModule, EntryDetailDialogComponent]
 })
 export class MyEntriesComponent implements OnInit {
   displayedColumns: string[] = ['date', 'time', 'type', 'content', 'tags', 'actions'];
@@ -27,7 +29,8 @@ export class MyEntriesComponent implements OnInit {
 
   constructor(
     private entryService: EntryService,
-    private authService: AuthService
+    private authService: AuthService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -72,5 +75,28 @@ export class MyEntriesComponent implements OnInit {
       // TODO: Implementar eliminación
       console.log('Eliminar:', entry);
     }
+  }
+
+  viewEntry(entry: Entry): void {
+    const author = entry.createdByUsername || this.currentUser?.username || 'N/A';
+    const date = entry.entryDate;
+    const time = entry.entryTime;
+    const type = entry.entryType === 'incidente' ? 'INCIDENTE' : 'Operativa';
+    const tags = entry.tags?.join(', ') || 'Sin tags';
+
+    const details = `Fecha: ${date} ${time}
+Autor: ${author}
+Tags: ${tags}`;
+
+    this.dialog.open(EntryDetailDialogComponent, {
+      data: {
+        title: `Entrada ${type}`,
+        details,
+        content: entry.content || ''
+      },
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '85vh'
+    });
   }
 }

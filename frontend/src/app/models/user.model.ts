@@ -4,7 +4,8 @@ export interface User {
   email: string;
   fullName: string;
   phone?: string;
-  role: 'admin' | 'user' | 'guest';
+  role: 'admin' | 'user' | 'auditor' | 'guest';
+  cargoLabel?: string; // Etiqueta de cargo (N1, N2, TI, AUDITOR, etc)
   isActive: boolean;
   theme: Theme;
   avatar?: string;

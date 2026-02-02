@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { TagService } from '../../../services/tag.service';
 import { TagStats } from '../../../models/report.model';
 import { NgIf } from '@angular/common';
@@ -23,7 +24,8 @@ export class TagsComponent implements OnInit {
 
   constructor(
     private tagService: TagService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -73,6 +75,13 @@ export class TagsComponent implements OnInit {
       error: (err) => {
         this.snackBar.open(err.error?.message || 'Error actualizando tag', 'Cerrar', { duration: 3000 });
       }
+    });
+  }
+
+  viewEntriesByTag(tag: TagStats & { name?: string }): void {
+    const tagName = tag.tag || tag.name || '';
+    this.router.navigate(['/main/all-entries'], {
+      queryParams: { tag: tagName }
     });
   }
 }

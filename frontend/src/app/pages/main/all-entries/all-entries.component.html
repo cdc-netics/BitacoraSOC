@@ -20,6 +20,16 @@
               </mat-option>
             </mat-select>
           </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente / Log Source</mat-label>
+            <mat-select formControlName="clientId">
+              <mat-option [value]="">-- Todos --</mat-option>
+              <mat-option *ngFor="let source of logSources" [value]="source._id">
+                {{ source.code }} - {{ source.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
 
         <div class="search-row">
@@ -91,6 +101,13 @@
             <mat-chip-set>
               <mat-chip *ngFor="let tag of entry.tags">{{ tag }}</mat-chip>
             </mat-chip-set>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="clientId">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let entry">
+            {{ entry.clientName || (entry.clientId ? ('(' + entry.clientId + ')') : '-') }}
           </td>
         </ng-container>
 

@@ -13,6 +13,8 @@ export interface Entry {
   entryDate: string; // ISO date string
   entryTime: string; // HH:mm format
   tags: string[];
+  clientId?: string; // ID del cliente/log source (B2i)
+  clientName?: string; // Nombre del cliente
   createdBy: {
     _id: string;
     username: string;
@@ -34,6 +36,7 @@ export interface CreateEntryRequest {
   entryType: EntryType;
   entryDate: string;
   entryTime: string;
+  clientId?: string; // Cliente/Log Source (B2i)
 }
 
 export interface EntriesResponse {
@@ -51,6 +54,7 @@ export interface EntryFilters {
   limit?: number;
   search?: string;
   tags?: string;
+  clientId?: string; // Filtro por cliente (B2i)
   entryType?: EntryType;
   startDate?: string;
   endDate?: string;

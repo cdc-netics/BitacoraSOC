@@ -31,6 +31,22 @@ const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 3000;
 const APP_VERSION = process.env.APP_VERSION || 'dev';
 
+// Validación básica de variables de entorno requeridas
+const validateEnv = () => {
+  const required = ['MONGODB_URI', 'JWT_SECRET'];
+  if (process.env.NODE_ENV === 'production') {
+    required.push('ALLOWED_ORIGINS');
+  }
+
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length) {
+    console.error(`❌ Faltan variables de entorno requeridas: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+};
+
+validateEnv();
+
 // Conectar a MongoDB
 connectDB();
 

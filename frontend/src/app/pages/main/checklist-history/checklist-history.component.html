@@ -36,6 +36,11 @@
               </div>
             </div>
           </mat-panel-title>
+          <mat-panel-description *ngIf="isAdmin" class="check-actions">
+            <button mat-icon-button color="warn" (click)="deleteCheck(check); $event.stopPropagation()" aria-label="Eliminar checklist">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-panel-description>
         </mat-expansion-panel-header>
 
         <div class="check-details">

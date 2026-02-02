@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChecklistService } from '../../../services/checklist.service';
+import { ConfigService } from '../../../services/config.service';
 import { ChecklistTemplate, ChecklistItem } from '../../../models/checklist.model';
 import { MatCard, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { NgIf, NgFor } from '@angular/common';
@@ -24,11 +25,14 @@ export class ChecklistAdminComponent implements OnInit {
   templates: ChecklistTemplate[] = [];
   selectedTemplate: ChecklistTemplate | null = null;
   isLoading = false;
+  savingConfig = false;
   form: FormGroup;
+  configForm: FormGroup;
 
   constructor(
     private fb: FormBuilder,
     private checklistService: ChecklistService,
+    private configService: ConfigService,
     private snackBar: MatSnackBar
   ) {
     this.form = this.fb.group({
@@ -36,11 +40,49 @@ export class ChecklistAdminComponent implements OnInit {
       description: [''],
       items: this.fb.array([])
     });
+
+    this.configForm = this.fb.group({
+      checklistCooldownHours: [24, [Validators.required, Validators.min(1)]]
+    });
   }
 
   ngOnInit(): void {
+    this.loadConfig();
     this.loadTemplates();
     this.addItem();
+  }
+
+  loadConfig(): void {
+    this.configService.getConfig().subscribe({
+      next: (config) => {
+        this.configForm.patchValue({
+          checklistCooldownHours: config.shiftCheckCooldownHours
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando config checklist:', err);
+        this.snackBar.open('Error cargando configuración de checklist', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  saveConfig(): void {
+    if (this.configForm.invalid) return;
+    this.savingConfig = true;
+    const payload = {
+      shiftCheckCooldownHours: this.configForm.value.checklistCooldownHours
+    };
+    this.configService.updateConfig(payload).subscribe({
+      next: () => {
+        this.snackBar.open('Cooldown checklist actualizado', 'Cerrar', { duration: 2000 });
+      },
+      error: () => {
+        this.snackBar.open('Error guardando cooldown checklist', 'Cerrar', { duration: 3000 });
+      },
+      complete: () => {
+        this.savingConfig = false;
+      }
+    });
   }
 
   get items(): FormArray {

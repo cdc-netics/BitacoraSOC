@@ -11,18 +11,23 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
 
 @Component({
     selector: 'app-backup',
     templateUrl: './backup.component.html',
     styleUrls: ['./backup.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, MatIcon, MatCardContent, MatButton, NgIf, MatProgressSpinner, MatCheckbox, ReactiveFormsModule, FormsModule, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
+    imports: [MatCard, MatCardHeader, MatCardTitle, MatIcon, MatCardContent, MatButton, NgIf, MatProgressSpinner, MatCheckbox, ReactiveFormsModule, FormsModule, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFormField, MatLabel, MatHint, MatInput]
 })
 export class BackupComponent implements OnInit {
   isExporting = false;
   isImporting = false;
+  isPurging = false;
   backupHistory: any[] = [];
   clearBeforeRestore = false;
+  purgeConfirmText = '';
+  readonly purgeConfirmRequired = 'PURGAR TODO';
 
   constructor(
     private http: HttpClient,
@@ -144,6 +149,31 @@ export class BackupComponent implements OnInit {
         this.isImporting = false;
         this.snackBar.open(err.error?.message || 'Error importando', 'Cerrar', { duration: 3000 });
         input.value = '';
+      }
+    });
+  }
+
+  purgeAllData(): void {
+    if (this.purgeConfirmText.trim() !== this.purgeConfirmRequired) {
+      this.snackBar.open(`Escribe exactamente: ${this.purgeConfirmRequired}`, 'Cerrar', { duration: 4000 });
+      return;
+    }
+
+    if (!confirm('⚠️ Esta acción elimina TODOS los datos del sistema. ¿Deseas continuar?')) return;
+
+    this.isPurging = true;
+    this.http.post<any>(`${environment.apiUrl}/backup/purge`, {
+      confirmation: this.purgeConfirmText.trim()
+    }).subscribe({
+      next: (response) => {
+        this.isPurging = false;
+        this.snackBar.open(response.message || 'Datos purgados', 'Cerrar', { duration: 5000 });
+        this.purgeConfirmText = '';
+        this.loadBackupHistory();
+      },
+      error: (err) => {
+        this.isPurging = false;
+        this.snackBar.open(err.error?.message || 'Error purgando datos', 'Cerrar', { duration: 4000 });
       }
     });
   }

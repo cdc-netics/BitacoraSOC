@@ -37,6 +37,24 @@
   }
 }
 
+.danger-card {
+  border: 1px solid rgba(244, 67, 54, 0.4);
+
+  mat-card-title {
+    color: #f44336;
+  }
+}
+
+.purge-field {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.purge-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .button-group {
   display: flex;
   gap: 8px;

@@ -12,7 +12,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ActivatedRoute } from '@angular/router';
 import { EntryService } from '../../../services/entry.service';
+import { CatalogService } from '../../../services/catalog.service';
+import { CatalogLogSource } from '../../../models/catalog.model';
 import { Entry } from '../../../models/entry.model';
 import { AuthService } from '../../../services/auth.service';
 import { EntryDetailDialogComponent } from './entry-detail-dialog.component';
@@ -45,8 +48,9 @@ export class AllEntriesComponent implements OnInit {
   pageSize = 20;
   currentPage = 1;
   isGuest = false;
+  logSources: CatalogLogSource[] = [];
 
-  displayedColumns: string[] = ['entryDate', 'entryTime', 'entryType', 'content', 'tags', 'author', 'actions'];
+  displayedColumns: string[] = ['entryDate', 'entryTime', 'entryType', 'content', 'tags', 'clientId', 'author', 'actions'];
 
   entryTypeOptions: { value: string; label: string }[] = [
     { value: '', label: 'Todos' },
@@ -57,13 +61,16 @@ export class AllEntriesComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private entryService: EntryService,
+    private catalogService: CatalogService,
     private authService: AuthService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private route: ActivatedRoute
   ) {
     this.searchForm = this.fb.group({
       query: [''],
       entryType: [''],
+      clientId: [''],
       startDate: [''],
       endDate: [''],
       tags: ['']
@@ -76,7 +83,25 @@ export class AllEntriesComponent implements OnInit {
     if (this.isGuest) {
       this.displayedColumns = this.displayedColumns.filter(col => col !== 'actions');
     }
-    this.loadEntries();
+
+    // Cargar clientes disponibles
+    this.catalogService.searchLogSources('').subscribe(
+      (result) => {
+        this.logSources = result.items || [];
+      },
+      () => {
+        // Error silencioso
+      }
+    );
+
+    this.route.queryParamMap.subscribe(params => {
+      const tag = params.get('tag')?.trim();
+      if (tag) {
+        this.searchForm.patchValue({ tags: tag });
+      }
+      this.currentPage = 1;
+      this.loadEntries();
+    });
   }
 
   loadEntries(): void {
@@ -88,6 +113,7 @@ export class AllEntriesComponent implements OnInit {
 
     if (filters.query?.trim()) params.query = filters.query.trim();
     if (filters.entryType) params.entryType = filters.entryType;
+    if (filters.clientId) params.clientId = filters.clientId; // Filtro cliente (B2i)
     if (filters.startDate) params.startDate = filters.startDate;
     if (filters.endDate) params.endDate = filters.endDate;
     if (filters.tags?.trim()) params.tags = filters.tags.trim();

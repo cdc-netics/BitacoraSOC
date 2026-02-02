@@ -67,6 +67,31 @@
         </button>
       </mat-card-content>
     </mat-card>
+
+    <!-- Purgar datos -->
+    <mat-card class="backup-card danger-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>warning</mat-icon>
+          Purgar Todos los Datos
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>Elimina TODA la información del sistema. Esta acción es irreversible.</p>
+        <mat-form-field appearance="outline" class="purge-field">
+          <mat-label>Confirmación</mat-label>
+          <input matInput [(ngModel)]="purgeConfirmText" placeholder="Escribe: {{ purgeConfirmRequired }}">
+          <mat-hint>Debes escribir exactamente: {{ purgeConfirmRequired }}</mat-hint>
+        </mat-form-field>
+        <div class="purge-actions">
+          <button mat-raised-button color="warn" (click)="purgeAllData()" [disabled]="isPurging">
+            <mat-spinner *ngIf="isPurging" diameter="20"></mat-spinner>
+            <mat-icon *ngIf="!isPurging">delete_forever</mat-icon>
+            <span *ngIf="!isPurging">Purgar Datos</span>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
   </div>
 
   <!-- Historial de backups -->

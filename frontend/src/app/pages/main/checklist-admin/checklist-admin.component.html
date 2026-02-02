@@ -2,6 +2,21 @@
   <h1>Checklist (Admin)</h1>
   <p class="hint">Crea plantillas, activalas y define el checklist que veran todos los usuarios (incluyendo guests).</p>
 
+  <mat-card class="config-card">
+    <mat-card-title>Configuración de Checklist</mat-card-title>
+    <mat-card-content>
+      <form [formGroup]="configForm" (ngSubmit)="saveConfig()" class="config-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Cooldown Checklist (horas)</mat-label>
+          <input matInput type="number" formControlName="checklistCooldownHours">
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="submit" [disabled]="configForm.invalid || savingConfig">
+          Guardar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
   <div class="layout">
     <mat-card class="list-card">
       <mat-card-title>Plantillas</mat-card-title>

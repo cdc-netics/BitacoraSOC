@@ -13,11 +13,11 @@
     <mat-card-content>
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Usuario</mat-label>
+          <mat-label>Usuario o Email</mat-label>
           <input matInput formControlName="username" autocomplete="username">
           <mat-icon matPrefix>person</mat-icon>
           <mat-error *ngIf="loginForm.get('username')?.hasError('required')">
-            El usuario es requerido
+            El usuario o email es requerido
           </mat-error>
           <mat-error *ngIf="loginForm.get('username')?.hasError('minlength')">
             Mínimo 3 caracteres

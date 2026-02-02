@@ -114,7 +114,14 @@ export class ChecklistService {
   }
 
   getCheckHistory(page = 1, limit = 20): Observable<CheckHistoryResponse> {
-    const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString());
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('t', Date.now().toString());
     return this.http.get<CheckHistoryResponse>(`${this.API_URL}/check/history`, { params });
+  }
+
+  deleteCheck(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.API_URL}/check/${id}`);
   }
 }

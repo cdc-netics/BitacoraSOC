@@ -46,6 +46,8 @@ const ShiftRotationCycle = require('../models/ShiftRotationCycle');
 const SmtpConfig = require('../models/SmtpConfig');
 const multer = require('multer');
 
+const PURGE_CONFIRM_PHRASE = 'PURGAR TODO';
+
 // Configurar multer para importación
 const upload = multer({
   dest: path.join(__dirname, '../../backups/temp'),
@@ -85,6 +87,32 @@ const arrayToCSV = (data) => {
   );
   
   return [headers.join(','), ...rows].join('\n');
+};
+
+const backupModels = {
+  entries: Entry,
+  checks: ShiftCheck,
+  users: User,
+  adminNotes: AdminNote,
+  appConfigs: AppConfig,
+  auditLogs: AuditLog,
+  catalogEvents: CatalogEvent,
+  catalogLogSources: CatalogLogSource,
+  catalogOperationTypes: CatalogOperationType,
+  checklistTemplates: ChecklistTemplate,
+  clients: Client,
+  contacts: Contact,
+  escalationRules: EscalationRule,
+  externalPersons: ExternalPerson,
+  logForwardingConfigs: LogForwardingConfig,
+  personalNotes: PersonalNote,
+  services: Service,
+  serviceCatalogs: ServiceCatalog,
+  shiftAssignments: ShiftAssignment,
+  shiftOverrides: ShiftOverride,
+  shiftRoles: ShiftRole,
+  shiftRotationCycles: ShiftRotationCycle,
+  smtpConfigs: SmtpConfig
 };
 
 // GET /api/backup/history - Historial de backups (admin)
@@ -224,31 +252,7 @@ router.post('/restore', authenticate, authorize('admin'), async (req, res) => {
     }
     
     // Definir modelos
-    const models = {
-      entries: Entry,
-      checks: ShiftCheck,
-      users: User,
-      adminNotes: AdminNote,
-      appConfigs: AppConfig,
-      auditLogs: AuditLog,
-      catalogEvents: CatalogEvent,
-      catalogLogSources: CatalogLogSource,
-      catalogOperationTypes: CatalogOperationType,
-      checklistTemplates: ChecklistTemplate,
-      clients: Client,
-      contacts: Contact,
-      escalationRules: EscalationRule,
-      externalPersons: ExternalPerson,
-      logForwardingConfigs: LogForwardingConfig,
-      personalNotes: PersonalNote,
-      services: Service,
-      serviceCatalogs: ServiceCatalog,
-      shiftAssignments: ShiftAssignment,
-      shiftOverrides: ShiftOverride,
-      shiftRoles: ShiftRole,
-      shiftRotationCycles: ShiftRotationCycle,
-      smtpConfigs: SmtpConfig
-    };
+    const models = backupModels;
     
     // Si clearBeforeRestore=true, borrar TODAS las colecciones primero
     if (clearBeforeRestore === true) {
@@ -417,6 +421,38 @@ router.post('/import',
     }
   }
 );
+
+// POST /api/backup/purge - Purgar todos los datos (admin)
+router.post('/purge', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { confirmation } = req.body || {};
+    if (confirmation !== PURGE_CONFIRM_PHRASE) {
+      return res.status(400).json({
+        message: `Confirmación inválida. Debes escribir exactamente: ${PURGE_CONFIRM_PHRASE}`
+      });
+    }
+
+    let deletedCollections = 0;
+    for (const Model of Object.values(backupModels)) {
+      await Model.deleteMany({});
+      deletedCollections += 1;
+    }
+
+    await audit(req, {
+      event: 'admin.backup.purge',
+      level: 'warning',
+      result: { success: true, deletedCollections }
+    });
+
+    res.json({
+      message: 'Datos purgados exitosamente',
+      deletedCollections
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Error purgando datos');
+    res.status(500).json({ message: 'Error purgando datos' });
+  }
+});
 
 // DELETE /api/backup/:id - Eliminar backup (admin)
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {

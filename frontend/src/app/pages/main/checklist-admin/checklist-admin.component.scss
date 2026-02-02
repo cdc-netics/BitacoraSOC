@@ -8,6 +8,17 @@
     margin-bottom: 16px;
   }
 
+  .config-card {
+    margin-bottom: 16px;
+
+    .config-form {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+  }
+
   .layout {
     display: grid;
     grid-template-columns: 320px 1fr;

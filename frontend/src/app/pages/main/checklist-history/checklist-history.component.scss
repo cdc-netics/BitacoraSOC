@@ -117,6 +117,12 @@
   padding: 1rem 0;
 }
 
+.check-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .status-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
