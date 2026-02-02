@@ -99,7 +99,19 @@ export class AuthService {
     const user = this.getCurrentUser();
     return user ? roles.includes(user.role) : false;
   }
+  forgotPassword(email: string): Observable<{ message: string; resetToken?: string; resetUrl?: string }> {
+    return this.http.post<{ message: string; resetToken?: string; resetUrl?: string }>(
+      `${this.API_URL}/auth/forgot-password`,
+      { email }
+    );
+  }
 
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.API_URL}/auth/reset-password`,
+      { token, newPassword }
+    );
+  }
   private setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
   }

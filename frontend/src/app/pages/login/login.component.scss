@@ -58,6 +58,23 @@ form {
   margin-top: 10px;
 }
 
+.forgot-password-link {
+  text-align: center;
+  margin-top: 16px;
+  
+  .link-text {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+    
+    &:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+  }
+}
+
 mat-card-footer {
   margin-top: 30px;
   

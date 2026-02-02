@@ -29,6 +29,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { environment } from '../../../environments/environment';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatCardFooter } from '@angular/material/card';
 import { NgIf } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { MatFormField, MatLabel, MatPrefix, MatError, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -39,7 +40,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, NgIf, MatIcon, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatPrefix, MatError, MatIconButton, MatSuffix, MatButton, MatProgressSpinner, MatCardFooter]
+    imports: [MatCard, MatCardHeader, MatCardTitle, NgIf, RouterModule, MatIcon, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatPrefix, MatError, MatIconButton, MatSuffix, MatButton, MatProgressSpinner, MatCardFooter]
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;

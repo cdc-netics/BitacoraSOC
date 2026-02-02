@@ -56,6 +56,12 @@
           <span *ngIf="!loading">Iniciar Sesión</span>
           <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
         </button>
+
+        <div class="forgot-password-link">
+          <a routerLink="/auth/forgot-password" class="link-text">
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
       </form>
     </mat-card-content>
 

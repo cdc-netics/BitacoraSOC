@@ -37,8 +37,8 @@ const smtpValidators = [
   body('useTLS').isBoolean(),
   body('senderName').trim().notEmpty(),
   body('senderEmail').isEmail().normalizeEmail(),
-  body('recipients').isArray({ min: 1 }).withMessage('Debe haber al menos un destinatario'),
-  body('recipients.*').isEmail().normalizeEmail(),
+  body('recipients').optional().isArray({ min: 1 }),
+  body('recipients.*').optional().isEmail().normalizeEmail(),
   body('sendOnlyIfRed').isBoolean()
 ];
 
@@ -56,50 +56,61 @@ const testValidators = [
   body('sendOnlyIfRed').optional().isBoolean()
 ];
 
-const ensureRequiredFields = (data) => {
+const ensureRequiredFields = (data, requireRecipients = true) => {
   const required = ['host', 'port', 'username', 'password', 'senderName', 'senderEmail'];
   for (const field of required) {
     if (!data[field]) return `Falta el campo requerido: ${field}`;
   }
-  if (!Array.isArray(data.recipients) || data.recipients.length === 0) {
+  if (requireRecipients && (!Array.isArray(data.recipients) || data.recipients.length === 0)) {
     return 'Debe haber al menos un destinatario';
   }
   return null;
 };
 
 const verifyAndTest = async (config, sendMail = true) => {
+  // Determinar si usar SSL seguro o STARTTLS
+  // Puerto 465 = SSL directo (secure: true)
+  // Puerto 587 = STARTTLS (secure: false, luego upgrade)
+  // Puerto 25 = Sin encriptación (secure: false)
+  const secure = config.port === 465;
+
   const transporter = nodemailer.createTransport({
     host: config.host,
     port: config.port,
-    secure: config.useTLS,
+    secure: secure,
     auth: {
       user: config.username,
       pass: config.password
     }
   });
 
+  // Verificar conexión SMTP
   await transporter.verify();
 
-  const testRecipient = config.recipients[0] || config.senderEmail;
+  // Si no se solicita enviar email, retornar aquí
+  if (!sendMail) {
+    return null;
+  }
+
+  // Para enviar email de prueba, necesitamos destinatarios
+  const testRecipient = (config.recipients && config.recipients[0]) || config.senderEmail;
   if (!testRecipient) throw new Error('No hay destinatarios configurados ni email remitente');
 
-  if (sendMail) {
-    await transporter.sendMail({
-      from: `"${config.senderName}" <${config.senderEmail}>`,
-      to: testRecipient,
-      subject: 'Prueba de Configuracion SMTP - Bitacora SOC',
-      text: 'Este es un correo de prueba. La configuracion SMTP funciona correctamente.',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>Prueba Exitosa</h2>
-          <p>Correo de prueba enviado desde la <strong>Bitacora SOC</strong>.</p>
-          <p>La configuracion SMTP esta funcionando correctamente.</p>
-          <hr>
-          <small>Fecha: ${new Date().toISOString()}</small>
-        </div>
-      `
-    });
-  }
+  await transporter.sendMail({
+    from: `"${config.senderName}" <${config.senderEmail}>`,
+    to: testRecipient,
+    subject: 'Prueba de Configuracion SMTP - Bitacora SOC',
+    text: 'Este es un correo de prueba. La configuracion SMTP funciona correctamente.',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Prueba Exitosa</h2>
+        <p>Correo de prueba enviado desde la <strong>Bitacora SOC</strong>.</p>
+        <p>La configuracion SMTP esta funcionando correctamente.</p>
+        <hr>
+        <small>Fecha: ${new Date().toISOString()}</small>
+      </div>
+    `
+  });
 
   return testRecipient;
 };
@@ -129,15 +140,18 @@ router.post('/',
     try {
       const data = req.body;
 
-      const missing = ensureRequiredFields(data);
+      // No requerir destinatarios para guardar
+      const missing = ensureRequiredFields(data, false);
       if (missing) {
         return res.status(400).json({ message: missing });
       }
 
+      // Verificar conexión sin enviar email (ya que puede no haber destinatarios)
+      const hasRecipients = Array.isArray(data.recipients) && data.recipients.length > 0;
       await verifyAndTest({
         ...data,
         password: data.password
-      });
+      }, hasRecipients);
 
       const encryptedPassword = encrypt(data.password);
 
@@ -187,7 +201,8 @@ router.post('/test',
       let configData = null;
 
       if (Object.keys(req.body || {}).length > 0) {
-        const missing = ensureRequiredFields(req.body);
+        // No requerir destinatarios para prueba de conexión
+        const missing = ensureRequiredFields(req.body, false);
         if (missing) {
           return res.status(400).json({ message: missing });
         }
@@ -204,10 +219,14 @@ router.post('/test',
         };
       }
 
+      // Determinar si enviar email o solo verificar conexión
+      const hasRecipients = Array.isArray(configData.recipients) && configData.recipients.length > 0;
+      const sendMail = hasRecipients;
+
       const recipient = await verifyAndTest({
         ...configData,
         password: configData.password
-      });
+      }, sendMail);
 
       if (usingStoredConfig) {
         const stored = await SmtpConfig.findOne();
@@ -218,9 +237,14 @@ router.post('/test',
         }
       }
 
+      const message = sendMail
+        ? 'Correo de prueba enviado exitosamente'
+        : 'Conexión SMTP verificada exitosamente (sin envío de email)';
+
       return res.json({
-        message: 'Correo de prueba enviado exitosamente',
-        recipient
+        message,
+        recipient: recipient || 'N/A (solo verificación de conexión)',
+        connectionOnly: !sendMail
       });
     } catch (error) {
       console.error('Error al probar SMTP:', error);

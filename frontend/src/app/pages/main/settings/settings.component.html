@@ -71,8 +71,10 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Destinatarios (separados por coma)</mat-label>
-            <textarea matInput rows="2" formControlName="recipientsText"></textarea>
+            <mat-label>Destinatarios (separados por coma) - Opcional</mat-label>
+            <textarea matInput rows="2" formControlName="recipientsText" 
+                      placeholder="Solo necesarios si deseas enviar emails de prueba o notificaciones"></textarea>
+            <mat-hint>La conexión SMTP funciona sin destinatarios. Los emails se enviarán cuando haya incidentes críticos.</mat-hint>
           </mat-form-field>
         </div>
 
@@ -82,13 +84,13 @@
 
         <div class="button-group">
           <button mat-raised-button color="accent" type="button"
-                  (click)="testSmtp()" [disabled]="testing || !smtpForm.valid">
+                  (click)="testSmtp()" [disabled]="testing">
             <mat-spinner *ngIf="testing" diameter="18"></mat-spinner>
             <span *ngIf="!testing">Probar conexion</span>
           </button>
 
           <button mat-raised-button color="primary" type="submit"
-                  [disabled]="!smtpForm.valid || !smtpTestPassed || savingSmtp">
+                  [disabled]="!smtpTestPassed || savingSmtp">
             <mat-spinner *ngIf="savingSmtp" diameter="18"></mat-spinner>
             <span *ngIf="!savingSmtp">Guardar SMTP</span>
           </button>

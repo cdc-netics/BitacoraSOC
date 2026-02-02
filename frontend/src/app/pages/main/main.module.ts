@@ -48,6 +48,7 @@ import { ChecklistAdminComponent } from './checklist-admin/checklist-admin.compo
 import { ChecklistHistoryComponent } from './checklist-history/checklist-history.component';
 import { ReportGeneratorComponent } from './report-generator/report-generator.component';
 import { CatalogAdminComponent } from './catalog-admin/catalog-admin.component';
+import { AuditLogsComponent } from './audit-logs/audit-logs.component';
 
 // Shared Components
 
@@ -74,6 +75,7 @@ const routes: Routes = [
       { path: 'backup', component: BackupComponent },
       { path: 'checklist-admin', component: ChecklistAdminComponent, canActivate: [AdminGuard] },
       { path: 'catalog-admin', component: CatalogAdminComponent, canActivate: [AdminGuard] },
+      { path: 'audit-logs', component: AuditLogsComponent, canActivate: [AdminGuard] },
       { path: 'report-generator', component: ReportGeneratorComponent },
       { path: 'settings', component: SettingsComponent },
       { 
@@ -131,6 +133,7 @@ const routes: Routes = [
     ChecklistAdminComponent,
     ChecklistHistoryComponent,
     CatalogAdminComponent,
+    AuditLogsComponent,
     ReportGeneratorComponent
 ]
 })

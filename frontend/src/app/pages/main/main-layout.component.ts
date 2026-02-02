@@ -86,6 +86,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { icon: 'category', label: 'Admin Catálogos', route: '/main/catalog-admin', roles: ['admin'] },
     { icon: 'admin_panel_settings', label: 'Admin Escalación', route: '/main/escalation/admin', roles: ['admin'] },
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
+    { icon: 'history', label: 'Logs de Auditoría', route: '/main/audit-logs', roles: ['admin', 'auditor'] },
     { icon: 'image', label: 'Logo', route: '/main/logo', roles: ['admin'] },
     { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] },
     { icon: 'settings', label: 'SMTP / Config', route: '/main/settings', roles: ['admin'] },

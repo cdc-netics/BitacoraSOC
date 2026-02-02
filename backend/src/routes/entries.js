@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, query } = require('express-validator');
 const Entry = require('../models/Entry');
+const CatalogLogSource = require('../models/CatalogLogSource');
 const { authenticate } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const captureMetadata = require('../middleware/metadata');
@@ -55,6 +56,18 @@ router.post('/',
       // Extraer tags del contenido
       const tags = extractHashtags(content);
 
+      // Buscar nombre del cliente si se proporciona clientId
+      let clientName = null;
+      if (clientId) {
+        const logSource = await CatalogLogSource.findById(clientId).select('name enabled');
+        if (logSource && logSource.enabled !== false) {
+          clientName = logSource.name;
+        } else if (logSource) {
+          // Si el cliente existe pero no está habilitado, aún guarda el nombre
+          clientName = logSource.name;
+        }
+      }
+
       const entry = new Entry({
         content,
         entryType,
@@ -62,6 +75,7 @@ router.post('/',
         entryTime,
         tags,
         clientId: clientId || null,
+        clientName: clientName,
         createdBy: req.user._id,
         createdByUsername: req.user.username,
         isGuestEntry: req.user.role === 'guest',

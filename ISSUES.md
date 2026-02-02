@@ -2,56 +2,68 @@
 
 ## Estado general (tabla de control)
 
+### ⏳ En Progreso / Pendiente
+
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
 | P1 | Pendiente | Actualizacion Angular 20 | Plan general de actualizacion |  |
-| F0-1 | Completado | Fase 0 (Preparacion) | Crear rama aislada | Rama `feature/angular-20-upgrade` creada |
-| F0-2 | Completado | Fase 0 (Preparacion) | Limpieza del entorno | Reinstaladas dependencias en backend y frontend |
-| F0-3 | Completado | Fase 0 (Preparacion) | Verificar pruebas | `ng test` no configurado (sin target de test) |
-| F1-1 | Completado | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Angular/CLI/Material/CDK actualizados a 18.2.x |
-| F1-2 | Completado | Fase 1 (Angular 18) | Analisis y migracion | Migración HTTP aplicada en `app.module.ts` |
-| F1-3 | Completado | Fase 1 (Angular 18) | Revision breaking changes | Sin advertencias adicionales; builder migration opcional pendiente |
-| F1-4 | Completado | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | `ng build` OK; `ng test` no configurado |
-| F1-5 | Completado | Fase 1 (Angular 18) | Commit upgrade 18 | Commit local listo |
-| F2-1 | Completado | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Migrado a standalone components primero |
-| F2-2 | Completado | Fase 2 (Angular 19) | Analisis y migracion | Migraciones automáticas aplicadas |
-| F2-3 | Completado | Fase 2 (Angular 19) | Revision breaking changes | Sin breaking changes críticos |
-| F2-4 | Completado | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Build OK con standalone components |
-| F2-5 | Completado | Fase 2 (Angular 19) | Commit upgrade 19 | Commit 8afdb02 + e292d7c |
-| F3-1 | Completado | Fase 3 (Angular 20) | ng update core/cli 20 + material 20 | Angular 20.3.16 + Material 20.2.14 |
-| F3-2 | Completado | Fase 3 (Angular 20) | Analisis y migracion | Migraciones de v19 a v20 aplicadas |
-| F3-3 | Completado | Fase 3 (Angular 20) | Revision breaking changes | TypeScript 5.9.3, sin breaking changes |
-| F3-4 | Completado | Fase 3 (Angular 20) | Verificacion final | Build exitoso, advertencia menor |
-| F3-5 | Completado | Fase 3 (Angular 20) | Commit upgrade 20 | Commits c102e7d + fa45c38 |
-| F4-1 | Completado | Fase 4 (Post-actualizacion) | Revision de dependencias externas | animejs@3.2.2 funcionando OK |
-| F4-2 | Completado | Fase 4 (Post-actualizacion) | Limpieza de codigo | Código limpio, solo 1 warning menor |
 | F4-3 | Pendiente | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
-| B1a | Completado | Bugs | Visibilidad en tema oscuro | Commit d3112bd: Agregados estilos mat-menu-item y options en dark mode |
-| B1b | Completado | Bugs | Notas no se guardan | Verificado: autosave con debounce 3s funciona correctamente |
-| B2a | Completado | Mejoras | Reordenar y clarificar menu lateral | Checklist (Admin) movido a Configuración (Admin); texto Escalación ok |
-| B2b | Pendiente | Mejoras | Visualizador de logs de auditoria |  |
-| B2c | Completado | Mejoras | Purgar datos segura | Botón en Backup con confirmación de frase + endpoint admin | 
-| B2d | Completado | Mejoras | Gestion de tags: ver entradas por tag | Contador ahora navega a /main/all-entries?tag=... |
-| B2e | Completado | Mejoras | Mis entradas / Ver todas: contenido completo | Dialogo listo en "Ver todas" y agregado en "Mis entradas" |
 | B2f | Pendiente | Mejoras | Reportes: graficos |  |
-| B2g | Pendiente | Mejoras | Recuperacion de contrasena |  |
-| B2h | Completado | Mejoras | Reorganizacion pagina configuracion | Cooldown movido a Checklist Admin + texto SMTP clarificado |
-| B2i | Completado | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Cliente/LogSource como campo estructurado en entries, filtro + columna en results |
 | B2j | Pendiente | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) |  |
-| B2k | Completado | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Borrado admin en historial + UI oculta para no-admin + cooldown solo mismo día | 
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
-| B2m | Completado | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Modelo ShiftClosure + endpoints POST/GET, resumen de turno con entradas/incidentes |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
-| B3a | Completado | Arquitectura | Etiquetas de cargo + rol auditor | Rol 'auditor' en User model, cargoLabel para cada usuario, ShiftRole flexible |
-| B4-1 | Completado | Observaciones | Eliminar backup.js.bak | Archivo eliminado |
-| B4-2 | Completado | Observaciones | Validacion de variables de entorno | Validación al inicio del server |
-| B4-3 | Completado | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption | 
 | B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) | No aplicar masivo; definir alcance (carpeta) para evitar romper imports |
-| B4-5 | Completado | Observaciones | Error tipografico "escalamiento" lateral | Commit d3112bd: Corregido en ambos menús |
-| B4-6 | Completado | Observaciones | Login, poder entrar con correo como con nombre de usuario | Backend: $or query, Frontend: label actualizado |
 | B4-7 | Pendiente | Observaciones | Aviso analistas de checklist | Depende de B3a (etiquetas de cargo) |
 | C1-1 | Pendiente | Revisiones de seguridad y auditoria | Analisis de seguridad general |  |
 | D1-1 | Pendiente | Complementos | Modulo de complementos (plugins) |  |
+
+### ✅ Completado
+
+| ID | Seccion | Tarea | Notas |
+| --- | --- | --- | --- |
+| F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Rama `feature/angular-20-upgrade` creada |
+| F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Reinstaladas dependencias en backend y frontend |
+| F0-3 | Fase 0 (Preparacion) | Verificar pruebas | `ng test` no configurado (sin target de test) |
+| F1-1 | Fase 1 (Angular 18) | ng update core/cli 18 + material 18 | Angular/CLI/Material/CDK actualizados a 18.2.x |
+| F1-2 | Fase 1 (Angular 18) | Analisis y migracion | Migración HTTP aplicada en `app.module.ts` |
+| F1-3 | Fase 1 (Angular 18) | Revision breaking changes | Sin advertencias adicionales; builder migration opcional pendiente |
+| F1-4 | Fase 1 (Angular 18) | Verificacion (ng serve / ng test) | `ng build` OK; `ng test` no configurado |
+| F1-5 | Fase 1 (Angular 18) | Commit upgrade 18 | Commit local listo |
+| F2-1 | Fase 2 (Angular 19) | ng update core/cli 19 + material 19 | Migrado a standalone components primero |
+| F2-2 | Fase 2 (Angular 19) | Analisis y migracion | Migraciones automáticas aplicadas |
+| F2-3 | Fase 2 (Angular 19) | Revision breaking changes | Sin breaking changes críticos |
+| F2-4 | Fase 2 (Angular 19) | Verificacion (ng serve / ng test) | Build OK con standalone components |
+| F2-5 | Fase 2 (Angular 19) | Commit upgrade 19 | Commit 8afdb02 + e292d7c |
+| F3-1 | Fase 3 (Angular 20) | ng update core/cli 20 + material 20 | Angular 20.3.16 + Material 20.2.14 |
+| F3-2 | Fase 3 (Angular 20) | Analisis y migracion | Migraciones de v19 a v20 aplicadas |
+| F3-3 | Fase 3 (Angular 20) | Revision breaking changes | TypeScript 5.9.3, sin breaking changes |
+| F3-4 | Fase 3 (Angular 20) | Verificacion final | Build exitoso, advertencia menor |
+| F3-5 | Fase 3 (Angular 20) | Commit upgrade 20 | Commits c102e7d + fa45c38 |
+| F4-1 | Fase 4 (Post-actualizacion) | Revision de dependencias externas | animejs@3.2.2 funcionando OK |
+| F4-2 | Fase 4 (Post-actualizacion) | Limpieza de codigo | Código limpio, solo 1 warning menor |
+| B1a | Bugs | Visibilidad en tema oscuro | Commit d3112bd: Agregados estilos mat-menu-item y options en dark mode |
+| B1b | Bugs | Notas no se guardan | Verificado: autosave con debounce 3s funciona correctamente |
+| B2a | Mejoras | Reordenar y clarificar menu lateral | Checklist (Admin) movido a Configuración (Admin); texto Escalación ok |
+| B2b | Mejoras | Visualizador de logs de auditoria | Backend: 3 endpoints (logs, events, stats). Frontend: componente con filtros, paginación, badges por tipo entrada |
+| B2c | Mejoras | Purgar datos segura | Botón en Backup con confirmación de frase + endpoint admin |
+| B2g | Mejoras | Recuperacion de contrasena | Endpoints forgot/reset + componentes Angular + email HTML + rutas |
+| B2g-smtp | Mejoras | SMTP destinatarios opcionales | Recipients optional + SSL auto-detect + ENCRYPTION_KEY 64 chars | 
+| B2d | Mejoras | Gestion de tags: ver entradas por tag | Contador ahora navega a /main/all-entries?tag=... |
+| B2e | Mejoras | Mis entradas / Ver todas: contenido completo | Dialogo listo en "Ver todas" y agregado en "Mis entradas" |
+| B2g | Mejoras | Recuperacion de contrasena | Backend: forgot-password + reset-password endpoints con token SHA256. Frontend: 2 componentes (forgot/reset) + routes |
+| B2h | Mejoras | Reorganizacion pagina configuracion | Cooldown movido a Checklist Admin + texto SMTP clarificado |
+| B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Cliente/LogSource como campo estructurado en entries, filtro + columna en results |
+| B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Borrado admin en historial + UI oculta para no-admin + cooldown solo mismo día | 
+| B2m | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Modelo ShiftClosure + endpoints POST/GET, resumen de turno con entradas/incidentes |
+| B3a | Arquitectura | Etiquetas de cargo + rol auditor | Rol 'auditor' en User model, cargoLabel para cada usuario, ShiftRole flexible |
+| B4-1 | Observaciones | Eliminar backup.js.bak | Archivo eliminado |
+| B4-2 | Observaciones | Validacion de variables de entorno | Validación al inicio del server |
+| B4-3 | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption | 
+| B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Commit d3112bd: Corregido en ambos menús |
+| B4-6 | Observaciones | Login, poder entrar con correo como con nombre de usuario | Backend: $or query, Frontend: label actualizado |
+| B4-8 | Infraestructura | Deshabilitar Rate Limiter en desarrollo | NODE_ENV=development en docker-compose |
+| B4-9 | Bugs | Navegacion password recovery (NG04002 auth/login) | Corregido en forgot-password.component.ts |
+| B4-10 | Configuracion | ENCRYPTION_KEY longitud invalida | Actualizado a 64 hex chars (32 bytes) |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
@@ -334,12 +346,42 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
     - Graficas  por tag  qu tiene el sistema  asi ver  que tag por tendencia (líneas múltiples) comparar 3–5 tags (seleccionables) y ver su curva. 
     - Un mapa de calor día vs hora para ver: horas muertas, picos reales  de entradas
 
-#### **B2g** **Módulo de Recuperación de Contraseña**
-- **Problema:** No hay opción para recuperar contraseñas olvidadas.
-- **Propuesta:**
-    - Implementar un flujo completo de "Olvidé mi contraseña" con envío de correo electrónico y un token de reseteo con tiempo de expiración.
-    - **Backend:** Nuevos endpoints (`/forgot-password`, `/reset-password`) y campos en el modelo `User`.
-    - **Frontend:** Nuevas vistas para solicitar y completar el reseteo.
+#### **B2g** ✅ **COMPLETADO - Módulo de Recuperación de Contraseña**
+- **Solución implementada:**
+    - Backend: Endpoints `/api/auth/forgot-password` y `/api/auth/reset-password` con tokens SHA256 de 1 hora
+    - Modelo User: Campos `resetPasswordToken` y `resetPasswordExpires`
+    - Frontend: ForgotPasswordComponent y ResetPasswordComponent con rutas `/auth/forgot-password` y `/auth/reset-password`
+    - Email HTML con estilos y botón de acción (solo envía si SMTP configurado)
+    - Tokens de desarrollo mostrados si SMTP no configurado (fallback seguro)
+- **Archivos modificados:**
+    - `backend/src/routes/auth.js` - Endpoints de password recovery
+    - `backend/src/models/User.js` - Campos de reset token
+    - `frontend/src/app/pages/auth/forgot-password/` - Componente + módulo + ruta
+    - `frontend/src/app/pages/auth/reset-password/` - Componente + módulo + ruta
+    - `frontend/src/app/app-routing.module.ts` - Rutas de password recovery
+- **Notas:**
+    - Email enviado cuando SMTP configurado (independiente de NODE_ENV)
+    - URL de reset: `{FRONTEND_URL}/auth/reset-password?token=...`
+    - Navegación corregida: todos los botones usan `/login` (no `/auth/login`)
+
+#### **B2g-smtp** ✅ **COMPLETADO - Configuración SMTP con Destinatarios Opcionales**
+- **Problema:** No se podía guardar la configuración SMTP sin destinatarios
+- **Solución implementada:**
+    - Backend: Validación de `recipients` cambiada a `.optional()`
+    - Frontend: Campo `recipientsText` sin Validators.required
+    - Test de conexión funciona sin destinatarios (solo verifica SMTP)
+    - Auto-detección SSL: Puerto 465 = SSL directo, Puerto 587 = STARTTLS
+    - ENCRYPTION_KEY corregido: 64 caracteres hex (32 bytes) para AES-256-GCM
+- **Archivos modificados:**
+    - `backend/src/routes/smtp.js` - Validadores y lógica de prueba
+    - `backend/src/utils/encryption.js` - Verificado soporte 32 bytes
+    - `frontend/src/app/pages/main/settings/settings.component.ts` - Validación opcional
+    - `frontend/src/app/pages/main/settings/settings.component.html` - Hints actualizados
+    - `.env` - ENCRYPTION_KEY actualizado a 64 caracteres hex
+- **Beneficios:**
+    - Se puede probar conexión SMTP sin configurar destinatarios
+    - Los emails se envían automáticamente en password recovery si SMTP configurado
+    - Compatible con Office365 y otros proveedores SMTP estándar
 
 #### **B2h** ✅ **COMPLETADO - Reorganización de la Página de Configuración**
 - **Cambios aplicados:**

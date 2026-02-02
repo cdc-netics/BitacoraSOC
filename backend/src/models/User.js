@@ -70,6 +70,15 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Password reset tokens
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
+  },
   // Preferencias
   theme: {
     type: String,
@@ -88,6 +97,7 @@ const userSchema = new mongoose.Schema({
 // Solo definimos índices NO-UNIQUE adicionales para optimizar queries
 userSchema.index({ role: 1 }); // Query: buscar usuarios por rol
 userSchema.index({ guestExpiresAt: 1 }); // Query: limpiar guests expirados
+userSchema.index({ resetPasswordToken: 1 }); // Query: validar token de reseteo
 
 /**
  * Pre-save Hook: Hashear password con bcrypt

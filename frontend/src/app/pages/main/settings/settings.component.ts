@@ -7,7 +7,7 @@ import { UpdateConfigRequest } from '../../../models/config.model';
 import { SmtpConfigRequest, SmtpConfig } from '../../../models/smtp.model';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { NgClass, NgFor, NgIf } from '@angular/common';
@@ -28,6 +28,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
         MatCheckbox,
         MatFormField,
         MatLabel,
+        MatHint,
         MatInput,
         MatButton,
         NgClass,
@@ -75,7 +76,7 @@ export class SettingsComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(8)]],
       senderName: ['', Validators.required],
       senderEmail: ['', [Validators.required, Validators.email]],
-      recipientsText: ['', Validators.required],
+      recipientsText: [''], // Opcional para pruebas, obligatorio para guardar
       sendOnlyIfRed: [false],
       isActive: [true]
     });
@@ -143,7 +144,7 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSmtpConfig(): void {
-    if (!this.smtpForm.valid || !this.smtpTestPassed) {
+    if (!this.smtpTestPassed) {
       this.snackBar.open('Primero realiza una prueba SMTP exitosa', 'Cerrar', { duration: 3000 });
       return;
     }
@@ -161,17 +162,25 @@ export class SettingsComponent implements OnInit {
   }
 
   testSmtp(): void {
-    if (!this.smtpForm.valid) {
-      this.snackBar.open('Completa los campos SMTP antes de probar', 'Cerrar', { duration: 3000 });
+    // Para probar conexión, solo validar campos básicos (sin destinatarios)
+    const requiredFields = ['host', 'port', 'username', 'password', 'senderName', 'senderEmail'];
+    const invalidFields = requiredFields.filter(field => {
+      const control = this.smtpForm.get(field);
+      return !control?.value || control?.invalid;
+    });
+
+    if (invalidFields.length > 0) {
+      this.snackBar.open('Completa los campos obligatorios antes de probar', 'Cerrar', { duration: 3000 });
       return;
     }
+
     this.testing = true;
     const payload = this.buildSmtpPayload();
     this.smtpService.testConfig(payload).subscribe({
       next: (response) => {
         this.smtpTestPassed = true;
         this.connectionStatus = 'conectado';
-        this.snackBar.open(response.message, 'Cerrar', { duration: 3000 });
+        this.snackBar.open(response.message, 'Cerrar', { duration: 4000 });
       },
       error: () => {
         this.connectionStatus = 'desconectado';

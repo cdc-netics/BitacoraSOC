@@ -167,4 +167,160 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password - Solicitar reseteo de contraseña
+router.post('/forgot-password',
+  [
+    body('email').isEmail().withMessage('Email inválido').normalizeEmail()
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      const user = await User.findOne({ email, isActive: true });
+
+      // Por seguridad, siempre retornamos éxito (no revelar si el email existe)
+      if (!user) {
+        return res.json({ message: 'Si el email existe, recibirás instrucciones para resetear tu contraseña' });
+      }
+
+      // Generar token de reseteo (6 caracteres aleatorios)
+      const crypto = require('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+      // Guardar token hasheado + expiración (1 hora)
+      user.resetPasswordToken = hashedToken;
+      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      await user.save();
+
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/reset-password?token=${resetToken}`;
+
+      // Intentar enviar email si SMTP está configurado
+      const SmtpConfig = require('../models/SmtpConfig');
+      const nodemailer = require('nodemailer');
+      const { decrypt } = require('../utils/encryption');
+      
+      let emailSent = false;
+      const smtpConfig = await SmtpConfig.findOne({ isActive: true });
+      
+      if (smtpConfig) {
+        try {
+          const secure = smtpConfig.port === 465;
+          const transporter = nodemailer.createTransport({
+            host: smtpConfig.host,
+            port: smtpConfig.port,
+            secure: secure,
+            auth: {
+              user: smtpConfig.username,
+              pass: decrypt(smtpConfig.password)
+            }
+          });
+
+          await transporter.sendMail({
+            from: `"${smtpConfig.senderName}" <${smtpConfig.senderEmail}>`,
+            to: email,
+            subject: 'Recuperación de Contraseña - Bitácora SOC',
+            text: `Hola,\n\nHemos recibido una solicitud para resetear tu contraseña.\n\nHaz click en el siguiente enlace para crear una nueva contraseña:\n${resetUrl}\n\nEste enlace expirará en 1 hora.\n\nSi no solicitaste este cambio, ignora este email.\n\nSaludos,\nEquipo Bitácora SOC`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1976d2;">Recuperación de Contraseña</h2>
+                <p>Hola,</p>
+                <p>Hemos recibido una solicitud para resetear tu contraseña.</p>
+                <p>Haz click en el siguiente botón para crear una nueva contraseña:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${resetUrl}" style="background-color: #1976d2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                    Resetear Contraseña
+                  </a>
+                </div>
+                <p><small>O copia y pega este enlace en tu navegador:<br>${resetUrl}</small></p>
+                <p style="color: #f44336;"><strong>⏰ Este enlace expirará en 1 hora.</strong></p>
+                <p>Si no solicitaste este cambio, ignora este email.</p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="color: #666; font-size: 12px;">Saludos,<br>Equipo Bitácora SOC</p>
+              </div>
+            `
+          });
+
+          emailSent = true;
+        } catch (emailError) {
+          console.error('Error enviando email de recuperación:', emailError);
+          // Continuar aunque falle el email
+        }
+      }
+
+      // Si está en desarrollo Y el email no se envió, retornar el token
+      if (process.env.NODE_ENV === 'development' && !emailSent) {
+        return res.json({
+          message: 'Token de reseteo generado (solo desarrollo - SMTP no configurado)',
+          resetToken,
+          resetUrl
+        });
+      }
+
+      // Si se envió el email o estamos en producción
+      res.json({ 
+        message: emailSent 
+          ? 'Email de recuperación enviado. Revisa tu bandeja de entrada.' 
+          : 'Si el email existe, recibirás instrucciones para resetear tu contraseña'
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Error in forgot-password');
+      res.status(500).json({ message: 'Error al procesar solicitud' });
+    }
+  }
+);
+
+// POST /api/auth/reset-password - Resetear contraseña con token
+router.post('/reset-password',
+  [
+    body('token').notEmpty().withMessage('Token requerido'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Contraseña debe tener al menos 6 caracteres')
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      // Hashear el token recibido para comparar con el almacenado
+      const crypto = require('crypto');
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+      // Buscar usuario con token válido y no expirado
+      const user = await User.findOne({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: { $gt: new Date() },
+        isActive: true
+      });
+
+      if (!user) {
+        return res.status(400).json({ message: 'Token inválido o expirado' });
+      }
+
+      // Actualizar contraseña (el pre-save hook se encarga de hashearla)
+      user.password = newPassword;
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+
+      // Auditar el reseteo
+      await audit(req, {
+        event: 'auth.password_reset',
+        level: 'info',
+        result: { success: true },
+        metadata: {
+          userId: user._id,
+          username: user.username,
+          email: user.email
+        }
+      });
+
+      res.json({ message: 'Contraseña actualizada exitosamente' });
+    } catch (error) {
+      logger.error({ err: error }, 'Error in reset-password');
+      res.status(500).json({ message: 'Error al resetear contraseña' });
+    }
+  }
+);
+
 module.exports = router;
