@@ -87,6 +87,37 @@ body {
   margin: 0;
 }
 
+/* ========== FORCE ALL TEXT COLORS GLOBALLY ========== */
+body, div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, 
+input, textarea, select, option, li, td, th, 
+.mat-mdc-card, .mat-mdc-dialog-container, .mat-mdc-list-item,
+.mat-mdc-menu-item, .mat-mdc-option, .mat-mdc-form-field {
+  color: var(--text-primary) !important;
+}
+
+/* Force secondary text colors */
+small, .mat-mdc-form-field-hint, .subtitle, 
+.mat-mdc-card-subtitle, .secondary-text,
+.mat-expansion-panel-header-description {
+  color: var(--text-secondary) !important;
+}
+
+/* Force all inputs and textareas */
+input, textarea, select {
+  color: var(--text-primary) !important;
+  background-color: var(--surface-color) !important;
+  
+  &::placeholder {
+    color: var(--text-secondary) !important;
+  }
+}
+
+/* Force all labels */
+label, .mat-mdc-floating-label, .mdc-floating-label,
+.mat-mdc-form-field-label, .mdc-text-field__input {
+  color: var(--text-primary) !important;
+}
+
 /* ========== SCROLLBAR STYLES ========== */
 ::-webkit-scrollbar {
   width: 10px;
@@ -374,9 +405,109 @@ p, span, label {
 
 /* ========== DARK THEME SPECIFIC OVERRIDES ========== */
 [data-theme="dark"] {
-  /* Table headers - improve contrast with bold weight */
+  /* FORCE ALL TEXT TO BE VISIBLE IN DARK MODE */
+  *, *::before, *::after {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Force all backgrounds to dark */
+  .mat-mdc-card, .mat-mdc-dialog-container, 
+  .mat-mdc-menu-panel, .mat-mdc-select-panel,
+  .mat-mdc-autocomplete-panel {
+    background-color: var(--surface-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Force form fields */
+  .mat-mdc-form-field {
+    .mdc-text-field__input,
+    .mat-mdc-input-element,
+    input, textarea {
+      color: var(--text-primary) !important;
+      background-color: transparent !important;
+    }
+    
+    .mat-mdc-floating-label,
+    .mdc-floating-label,
+    label {
+      color: var(--text-primary) !important;
+    }
+    
+    .mat-mdc-form-field-hint {
+      color: var(--text-secondary) !important;
+    }
+  }
+  
+  /* Force dropdown text */
+  .mat-mdc-select-value,
+  .mat-mdc-select-value-text,
+  .mat-mdc-option,
+  .mat-mdc-option-text {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Force all list items */
+  .mat-mdc-list-item,
+  .mdc-list-item__primary-text,
+  .mdc-list-item__secondary-text {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Force dialog text */
+  .mat-mdc-dialog-title,
+  .mat-mdc-dialog-content,
+  .mat-mdc-dialog-content * {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Force table text */
+  .mat-mdc-table,
+  .mat-mdc-cell,
+  .mat-mdc-header-cell {
+    color: var(--text-primary) !important;
+    background-color: var(--surface-color) !important;
+  }
+  
   .mat-mdc-header-cell {
     font-weight: 600 !important;
+  }
+  
+  /* Force card content */
+  .mat-mdc-card-title,
+  .mat-mdc-card-subtitle,
+  .mat-mdc-card-content,
+  .mat-mdc-card-content * {
+    color: var(--text-primary) !important;
+  }
+  
+  .mat-mdc-card-subtitle {
+    color: var(--text-secondary) !important;
+  }
+  
+  /* Force expansion panel */
+  .mat-expansion-panel,
+  .mat-expansion-panel-header,
+  .mat-expansion-panel-header-title,
+  .mat-expansion-panel-content {
+    color: var(--text-primary) !important;
+    background-color: var(--surface-color) !important;
+  }
+  
+  .mat-expansion-panel-header-description {
+    color: var(--text-secondary) !important;
+  }
+  
+  /* Force button text */
+  .mat-mdc-button,
+  .mat-mdc-raised-button,
+  .mat-mdc-outlined-button {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Force icons */
+  mat-icon,
+  .material-icons {
+    color: var(--text-primary) !important;
   }
   
   /* Warning boxes - different color scheme for dark mode */
@@ -386,6 +517,11 @@ p, span, label {
     background-color: #3d3316 !important;
     color: #f5e6a3 !important;
     border-color: #5a4a1f !important;
+  }
+  
+  /* Override ANY inline styles that set colors */
+  [style*="color"] {
+    color: var(--text-primary) !important;
   }
 }
 
