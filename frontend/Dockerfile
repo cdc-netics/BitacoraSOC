@@ -21,8 +21,8 @@ FROM nginx:alpine
 # Copiar configuración de Nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copiar build de Angular
-COPY --from=builder /app/dist/bitacora-soc /usr/share/nginx/html
+# Copiar build de Angular (Angular 20 genera en /browser)
+COPY --from=builder /app/dist/bitacora-soc/browser /usr/share/nginx/html
 
 # Exponer puerto
 EXPOSE 80
