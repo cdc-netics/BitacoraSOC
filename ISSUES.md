@@ -36,13 +36,13 @@
 | B2f | Pendiente | Mejoras | Reportes: graficos |  |
 | B2g | Pendiente | Mejoras | Recuperacion de contrasena |  |
 | B2h | Completado | Mejoras | Reorganizacion pagina configuracion | Cooldown movido a Checklist Admin + texto SMTP clarificado |
-| B2i | Pendiente | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda |  |
+| B2i | Completado | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Cliente/LogSource como campo estructurado en entries, filtro + columna en results |
 | B2j | Pendiente | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) |  |
 | B2k | Completado | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Borrado admin en historial + UI oculta para no-admin + cooldown solo mismo día | 
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
-| B2m | Pendiente | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Ticket diario con titulo configurable |
+| B2m | Completado | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Modelo ShiftClosure + endpoints POST/GET, resumen de turno con entradas/incidentes |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
-| B3a | Pendiente | Arquitectura | Etiquetas de cargo + rol auditor |  |
+| B3a | Completado | Arquitectura | Etiquetas de cargo + rol auditor | Rol 'auditor' en User model, cargoLabel para cada usuario, ShiftRole flexible |
 | B4-1 | Completado | Observaciones | Eliminar backup.js.bak | Archivo eliminado |
 | B4-2 | Completado | Observaciones | Validacion de variables de entorno | Validación al inicio del server |
 | B4-3 | Completado | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption | 
