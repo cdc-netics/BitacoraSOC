@@ -35,7 +35,6 @@ type MenuItem = {
     selector: 'app-main-layout',
     templateUrl: './main-layout.component.html',
     styleUrls: ['./main-layout.component.scss'],
-    standalone: true,
     imports: [MatSidenavContainer, MatSidenav, MatToolbar, NgIf, MatIcon, MatNavList, NgFor, MatListItem, RouterLinkActive, RouterLink, MatListItemIcon, MatListItemTitle, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatDivider, MatFormField, MatLabel, MatInput, ReactiveFormsModule, FormsModule, MatHint, MatSidenavContent, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, RouterOutlet]
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {

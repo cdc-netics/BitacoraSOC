@@ -36,7 +36,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-reports',
     templateUrl: './reports.component.html',
     styleUrls: ['./reports.component.scss'],
-    standalone: true,
     imports: [NgIf, MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, MatIcon]
 })
 export class ReportsComponent implements OnInit {

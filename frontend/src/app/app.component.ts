@@ -9,7 +9,6 @@ import { RouterOutlet } from '@angular/router';
     selector: 'app-root',
     template: '<router-outlet></router-outlet>',
     styles: [],
-    standalone: true,
     imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {

@@ -25,33 +25,32 @@ class MondayFirstNativeDateAdapter extends NativeDateAdapter {
 }
 
 @Component({
-  selector: 'app-escalation-admin-simple',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatTableModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatTabsModule
-  ],
-  providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
-    {
-      provide: DateAdapter,
-      useClass: MondayFirstNativeDateAdapter
-    }
-  ],
-  templateUrl: './escalation-admin-simple.component.html',
-  styleUrls: ['./escalation-admin-simple.component.scss']
+    selector: 'app-escalation-admin-simple',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatTableModule,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatTabsModule
+    ],
+    providers: [
+        { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
+        {
+            provide: DateAdapter,
+            useClass: MondayFirstNativeDateAdapter
+        }
+    ],
+    templateUrl: './escalation-admin-simple.component.html',
+    styleUrls: ['./escalation-admin-simple.component.scss']
 })
 export class EscalationAdminSimpleComponent implements OnInit {
   // Turnos internos

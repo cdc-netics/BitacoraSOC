@@ -19,7 +19,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-settings',
     templateUrl: './settings.component.html',
     styleUrls: ['./settings.component.scss'],
-    standalone: true,
     imports: [
         MatCard,
         MatCardHeader,
@@ -37,7 +36,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
         MatOption,
         NgIf,
         MatProgressSpinner,
-    ],
+    ]
 })
 export class SettingsComponent implements OnInit {
   appConfigForm: FormGroup;

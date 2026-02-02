@@ -10,11 +10,10 @@ export interface EntryDetailDialogData {
 }
 
 @Component({
-  selector: 'app-entry-detail-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule],
-  templateUrl: './entry-detail-dialog.component.html',
-  styleUrls: ['./entry-detail-dialog.component.scss']
+    selector: 'app-entry-detail-dialog',
+    imports: [CommonModule, MatDialogModule, MatButtonModule],
+    templateUrl: './entry-detail-dialog.component.html',
+    styleUrls: ['./entry-detail-dialog.component.scss']
 })
 export class EntryDetailDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public data: EntryDetailDialogData) {}

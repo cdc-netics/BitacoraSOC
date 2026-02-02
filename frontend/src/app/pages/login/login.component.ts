@@ -39,7 +39,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardHeader, MatCardTitle, NgIf, MatIcon, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatPrefix, MatError, MatIconButton, MatSuffix, MatButton, MatProgressSpinner, MatCardFooter]
 })
 export class LoginComponent implements OnInit {

@@ -18,7 +18,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-report-generator',
     templateUrl: './report-generator.component.html',
     styleUrls: ['./report-generator.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardContent, ReactiveFormsModule, EntityAutocompleteComponent, NgIf, MatFormField, MatLabel, MatInput, MatError, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatButton, MatIcon, NgFor, MatIconButton]
 })
 export class ReportGeneratorComponent {

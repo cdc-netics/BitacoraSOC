@@ -18,7 +18,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-checklist-admin',
     templateUrl: './checklist-admin.component.html',
     styleUrls: ['./checklist-admin.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardTitle, NgIf, MatProgressBar, MatNavList, NgFor, MatListItem, MatChipSet, MatChip, MatButton, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatCheckbox, MatIconButton, MatIcon]
 })
 export class ChecklistAdminComponent implements OnInit {

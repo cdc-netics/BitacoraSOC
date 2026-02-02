@@ -18,26 +18,25 @@ import { AuthService } from '../../../services/auth.service';
 import { EntryDetailDialogComponent } from './entry-detail-dialog.component';
 
 @Component({
-  selector: 'app-all-entries',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSelectModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatIconModule,
-    MatChipsModule,
-    MatSnackBarModule,
-    MatDialogModule,
-    EntryDetailDialogComponent
-  ],
-  templateUrl: './all-entries.component.html',
-  styleUrl: './all-entries.component.scss'
+    selector: 'app-all-entries',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatSelectModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatIconModule,
+        MatChipsModule,
+        MatSnackBarModule,
+        MatDialogModule,
+        EntryDetailDialogComponent
+    ],
+    templateUrl: './all-entries.component.html',
+    styleUrl: './all-entries.component.scss'
 })
 export class AllEntriesComponent implements OnInit {
   searchForm: FormGroup;

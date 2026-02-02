@@ -15,7 +15,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-my-entries',
     templateUrl: './my-entries.component.html',
     styleUrls: ['./my-entries.component.scss'],
-    standalone: true,
     imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe]
 })
 export class MyEntriesComponent implements OnInit {

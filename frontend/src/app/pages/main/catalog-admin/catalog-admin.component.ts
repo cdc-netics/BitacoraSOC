@@ -19,7 +19,6 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'app-catalog-admin',
     templateUrl: './catalog-admin.component.html',
     styleUrls: ['./catalog-admin.component.scss'],
-    standalone: true,
     imports: [MatTabGroup, MatTab, MatCard, MatCardHeader, MatCardTitle, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatCheckbox, MatButton, MatIcon, NgIf, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class CatalogAdminComponent implements OnInit {

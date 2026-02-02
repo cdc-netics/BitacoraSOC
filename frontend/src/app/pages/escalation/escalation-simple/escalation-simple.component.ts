@@ -19,28 +19,27 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { EscalationService } from '../../../services/escalation.service';
 
 @Component({
-  selector: 'app-escalation-simple',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatTabsModule,
-    MatChipsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatTooltipModule,
-    ReactiveFormsModule
-  ],
-  templateUrl: './escalation-simple.component.html',
-  styleUrls: ['./escalation-simple.component.scss']
+    selector: 'app-escalation-simple',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatTableModule,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
+        MatTabsModule,
+        MatChipsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatTooltipModule,
+        ReactiveFormsModule
+    ],
+    templateUrl: './escalation-simple.component.html',
+    styleUrls: ['./escalation-simple.component.scss']
 })
 export class EscalationSimpleComponent implements OnInit {
   // Datos para la vista Excel

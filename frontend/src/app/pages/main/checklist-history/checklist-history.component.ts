@@ -14,7 +14,6 @@ import { MatPaginator } from '@angular/material/paginator';
     selector: 'app-checklist-history',
     templateUrl: './checklist-history.component.html',
     styleUrls: ['./checklist-history.component.scss'],
-    standalone: true,
     imports: [NgIf, MatProgressSpinner, MatIcon, MatAccordion, NgFor, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatDivider, MatPaginator, UpperCasePipe, DatePipe]
 })
 export class ChecklistHistoryComponent implements OnInit {

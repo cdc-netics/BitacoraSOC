@@ -21,7 +21,6 @@ import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
     selector: 'app-entries',
     templateUrl: './entries.component.html',
     styleUrls: ['./entries.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatButton, NgIf, MatIcon, MatProgressSpinner, MatRadioGroup, MatRadioButton]
 })
 export class EntriesComponent implements OnInit {

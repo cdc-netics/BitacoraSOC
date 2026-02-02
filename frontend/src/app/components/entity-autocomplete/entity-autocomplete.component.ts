@@ -79,7 +79,6 @@ export interface AutocompleteResponse {
     templateUrl: './entity-autocomplete.component.html',
     styleUrls: ['./entity-autocomplete.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatAutocompleteTrigger, NgIf, MatIconButton, MatSuffix, MatIcon, MatProgressSpinner, MatHint, MatAutocomplete, NgFor, MatOption, AsyncPipe]
 })
 export class EntityAutocompleteComponent implements OnInit {

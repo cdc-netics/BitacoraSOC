@@ -32,7 +32,6 @@ type ChecklistNode = {
     selector: 'app-checklist',
     templateUrl: './checklist.component.html',
     styleUrls: ['./checklist.component.scss'],
-    standalone: true,
     imports: [NgIf, MatCard, MatCardContent, MatIcon, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, ReactiveFormsModule, FormsModule, MatFormField, MatLabel, MatSelect, MatOption, NgFor, MatExpansionPanelDescription, MatRadioGroup, MatRadioButton, MatInput, MatHint, MatButton, MatProgressSpinner, EntriesComponent, DatePipe]
 })
 export class ChecklistComponent implements OnInit {
