@@ -1,9 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { MatExpansionModule, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { ChecklistService } from '../../../services/checklist.service';
 import { ChecklistTemplate, ChecklistItem, ShiftCheck } from '../../../models/checklist.model';
 import { AuthService } from '../../../services/auth.service';
+import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatIcon } from '@angular/material/icon';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
+import { MatInput } from '@angular/material/input';
+import { MatButton } from '@angular/material/button';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { EntriesComponent } from '../entries/entries.component';
 
 type ChecklistNode = {
   serviceId: string;
@@ -17,9 +29,11 @@ type ChecklistNode = {
 };
 
 @Component({
-  selector: 'app-checklist',
-  templateUrl: './checklist.component.html',
-  styleUrls: ['./checklist.component.scss']
+    selector: 'app-checklist',
+    templateUrl: './checklist.component.html',
+    styleUrls: ['./checklist.component.scss'],
+    standalone: true,
+    imports: [NgIf, MatCard, MatCardContent, MatIcon, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, ReactiveFormsModule, FormsModule, MatFormField, MatLabel, MatSelect, MatOption, NgFor, MatExpansionPanelDescription, MatRadioGroup, MatRadioButton, MatInput, MatHint, MatButton, MatProgressSpinner, EntriesComponent, DatePipe]
 })
 export class ChecklistComponent implements OnInit {
   activeChecklist: ChecklistTemplate | null = null;

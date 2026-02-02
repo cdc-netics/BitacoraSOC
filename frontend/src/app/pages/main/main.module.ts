@@ -50,7 +50,7 @@ import { ReportGeneratorComponent } from './report-generator/report-generator.co
 import { CatalogAdminComponent } from './catalog-admin/catalog-admin.component';
 
 // Shared Components
-import { SharedComponentsModule } from '../../components/shared-components.module';
+
 
 // Guards
 import { AdminGuard } from '../../guards/admin.guard';
@@ -85,29 +85,11 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [
-    MainLayoutComponent,
-    EntriesComponent,
-    ChecklistComponent,
-    ReportsComponent,
-    UsersComponent,
-    SettingsComponent,
-    ProfileComponent,
-    MyEntriesComponent,
-    TagsComponent,
-    LogoComponent,
-    BackupComponent,
-    ChecklistAdminComponent,
-    ChecklistHistoryComponent,
-    CatalogAdminComponent,
-    ReportGeneratorComponent
-  ],
-  imports: [
+    imports: [
     CommonModule,
     RouterModule.forChild(routes),
     ReactiveFormsModule,
-    FormsModule,
-    SharedComponentsModule, // Para EntityAutocomplete
+    FormsModule, // Para EntityAutocomplete
     MatSidenavModule,
     MatToolbarModule,
     MatIconModule,
@@ -134,7 +116,22 @@ const routes: Routes = [
     MatProgressBarModule,
     MatAutocompleteModule,
     MatTabsModule,
-    AllEntriesComponent
-  ]
+    AllEntriesComponent,
+    MainLayoutComponent,
+    EntriesComponent,
+    ChecklistComponent,
+    ReportsComponent,
+    UsersComponent,
+    SettingsComponent,
+    ProfileComponent,
+    MyEntriesComponent,
+    TagsComponent,
+    LogoComponent,
+    BackupComponent,
+    ChecklistAdminComponent,
+    ChecklistHistoryComponent,
+    CatalogAdminComponent,
+    ReportGeneratorComponent
+]
 })
 export class MainModule { }

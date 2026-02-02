@@ -1,15 +1,43 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfigService } from '../../../services/config.service';
 import { SmtpService } from '../../../services/smtp.service';
 import { UpdateConfigRequest } from '../../../models/config.model';
 import { SmtpConfigRequest, SmtpConfig } from '../../../models/smtp.model';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatButton } from '@angular/material/button';
+import { NgClass, NgFor, NgIf } from '@angular/common';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
-  selector: 'app-settings',
-  templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.scss'],
+    selector: 'app-settings',
+    templateUrl: './settings.component.html',
+    styleUrls: ['./settings.component.scss'],
+    standalone: true,
+    imports: [
+        MatCard,
+        MatCardHeader,
+        MatCardTitle,
+        MatCardContent,
+        ReactiveFormsModule,
+        MatCheckbox,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatButton,
+        NgClass,
+        MatSelect,
+        NgFor,
+        MatOption,
+        NgIf,
+        MatProgressSpinner,
+    ],
 })
 export class SettingsComponent implements OnInit {
   appConfigForm: FormGroup;

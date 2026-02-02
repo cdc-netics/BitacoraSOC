@@ -2,11 +2,22 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'app-backup',
-  templateUrl: './backup.component.html',
-  styleUrls: ['./backup.component.scss']
+    selector: 'app-backup',
+    templateUrl: './backup.component.html',
+    styleUrls: ['./backup.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardHeader, MatCardTitle, MatIcon, MatCardContent, MatButton, NgIf, MatProgressSpinner, MatCheckbox, ReactiveFormsModule, FormsModule, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class BackupComponent implements OnInit {
   isExporting = false;

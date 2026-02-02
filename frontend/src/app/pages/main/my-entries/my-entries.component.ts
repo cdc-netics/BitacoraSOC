@@ -1,14 +1,22 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
 import { EntryService } from '../../../services/entry.service';
 import { AuthService } from '../../../services/auth.service';
 import { Entry } from '../../../models/entry.model';
+import { NgIf, NgFor, SlicePipe, DatePipe } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatChipSet, MatChip } from '@angular/material/chips';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-my-entries',
-  templateUrl: './my-entries.component.html',
-  styleUrls: ['./my-entries.component.scss']
+    selector: 'app-my-entries',
+    templateUrl: './my-entries.component.html',
+    styleUrls: ['./my-entries.component.scss'],
+    standalone: true,
+    imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe]
 })
 export class MyEntriesComponent implements OnInit {
   displayedColumns: string[] = ['date', 'time', 'type', 'content', 'tags', 'actions'];

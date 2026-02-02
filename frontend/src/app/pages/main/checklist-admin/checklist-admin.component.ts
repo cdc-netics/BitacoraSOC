@@ -1,13 +1,25 @@
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChecklistService } from '../../../services/checklist.service';
 import { ChecklistTemplate, ChecklistItem } from '../../../models/checklist.model';
+import { MatCard, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { NgIf, NgFor } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatNavList, MatListItem } from '@angular/material/list';
+import { MatChipSet, MatChip } from '@angular/material/chips';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-checklist-admin',
-  templateUrl: './checklist-admin.component.html',
-  styleUrls: ['./checklist-admin.component.scss']
+    selector: 'app-checklist-admin',
+    templateUrl: './checklist-admin.component.html',
+    styleUrls: ['./checklist-admin.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardTitle, NgIf, MatProgressBar, MatNavList, NgFor, MatListItem, MatChipSet, MatChip, MatButton, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatCheckbox, MatIconButton, MatIcon]
 })
 export class ChecklistAdminComponent implements OnInit {
   templates: ChecklistTemplate[] = [];

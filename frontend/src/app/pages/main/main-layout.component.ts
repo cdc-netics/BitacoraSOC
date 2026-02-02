@@ -9,6 +9,19 @@ import { AdminNote, PersonalNote } from '../../models/note.model';
 import { ChecklistTemplate, ChecklistItem, ShiftCheck } from '../../models/checklist.model';
 import { Theme } from '../../models/user.model';
 import { environment } from '../../../environments/environment';
+import { MatSidenavContainer, MatSidenav, MatSidenavContent } from '@angular/material/sidenav';
+import { MatToolbar } from '@angular/material/toolbar';
+import { NgIf, NgFor } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatNavList, MatListItem, MatListItemIcon, MatListItemTitle } from '@angular/material/list';
+import { RouterLinkActive, RouterLink, RouterOutlet } from '@angular/router';
+import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
+import { MatDivider } from '@angular/material/divider';
+import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { MatIconButton } from '@angular/material/button';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 
 type MenuItem = {
   icon: string;
@@ -19,9 +32,11 @@ type MenuItem = {
 };
 
 @Component({
-  selector: 'app-main-layout',
-  templateUrl: './main-layout.component.html',
-  styleUrls: ['./main-layout.component.scss']
+    selector: 'app-main-layout',
+    templateUrl: './main-layout.component.html',
+    styleUrls: ['./main-layout.component.scss'],
+    standalone: true,
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, NgIf, MatIcon, MatNavList, NgFor, MatListItem, RouterLinkActive, RouterLink, MatListItemIcon, MatListItemTitle, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatDivider, MatFormField, MatLabel, MatInput, ReactiveFormsModule, FormsModule, MatHint, MatSidenavContent, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, RouterOutlet]
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

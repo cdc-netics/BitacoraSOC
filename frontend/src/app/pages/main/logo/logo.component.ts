@@ -2,11 +2,21 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { NgIf } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton } from '@angular/material/button';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-logo',
-  templateUrl: './logo.component.html',
-  styleUrls: ['./logo.component.scss']
+    selector: 'app-logo',
+    templateUrl: './logo.component.html',
+    styleUrls: ['./logo.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, NgIf, MatIcon, MatButton, MatProgressSpinner, MatFormField, MatLabel, MatInput, ReactiveFormsModule, FormsModule, MatHint]
 })
 export class LogoComponent implements OnInit {
   currentLogo: string = '';

@@ -27,11 +27,17 @@
 import { Component, OnInit } from '@angular/core';
 import { ReportService } from '../../../services/report.service';
 import { ReportOverview } from '../../../models/report.model';
+import { NgIf } from '@angular/common';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-reports',
-  templateUrl: './reports.component.html',
-  styleUrls: ['./reports.component.scss']
+    selector: 'app-reports',
+    templateUrl: './reports.component.html',
+    styleUrls: ['./reports.component.scss'],
+    standalone: true,
+    imports: [NgIf, MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, MatIcon]
 })
 export class ReportsComponent implements OnInit {
   overview: ReportOverview | null = null;

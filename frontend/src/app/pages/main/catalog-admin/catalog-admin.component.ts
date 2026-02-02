@@ -3,12 +3,24 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { CatalogService } from '../../../services/catalog.service';
 import { CatalogEvent, CatalogLogSource, CatalogOperationType } from '../../../models/catalog.model';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatTabGroup, MatTab } from '@angular/material/tabs';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf } from '@angular/common';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'app-catalog-admin',
-  templateUrl: './catalog-admin.component.html',
-  styleUrls: ['./catalog-admin.component.scss']
+    selector: 'app-catalog-admin',
+    templateUrl: './catalog-admin.component.html',
+    styleUrls: ['./catalog-admin.component.scss'],
+    standalone: true,
+    imports: [MatTabGroup, MatTab, MatCard, MatCardHeader, MatCardTitle, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatCheckbox, MatButton, MatIcon, NgIf, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class CatalogAdminComponent implements OnInit {
   activeTabIndex = 0;

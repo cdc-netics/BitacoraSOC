@@ -3,11 +3,14 @@ import { isPlatformBrowser } from '@angular/common';
 import { ThemeService } from './services/theme.service';
 import { ConfigService } from './services/config.service';
 import { environment } from '../environments/environment';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'app-root',
-  template: '<router-outlet></router-outlet>',
-  styles: []
+    selector: 'app-root',
+    template: '<router-outlet></router-outlet>',
+    styles: [],
+    standalone: true,
+    imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
   private backendBaseUrl = environment.backendBaseUrl;

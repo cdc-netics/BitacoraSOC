@@ -3,11 +3,19 @@ import { ChecklistService } from '../../../services/checklist.service';
 import { AuthService } from '../../../services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ShiftCheck, ServiceCheck } from '../../../models/checklist.model';
+import { NgIf, NgFor, UpperCasePipe, DatePipe } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
+import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
+import { MatDivider } from '@angular/material/divider';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
-  selector: 'app-checklist-history',
-  templateUrl: './checklist-history.component.html',
-  styleUrls: ['./checklist-history.component.scss']
+    selector: 'app-checklist-history',
+    templateUrl: './checklist-history.component.html',
+    styleUrls: ['./checklist-history.component.scss'],
+    standalone: true,
+    imports: [NgIf, MatProgressSpinner, MatIcon, MatAccordion, NgFor, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatDivider, MatPaginator, UpperCasePipe, DatePipe]
 })
 export class ChecklistHistoryComponent implements OnInit {
   checks: ShiftCheck[] = [];

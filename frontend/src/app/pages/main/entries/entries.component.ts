@@ -3,16 +3,26 @@
  * Pantalla simple para crear nuevas entradas con clasificación Operativa/Incidente
  */
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EntryService } from '../../../services/entry.service';
 import { CreateEntryRequest } from '../../../models/entry.model';
 import { AuthService } from '../../../services/auth.service';
+import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatButton } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
 
 @Component({
-  selector: 'app-entries',
-  templateUrl: './entries.component.html',
-  styleUrls: ['./entries.component.scss']
+    selector: 'app-entries',
+    templateUrl: './entries.component.html',
+    styleUrls: ['./entries.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardContent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatButton, NgIf, MatIcon, MatProgressSpinner, MatRadioGroup, MatRadioButton]
 })
 export class EntriesComponent implements OnInit {
   entryForm: FormGroup;

@@ -1,13 +1,25 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CatalogService } from '../../../services/catalog.service';
 import { CatalogEvent, CatalogLogSource, CatalogOperationType } from '../../../models/catalog.model';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardContent } from '@angular/material/card';
+import { EntityAutocompleteComponent } from '../../../components/entity-autocomplete/entity-autocomplete.component';
+import { NgIf, NgFor } from '@angular/common';
+import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from '@angular/material/datepicker';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-report-generator',
-  templateUrl: './report-generator.component.html',
-  styleUrls: ['./report-generator.component.scss']
+    selector: 'app-report-generator',
+    templateUrl: './report-generator.component.html',
+    styleUrls: ['./report-generator.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardContent, ReactiveFormsModule, EntityAutocompleteComponent, NgIf, MatFormField, MatLabel, MatInput, MatError, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatButton, MatIcon, NgFor, MatIconButton]
 })
 export class ReportGeneratorComponent {
   reportForm: FormGroup;

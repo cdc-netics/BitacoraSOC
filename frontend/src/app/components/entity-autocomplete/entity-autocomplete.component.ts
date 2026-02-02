@@ -41,7 +41,7 @@ import {
   ViewChild,
   ElementRef
 } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { 
   map, 
@@ -52,7 +52,14 @@ import {
   startWith,
   tap
 } from 'rxjs/operators';
-import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger, MatAutocomplete } from '@angular/material/autocomplete';
+import { MatFormField, MatLabel, MatSuffix, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatOption } from '@angular/material/core';
 
 export interface AutocompleteItem {
   _id: string;
@@ -68,10 +75,12 @@ export interface AutocompleteResponse {
 }
 
 @Component({
-  selector: 'app-entity-autocomplete',
-  templateUrl: './entity-autocomplete.component.html',
-  styleUrls: ['./entity-autocomplete.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-entity-autocomplete',
+    templateUrl: './entity-autocomplete.component.html',
+    styleUrls: ['./entity-autocomplete.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatAutocompleteTrigger, NgIf, MatIconButton, MatSuffix, MatIcon, MatProgressSpinner, MatHint, MatAutocomplete, NgFor, MatOption, AsyncPipe]
 })
 export class EntityAutocompleteComponent implements OnInit {
   @ViewChild('inputField', { static: false }) inputField?: ElementRef<HTMLInputElement>;
