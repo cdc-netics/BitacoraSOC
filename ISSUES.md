@@ -8,7 +8,6 @@
 | --- | --- | --- | --- | --- |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
-| B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) | No aplicar masivo; definir alcance (carpeta) para evitar romper imports |
 | B4-7 | Pendiente | Observaciones | Aviso analistas de checklist | Depende de B3a (etiquetas de cargo) |
 | C1-1 | Pendiente | Revisiones de seguridad y auditoria | Analisis de seguridad general |  |
 | D1-1 | Pendiente | Complementos | Modulo de complementos (plugins) |  |
@@ -57,6 +56,7 @@
 | B4-1 | Observaciones | Eliminar backup.js.bak | Archivo eliminado |
 | B4-2 | Observaciones | Validacion de variables de entorno | Validación al inicio del server |
 | B4-3 | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption | 
+| B4-4 | Observaciones | Consistencia en nombres (kebab-case) | Alcance acotado: backend/src/middleware (rate-limiter, request-id) + shims camelCase por compatibilidad |
 | B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Commit d3112bd: Corregido en ambos menús |
 | B4-6 | Observaciones | Login, poder entrar con correo como con nombre de usuario | Backend: $or query, Frontend: label actualizado |
 | B4-8 | Infraestructura | Deshabilitar Rate Limiter en desarrollo | NODE_ENV=development en docker-compose |

@@ -193,12 +193,31 @@ router.get('/heatmap', authenticate, async (req, res) => {
     startDate.setDate(startDate.getDate() - parseInt(days));
     
     const heatmapData = await Entry.aggregate([
-      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $match: {
+          entryDate: { $gte: startDate },
+          entryTime: { $regex: /^\d{2}:\d{2}/ }
+        }
+      },
+      {
+        $addFields: {
+          entryDateTime: {
+            $dateFromParts: {
+              year: { $year: '$entryDate' },
+              month: { $month: '$entryDate' },
+              day: { $dayOfMonth: '$entryDate' },
+              hour: { $toInt: { $substr: ['$entryTime', 0, 2] } },
+              minute: { $toInt: { $substr: ['$entryTime', 3, 2] } },
+              timezone: 'America/Santiago'
+            }
+          }
+        }
+      },
       {
         $group: {
           _id: {
-            dayOfWeek: { $dayOfWeek: { date: '$createdAt', timezone: 'America/Santiago' } },
-            hour: { $hour: { date: '$createdAt', timezone: 'America/Santiago' } }
+            dayOfWeek: { $dayOfWeek: { date: '$entryDateTime', timezone: 'America/Santiago' } },
+            hour: { $hour: { date: '$entryDateTime', timezone: 'America/Santiago' } }
           },
           count: { $sum: 1 }
         }
@@ -206,7 +225,7 @@ router.get('/heatmap', authenticate, async (req, res) => {
       {
         $project: {
           _id: 0,
-          dayOfWeek: { $subtract: ['$_id.dayOfWeek', 1] }, // Ajustar domingo=0
+          dayOfWeek: { $subtract: ['$_id.dayOfWeek', 1] },
           hour: '$_id.hour',
           count: '$count'
         }

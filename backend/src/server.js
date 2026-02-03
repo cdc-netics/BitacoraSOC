@@ -22,8 +22,8 @@ const helmet = require('helmet');
 const path = require('path');
 const fs = require('fs');
 const connectDB = require('./config/database');
-const { apiLimiter } = require('./middleware/rateLimiter');
-const requestIdMiddleware = require('./middleware/requestId');
+const { apiLimiter } = require('./middleware/rate-limiter');
+const requestIdMiddleware = require('./middleware/request-id');
 const { logger } = require('./utils/logger');
 const { startChecklistAlertScheduler } = require('./utils/checklistAlertScheduler');
 
