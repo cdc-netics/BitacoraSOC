@@ -147,15 +147,11 @@ router.put('/log-sources/:id', async (req, res) => {
 
 router.delete('/log-sources/:id', async (req, res) => {
   try {
-    const source = await CatalogLogSource.findByIdAndUpdate(
-      req.params.id,
-      { enabled: false },
-      { new: true }
-    );
+    const source = await CatalogLogSource.findByIdAndDelete(req.params.id);
     if (!source) {
       return res.status(404).json({ message: 'Log Source no encontrado' });
     }
-    res.json({ message: 'Log Source deshabilitado', source });
+    res.json({ message: 'Log Source eliminado permanentemente', source });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

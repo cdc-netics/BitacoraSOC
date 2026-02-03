@@ -187,14 +187,14 @@ export class CatalogAdminComponent implements OnInit {
   }
 
   deleteLogSource(id: string): void {
-    if (!confirm('¿Deshabilitar este log source?')) return;
+    if (!confirm('⚠️ ¿ELIMINAR PERMANENTEMENTE este log source? Esta acción no se puede deshacer.')) return;
 
     this.catalogService.deleteLogSource(id).subscribe({
       next: () => {
-        this.snackBar.open('✅ Log Source deshabilitado', 'Cerrar', { duration: 2000 });
+        this.snackBar.open('✅ Log Source eliminado', 'Cerrar', { duration: 2000 });
         this.loadLogSources();
       },
-      error: () => this.snackBar.open('Error deshabilitando', 'Cerrar', { duration: 3000 })
+      error: () => this.snackBar.open('Error eliminando', 'Cerrar', { duration: 3000 })
     });
   }
 
