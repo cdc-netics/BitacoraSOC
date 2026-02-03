@@ -7,7 +7,7 @@ import { Entry } from '../../../models/entry.model';
 import { NgIf, NgFor, SlicePipe, DatePipe } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatChipSet, MatChip } from '@angular/material/chips';
-import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -19,7 +19,7 @@ import { EntryEditDialogComponent } from './entry-edit-dialog.component';
     selector: 'app-my-entries',
     templateUrl: './my-entries.component.html',
     styleUrls: ['./my-entries.component.scss'],
-  imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe, MatDialogModule, EntryDetailDialogComponent, MatButton]
+  imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe, MatDialogModule]
 })
 export class MyEntriesComponent implements OnInit {
   displayedColumns: string[] = ['date', 'time', 'type', 'content', 'tags', 'actions'];

@@ -136,7 +136,7 @@ export class EntryEditDialogComponent {
     const entry = data.entry;
     
     // Convertir entryDate de ISO string a YYYY-MM-DD para input type="date"
-    const dateString = entry.entryDate instanceof String 
+    const dateString = typeof entry.entryDate === 'string'
       ? entry.entryDate.split('T')[0]
       : new Date(entry.entryDate).toISOString().split('T')[0];
 
