@@ -64,6 +64,12 @@ const appConfigSchema = new mongoose.Schema({
     enum: ['url', 'upload', 'external'],
     default: 'url'
   },
+  // LogSource por defecto para entradas sin cliente
+  defaultLogSourceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CatalogLogSource',
+    default: null
+  },
   // Última actualización
   lastUpdatedBy: {
     type: mongoose.Schema.Types.ObjectId,

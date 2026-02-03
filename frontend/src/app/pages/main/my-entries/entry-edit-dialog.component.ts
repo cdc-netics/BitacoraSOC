@@ -59,12 +59,12 @@ import { Entry } from '../../../models/entry.model';
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Cliente / Log Source</mat-label>
             <mat-select formControlName="clientId">
-              <mat-option [value]="null">-- Netics (por defecto) --</mat-option>
+              <mat-option [value]="null">-- Por defecto (configurado por admin) --</mat-option>
               <mat-option *ngFor="let source of logSources" [value]="source._id">
                 {{ source.name }}
               </mat-option>
             </mat-select>
-            <mat-hint>El Log Source de donde proviene esta entrada</mat-hint>
+            <mat-hint>Origen de esta entrada</mat-hint>
           </mat-form-field>
         </form>
       </mat-dialog-content>

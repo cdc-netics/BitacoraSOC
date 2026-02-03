@@ -8,6 +8,7 @@ export interface AppConfig {
   lastChecklistAlertDate?: Date;
   logoUrl?: string;
   logoType?: 'url' | 'upload';
+  defaultLogSourceId?: string | { _id: string; name: string; enabled: boolean };
   lastUpdatedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -20,4 +21,5 @@ export interface UpdateConfigRequest {
   checklistAlertEnabled?: boolean;
   checklistAlertTime?: string;
   logoUrl?: string;
+  defaultLogSourceId?: string | null;
 }

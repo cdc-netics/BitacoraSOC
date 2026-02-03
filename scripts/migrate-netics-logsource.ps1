@@ -1,13 +1,16 @@
 ###############################################################################
-# Script de migración: Crear LogSource "Netics" y actualizar entradas
+# Script de migración: Configurar LogSource por defecto y actualizar entradas
 # 
 # Este script:
 # 1. Lee credenciales de MongoDB desde .env
-# 2. Crea el LogSource "Netics" si no existe
-# 3. Actualiza todas las entradas sin clientId para asignarles "Netics"
+# 2. Permite al admin configurar el LogSource por defecto
+# 3. Actualiza todas las entradas sin clientId para asignarles el LogSource configurado
 #
 # Uso:
-#   .\scripts\migrate-netics-logsource.ps1
+#   .\scripts\migrate-default-logsource.ps1 [-LogSourceName "Nombre"]
+#
+# Ejemplo:
+#   .\scripts\migrate-default-logsource.ps1 -LogSourceName "Netics"
 #
 # Pre-requisitos:
 #   - Docker y docker-compose corriendo

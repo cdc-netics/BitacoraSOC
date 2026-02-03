@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, query } = require('express-validator');
 const Entry = require('../models/Entry');
 const CatalogLogSource = require('../models/CatalogLogSource');
+const AppConfig = require('../models/AppConfig');
 const { authenticate } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const captureMetadata = require('../middleware/metadata');
@@ -56,21 +57,25 @@ router.post('/',
       // Extraer tags del contenido
       const tags = extractHashtags(content);
 
-      // Si no hay clientId, buscar automáticamente "Netics"
+      // Si no hay clientId, usar LogSource por defecto de configuración
       let finalClientId = clientId;
       let clientName = null;
       
       if (!clientId) {
-        // Buscar LogSource "Netics"
-        const neticsSource = await CatalogLogSource.findOne({ 
-          name: 'Netics',
-          enabled: true 
-        }).select('_id name');
+        // Obtener configuración de la app
+        const appConfig = await AppConfig.findOne();
         
-        if (neticsSource) {
-          finalClientId = neticsSource._id;
-          clientName = neticsSource.name;
+        if (appConfig && appConfig.defaultLogSourceId) {
+          // Usar LogSource configurado como predeterminado
+          const defaultSource = await CatalogLogSource.findById(appConfig.defaultLogSourceId)
+            .select('_id name enabled');
+          
+          if (defaultSource && defaultSource.enabled) {
+            finalClientId = defaultSource._id;
+            clientName = defaultSource.name;
+          }
         }
+        // Si no hay LogSource configurado, el entry se crea sin cliente (null)
       } else {
         // Si se proporciona clientId, obtener su nombre
         const logSource = await CatalogLogSource.findById(clientId).select('name enabled');
@@ -284,14 +289,18 @@ router.put('/:id',
       // Manejar cambio de clientId
       if (clientId !== undefined) {
         if (clientId === null) {
-          // Si es null, auto-asignar Netics
-          const neticsSource = await CatalogLogSource.findOne({ 
-            name: 'Netics',
-            enabled: true 
-          });
-          if (neticsSource) {
-            entry.clientId = neticsSource._id;
-            entry.clientName = neticsSource.name;
+          // Si es null, usar LogSource por defecto de configuración
+          const appConfig = await AppConfig.findOne();
+          
+          if (appConfig && appConfig.defaultLogSourceId) {
+            const defaultSource = await CatalogLogSource.findById(appConfig.defaultLogSourceId);
+            if (defaultSource && defaultSource.enabled) {
+              entry.clientId = defaultSource._id;
+              entry.clientName = defaultSource.name;
+            } else {
+              entry.clientId = null;
+              entry.clientName = null;
+            }
           } else {
             entry.clientId = null;
             entry.clientName = null;

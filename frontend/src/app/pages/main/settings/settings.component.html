@@ -3,7 +3,7 @@
 
   <mat-card class="config-card" id="general-config">
     <mat-card-header>
-      <mat-card-title>Modo Invitado</mat-card-title>
+      <mat-card-title>Configuración General</mat-card-title>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="appConfigForm" (ngSubmit)="saveAppConfig()">
@@ -22,6 +22,17 @@
             <mat-hint>Solo admins pueden cambiar este horario</mat-hint>
           </mat-form-field>
         </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>LogSource por Defecto</mat-label>
+          <mat-select formControlName="defaultLogSourceId">
+            <mat-option [value]="null">-- Sin LogSource predeterminado --</mat-option>
+            <mat-option *ngFor="let source of logSources" [value]="source._id">
+              {{ source.name }}{{ source.parent ? ' (' + source.parent + ')' : '' }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>Se asignará automáticamente al crear entradas sin seleccionar cliente</mat-hint>
+        </mat-form-field>
 
         <button mat-raised-button color="primary" type="submit"
                 [disabled]="!appConfigForm.valid">

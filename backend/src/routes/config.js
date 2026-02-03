@@ -43,7 +43,7 @@ const upload = multer({
 // GET /api/config - Obtener configuración
 router.get('/', authenticate, async (req, res) => {
   try {
-    let config = await AppConfig.findOne();
+    let config = await AppConfig.findOne().populate('defaultLogSourceId', 'name enabled');
 
     if (!config) {
       config = await AppConfig.create({
@@ -72,7 +72,8 @@ router.put('/',
     body('shiftCheckCooldownHours').optional().isInt({ min: 1, max: 24 }).toInt(),
     body('checklistAlertEnabled').optional().isBoolean(),
     body('checklistAlertTime').optional().matches(/^\d{2}:\d{2}$/).withMessage('Formato de hora inválido (HH:mm)'),
-    body('logoUrl').optional().trim()
+    body('logoUrl').optional().trim(),
+    body('defaultLogSourceId').optional({ checkFalsy: true }).isMongoId().withMessage('ID de LogSource inválido')
   ],
   validate,
   async (req, res) => {
@@ -87,6 +88,9 @@ router.put('/',
 
       config.lastUpdatedBy = req.user._id;
       await config.save();
+
+      // Populate defaultLogSourceId para retornar nombre
+      await config.populate('defaultLogSourceId', 'name enabled');
 
       res.json({ message: 'Configuración actualizada', config });
     } catch (error) {
