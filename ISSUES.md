@@ -10,8 +10,6 @@
 | B6 | Pendiente | Bugs | Dark Mode: contraste y legibilidad | Textos/botones invisibles, inputs blancos con letra blanca |
 | B7 | ✅ Resuelto | Bugs | No se podían editar entradas | Implementado diálogo de edición en my-entries component |
 | B8 | Pendiente | Mejoras | Edición masiva/individual de entradas (admin) | Admin puede editar entradas de otros, pero NO contenido/hora/fecha/autor |
-| C5 | Pendiente | Cambios | Token de recuperación: reducir a 5 min | Actualmente dura 1 hora, riesgo de seguridad |
-| C6 | Pendiente | Cambios | Sesión JWT muy larga (24h) | Reducir a 4h + implementar refresh token rotation |
 | M7 | Pendiente | Mejoras | Tema Cyberpunk/Neon | Investigar implementación sin los problemas del dark mode |
 | B1c | Pendiente | Bugs | Version no se muestra en sidebar | Placeholder __APP_VERSION__ no reemplazado en build |
 | B2p | Pendiente | Mejoras | Config TLS/SSL en backend (admin) | Permitir cargar certificados sin reconstruir imagen |
@@ -75,6 +73,8 @@
 | B4-11 | UI/UX | Mejora visibilidad texto login/recovery CRT theme | Todos los elementos forzados a #ffffff con !important + text-shadow green glow |
 | B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Backend: RaciEntry con contactos {name, email, phone}. Frontend: form admin + vista analista con iconos |
 | B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios/log-sources), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend, /entries-by-logsource y /heatmap |
+| C5 | Cambios | Token de recuperación: reducir a 5 min | Reducido de 1h a 5 minutos en auth.js. Email y frontend actualizados con aviso temporal |
+| C6 | Cambios | Sesión JWT reducida a 4h | JWT reducido de 24h a 4h para admin/user, guest mantiene 2h. Aviso en login sobre duración |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
