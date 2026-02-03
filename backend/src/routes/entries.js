@@ -383,17 +383,7 @@ router.put('/admin/edit',
   [
     body('entryIds').isArray({ min: 1 }).withMessage('Debe proporcionar al menos un ID de entrada'),
     body('entryIds.*').isMongoId().withMessage('IDs inválidos'),
-    body('updates').isObject().withMessage('Actualizaciones requeridas'),
-    body('updates.tags').optional().isArray(),
-    body('updates.clientId').optional({ checkFalsy: true }).custom((value) => {
-      // Acepta: null, '__no_change__', o MongoId válido
-      if (value === null || value === '__no_change__') return true;
-      if (!mongoose.Types.ObjectId.isValid(value)) {
-        throw new Error('clientId debe ser un ObjectId válido, null, o "__no_change__"');
-      }
-      return true;
-    }),
-    body('updates.entryType').optional().isIn(['operativa', 'incidente']).withMessage('entryType inválido')
+    body('updates').isObject().withMessage('Actualizaciones requeridas')
   ],
   validate,
   async (req, res) => {
@@ -409,9 +399,22 @@ router.put('/admin/edit',
       const allowedFields = ['tags', 'clientId', 'clientName', 'entryType'];
       const sanitizedUpdates = {};
 
-      // Procesar campos permitidos
+      // Procesar campos permitidos (filtrar '__no_change__')
       for (const field of allowedFields) {
         if (updates[field] !== undefined && updates[field] !== '__no_change__') {
+          // Validar cada campo según su tipo
+          if (field === 'tags' && !Array.isArray(updates[field])) {
+            return res.status(400).json({ message: 'tags debe ser un array' });
+          }
+          if (field === 'clientId' && updates[field] !== null) {
+            if (!mongoose.Types.ObjectId.isValid(updates[field])) {
+              return res.status(400).json({ message: 'clientId debe ser un ObjectId válido o null' });
+            }
+          }
+          if (field === 'entryType' && !['operativa', 'incidente'].includes(updates[field])) {
+            return res.status(400).json({ message: 'entryType debe ser "operativa" o "incidente"' });
+          }
+          
           sanitizedUpdates[field] = updates[field];
         }
       }
