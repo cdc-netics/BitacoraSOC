@@ -492,6 +492,227 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
     - Log de todos los intentos de envío
 - **Archivos relevantes:** `backend/src/models/IntegrationConfig.js`, `backend/src/routes/checklist.js`, `backend/src/routes/integrations.js`, `backend/src/utils/integrationDispatcher.js`
 
+**Implementación técnica propuesta:**
+
+**1. Modelo: IntegrationConfig.js (de B2l, extendido para B2o)**
+```javascript
+const integrationConfigSchema = new mongoose.Schema({
+  name: String, // 'GLPI', 'Zendesk', etc.
+  provider: { type: String, enum: ['glpi', 'generic'], default: 'generic' },
+  url: String,
+  authType: { type: String, enum: ['api-key', 'bearer', 'basic', 'oauth2'] },
+  apiKey: String, // Encriptado con utils/encryption
+  // Campos GLPI específicos
+  projectId: Number, // ID del proyecto en GLPI
+  categoryId: Number, // ID categoría de ticket
+  assignedGroup: String, // Grupo asignado
+  // Auto-envío al cierre
+  autoOnShiftClose: { type: Boolean, default: false },
+  includeEntryDetails: { type: Boolean, default: true },
+  templateTitle: { type: String, default: 'Turno SOC - {{date}} - {{analyst}}' },
+  active: { type: Boolean, default: true }
+}, { timestamps: true });
+```
+
+**2. Modificación en checklist.js (línea ~550, después de sendChecklistEmail):**
+```javascript
+// Si es cierre de turno, intentar enviar a GLPI
+if (type === 'cierre') {
+  try {
+    const IntegrationConfig = require('../models/IntegrationConfig');
+    const glpiConfig = await IntegrationConfig.findOne({ 
+      name: 'GLPI', 
+      active: true,
+      autoOnShiftClose: true 
+    });
+
+    if (glpiConfig) {
+      // Obtener entradas del día
+      const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
+      const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
+      
+      const entries = await Entry.find({
+        createdBy: userId,
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+      }).sort({ createdAt: -1 });
+
+      // Contar tipos
+      const incidents = entries.filter(e => e.entryType === 'incidente').length;
+      const operational = entries.filter(e => e.entryType === 'operativa').length;
+
+      // Top tags
+      const tagCounts = {};
+      entries.forEach(e => {
+        e.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      });
+      const topTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([tag]) => tag);
+
+      // Construir payload GLPI
+      const glpiPayload = {
+        input: {
+          name: glpiConfig.templateTitle
+            .replace('{{date}}', new Date().toLocaleDateString('es-CL'))
+            .replace('{{analyst}}', req.user.fullName || req.user.username),
+          content: `
+**Resumen de Turno SOC**
+- Total entradas: ${entries.length}
+- Incidentes: ${incidents}
+- Operativas: ${operational}
+- Tags principales: ${topTags.join(', ') || 'N/A'}
+- Servicios con problemas: ${normalizedServices.filter(s => s.status === 'rojo').map(s => s.serviceTitle).join(', ') || 'Ninguno'}
+
+**Detalles:**
+${glpiConfig.includeEntryDetails ? entries.map(e => 
+  `- [${e.entryType}] ${e.entryDate} ${e.entryTime}: ${e.content.substring(0, 100)}...`
+).join('\n') : 'Detalles omitidos'}
+          `,
+          type: 'incident',
+          itilcategories_id: glpiConfig.categoryId,
+          groups_id_assign: glpiConfig.assignedGroup
+        }
+      };
+
+      // Llamar a integrationDispatcher (de B2l)
+      const { sendViaIntegration } = require('../utils/integrationDispatcher');
+      const result = await sendViaIntegration(glpiConfig, glpiPayload);
+
+      // Guardar en ShiftClosure
+      const closure = new ShiftClosure({
+        userId,
+        shiftStartAt: lastCheck?.createdAt || startOfDay,
+        shiftEndAt: new Date(),
+        closureCheckId: check._id,
+        summary: {
+          totalEntries: entries.length,
+          totalIncidents: incidents,
+          servicesDown: normalizedServices.filter(s => s.status === 'rojo').map(s => s.serviceTitle)
+        },
+        sentVia: 'api',
+        integrationName: 'GLPI',
+        sentAt: new Date(),
+        sentStatus: result.success ? 'success' : 'failed',
+        sentError: result.error || null
+      });
+      await closure.save();
+
+      logger.info({ userId, ticketId: result.ticketId }, 'GLPI ticket sent successfully');
+    }
+  } catch (glpiError) {
+    logger.error({ err: glpiError, userId }, 'Error sending to GLPI');
+    // No bloquear el cierre si falla GLPI
+  }
+}
+```
+
+**3. Modelo: IntegrationDelivery.js (para auditoría)**
+```javascript
+const integrationDeliverySchema = new mongoose.Schema({
+  integrationConfigId: { type: mongoose.Schema.Types.ObjectId, ref: 'IntegrationConfig' },
+  event: { type: String, enum: ['shift-close', 'manual-trigger', 'scheduled'] },
+  payload: mongoose.Schema.Types.Mixed, // payload enviado
+  response: mongoose.Schema.Types.Mixed, // respuesta de GLPI
+  statusCode: Number,
+  success: Boolean,
+  externalId: String, // ticket ID en GLPI
+  error: String,
+  sentAt: Date
+}, { timestamps: true });
+
+integrationDeliverySchema.index({ integrationConfigId: 1, createdAt: -1 });
+```
+
+**4. Ruta /api/integrations (de B2l)**
+```javascript
+// GET /api/integrations - Listar integraciones (admin)
+router.get('/integrations', authenticate, authorize('admin'), async (req, res) => {
+  const configs = await IntegrationConfig.find({});
+  res.json(configs);
+});
+
+// POST /api/integrations - Crear/actualizar integración (admin)
+router.post('/integrations', authenticate, authorize('admin'), async (req, res) => {
+  const { name, provider, url, authType, apiKey, autoOnShiftClose, includeEntryDetails, templateTitle, active } = req.body;
+  let config = await IntegrationConfig.findOne({ name });
+  
+  if (!config) {
+    config = new IntegrationConfig({ name, provider });
+  }
+  
+  Object.assign(config, {
+    url, authType, autoOnShiftClose, includeEntryDetails, templateTitle, active,
+    apiKey: encrypt(apiKey) // Encriptar
+  });
+  
+  await config.save();
+  res.json(config);
+});
+
+// GET /api/integrations/deliveries - Historial de envíos
+router.get('/integrations/deliveries', authenticate, authorize('admin'), async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const deliveries = await IntegrationDelivery.find({})
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit));
+  
+  res.json(deliveries);
+});
+```
+
+**5. Utilidad: integrationDispatcher.js (de B2l)**
+```javascript
+const nodemailer = require('nodemailer');
+const axios = require('axios');
+const { decrypt } = require('./encryption');
+
+const sendViaIntegration = async (config, payload) => {
+  try {
+    const authHeader = {
+      'api-key': `${decrypt(config.apiKey)}`,
+      'bearer': `Bearer ${decrypt(config.apiKey)}`,
+      'basic': `Basic ${Buffer.from(`${decrypt(config.apiKey)}`).toString('base64')}`
+    };
+
+    const response = await axios.post(config.url, payload, {
+      headers: {
+        'Authorization': authHeader[config.authType],
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
+
+    return {
+      success: true,
+      ticketId: response.data?.id || response.data?.ticket_id,
+      statusCode: response.status
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      statusCode: error.response?.status || 0
+    };
+  }
+};
+
+module.exports = { sendViaIntegration };
+```
+
+**Flujo de uso:**
+1. Admin crea integración GLPI: URL, API token, categoría, grupo.
+2. Admin activa "Auto-enviar al cierre de turno".
+3. Analista hace cierre: endpoint POST /api/checklist/check con `type=cierre`.
+4. Backend valida checklist, crea registro ShiftCheck.
+5. Backend detecta configuración GLPI activa y reúne entradas del día.
+6. Construye payload y envía via integrationDispatcher.
+7. Resultado se guarda en ShiftClosure (success/failed/error).
+8. Admin puede ver historial en "Integraciones → Historial de Envíos".
+
 #### **B2m** **Estado de turno + cierre automatico (envio via integracion)**
 - **Objetivo:** Registrar el estado del turno y, al hacer "cierre de turno", enviar automaticamente checklist + entradas del periodo a una integracion (ej: GLPI).
 - **Flujo propuesto:**
