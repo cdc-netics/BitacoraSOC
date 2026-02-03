@@ -83,6 +83,14 @@ export class ReportsComponent implements OnInit {
     domain: ['#00ff99', '#00ccff', '#ff6b6b', '#ffd700', '#9b59b6', '#3498db', '#e74c3c', '#2ecc71']
   };
   
+  // Esquema de colores para heatmap (gradiente: verde=bajo, rojo=alto)
+  heatmapColorScheme: Color = {
+    name: 'heatmap',
+    selectable: true,
+    group: ScaleType.Linear,
+    domain: ['#1aa333', '#4db849', '#a4d65e', '#f5f5a4', '#ffb84d', '#ff7f42', '#e63946']
+  };
+  
   // Selección de tags para comparación
   availableTags: string[] = [];
   selectedTagsForComparison: string[] = [];

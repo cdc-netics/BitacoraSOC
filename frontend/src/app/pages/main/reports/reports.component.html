@@ -185,17 +185,36 @@
         <mat-card-title>🖥️ Entradas por Log Source / Cliente</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <ngx-charts-bar-horizontal
-          [view]="view"
-          [results]="entriesByLogSourceData"
-          [xAxis]="true"
-          [yAxis]="true"
-          [showXAxisLabel]="true"
-          [showYAxisLabel]="true"
-          xAxisLabel="Cantidad de Entradas"
-          yAxisLabel="Log Source"
-          [scheme]="colorScheme">
-        </ngx-charts-bar-horizontal>
+        <div class="charts-grid">
+          <!-- Gráfico de barras -->
+          <div class="chart-wrapper">
+            <h3 class="chart-subtitle">Cantidad por Cliente</h3>
+            <ngx-charts-bar-horizontal
+              [view]="[400, 300]"
+              [results]="entriesByLogSourceData"
+              [xAxis]="true"
+              [yAxis]="true"
+              [showXAxisLabel]="true"
+              [showYAxisLabel]="true"
+              xAxisLabel="Entradas"
+              yAxisLabel=""
+              [scheme]="colorScheme">
+            </ngx-charts-bar-horizontal>
+          </div>
+          
+          <!-- Gráfico de torta -->
+          <div class="chart-wrapper">
+            <h3 class="chart-subtitle">Distribución Porcentual</h3>
+            <ngx-charts-pie-chart
+              [view]="[400, 300]"
+              [results]="entriesByLogSourceData"
+              [legend]="true"
+              [labels]="true"
+              [doughnut]="false"
+              [scheme]="colorScheme">
+            </ngx-charts-pie-chart>
+          </div>
+        </div>
       </mat-card-content>
     </mat-card>
 
@@ -213,6 +232,31 @@
         <p class="chart-description">
           Visualiza los picos de actividad: horas y días con más entradas
         </p>
+        
+        <!-- Leyenda de escala de colores -->
+        <div class="heatmap-legend">
+          <div class="legend-item">
+            <span class="legend-color" style="background-color: #1aa333;"></span>
+            <span class="legend-label">Bajo (0-25%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background-color: #4db849;"></span>
+            <span class="legend-label">Bajo-Medio (25-40%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background-color: #a4d65e;"></span>
+            <span class="legend-label">Medio (40-60%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background-color: #ffb84d;"></span>
+            <span class="legend-label">Alto (60-80%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background-color: #e63946;"></span>
+            <span class="legend-label">Muy Alto (80-100%)</span>
+          </div>
+        </div>
+        
         <div *ngIf="heatmapData.length > 0">
           <ngx-charts-heat-map
             [view]="[900, 400]"
@@ -223,7 +267,7 @@
             [showYAxisLabel]="true"
             xAxisLabel="Hora del Día"
             yAxisLabel="Día de la Semana"
-            [scheme]="colorScheme">
+            [scheme]="heatmapColorScheme">
           </ngx-charts-heat-map>
         </div>
       </mat-card-content>
