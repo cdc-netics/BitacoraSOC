@@ -405,6 +405,21 @@ $crt-font: 'Courier New', monospace;
   }
 }
 
+// Session info
+.session-info {
+  margin-top: 16px;
+  padding: 8px 12px;
+  text-align: center;
+  font-family: $crt-font;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #00cc77;
+  background-color: rgba(0, 204, 119, 0.05);
+  border: 1px solid rgba(0, 204, 119, 0.3);
+  border-radius: 4px;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.6);
+}
+
 // Recovery link
 .recover-link {
   background: none;

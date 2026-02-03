@@ -4,13 +4,19 @@
  * Endpoints:
  *   POST /api/auth/login   - Iniciar sesión
  *   POST /api/auth/refresh - Renovar token JWT
+ *   POST /api/auth/forgot-password - Solicitar token de reseteo
+ *   POST /api/auth/reset-password - Resetear contraseña
  * 
  * Roles: admin, user, guest
  * 
- * Tokens JWT:
- *   - Admin/User: 24h de duración
+ * Tokens JWT (C6 - Reducido por seguridad):
+ *   - Admin/User: 4h de duración (reducido de 24h)
  *   - Guest: 2h de duración (cuentas guest expiran a 48h)
  *   - Verificación de expiración guest en login y refresh
+ * 
+ * Token de Recuperación (C5 - Reducido por seguridad):
+ *   - Duración: 5 minutos (reducido de 1 hora)
+ *   - Hasheado con SHA256 antes de almacenar
  */
 const express = require('express');
 const router = express.Router();
@@ -25,10 +31,11 @@ const { logger } = require('../utils/logger');
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // 🎫 Generar token JWT con expiración diferenciada por rol
-// Guest: 2h (sesión corta), Admin/User: 24h
+// Guest: 2h (sesión corta), Admin/User: 4h (reducido de 24h por seguridad)
 const generateToken = (userId, role) => {
   // Guest: tokens más cortos (2 horas)
-  const expiresIn = role === 'guest' ? '2h' : (process.env.JWT_EXPIRES_IN || '24h');
+  // Admin/User: 4 horas (reducido por seguridad - C6)
+  const expiresIn = role === 'guest' ? '2h' : '4h';
   return jwt.sign(
     { userId, role },
     process.env.JWT_SECRET,
@@ -194,9 +201,9 @@ router.post('/forgot-password',
       const resetToken = crypto.randomBytes(32).toString('hex');
       const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-      // Guardar token hasheado + expiración (1 hora)
+      // Guardar token hasheado + expiración (5 minutos por seguridad - C5)
       user.resetPasswordToken = hashedToken;
-      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      user.resetPasswordExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
       await user.save();
 
       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/reset-password?token=${resetToken}`;
@@ -226,7 +233,7 @@ router.post('/forgot-password',
             from: `"${smtpConfig.senderName}" <${smtpConfig.senderEmail}>`,
             to: email,
             subject: 'Recuperación de Contraseña - Bitácora SOC',
-            text: `Hola,\n\nHemos recibido una solicitud para resetear tu contraseña.\n\nHaz click en el siguiente enlace para crear una nueva contraseña:\n${resetUrl}\n\nEste enlace expirará en 1 hora.\n\nSi no solicitaste este cambio, ignora este email.\n\nSaludos,\nEquipo Bitácora SOC`,
+            text: `Hola,\n\nHemos recibido una solicitud para resetear tu contraseña.\n\nHaz click en el siguiente enlace para crear una nueva contraseña:\n${resetUrl}\n\nEste enlace expirará en 5 minutos.\n\nSi no solicitaste este cambio, ignora este email.\n\nSaludos,\nEquipo Bitácora SOC`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #1976d2;">Recuperación de Contraseña</h2>
@@ -239,7 +246,7 @@ router.post('/forgot-password',
                   </a>
                 </div>
                 <p><small>O copia y pega este enlace en tu navegador:<br>${resetUrl}</small></p>
-                <p style="color: #f44336;"><strong>⏰ Este enlace expirará en 1 hora.</strong></p>
+                <p style="color: #f44336;"><strong>⏰ Este enlace expirará en 5 minutos.</strong></p>
                 <p>Si no solicitaste este cambio, ignora este email.</p>
                 <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
                 <p style="color: #666; font-size: 12px;">Saludos,<br>Equipo Bitácora SOC</p>
