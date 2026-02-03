@@ -7,6 +7,7 @@
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
+| B2o | Pendiente | Mejoras | Envio automatico de entradas a GLPI al cierre de turno | Depende de B2l; toma entradas del día y crea ticket |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
 | B4-7 | Pendiente | Observaciones | Aviso analistas de checklist | Depende de B3a (etiquetas de cargo) |
 | C1-1 | Pendiente | Revisiones de seguridad y auditoria | Analisis de seguridad general |  |
@@ -463,6 +464,33 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
     - Titulo personalizable (ej: `Ticket CSC {{date}}`).
     - Cuerpo con resumen + listado de entradas (formato HTML o texto).
 - **Archivos relevantes para implementar:** `backend/src/routes/entries.js`, `backend/src/routes/checklist.js`, `backend/src/utils/logForwarder.js`, `backend/src/routes/smtp.js`.
+
+#### **B2o** **Envío automático de entradas a GLPI al cierre de turno (depende de B2l)**
+- **Objetivo:** Configurar una integración específica con GLPI para que, al hacer cierre de turno, se envíen automáticamente todas las entradas del día como un ticket.
+- **Flujo propuesto:**
+    1. Admin configura conector GLPI en "Integraciones" (URL, API token, etc.) - reutiliza B2l.
+    2. Al registrar `POST /api/checklist/check` con `type = cierre`, verificar si existe conector GLPI activo.
+    3. Si sí, obtener todas las entradas del día para el usuario (`createdAt >= 00:00:00 && createdAt <= 23:59:59`).
+    4. Construir payload con formato de ticket (título personalizable, descripción, tags, incidentes).
+    5. Enviar a GLPI via API; registrar resultado (ok/fallo) en una tabla de auditoría.
+- **Datos que se envían a GLPI:**
+    - Título: `Turno SOC - {fecha} - {analista}` (personalizable)
+    - Descripción: resumen de entradas (cantidad total, incidentes, tags top)
+    - Listado de entradas: fecha, tipo, tags, contenido (si configurado)
+    - Estado general: ok/con problemas (basado en rojos en checklist)
+- **UI/Admin:**
+    - En "Integraciones", opción para marcar conector como "auto-enviar al cierre de turno"
+    - Checkbox: "Incluir detalles de entradas en ticket"
+    - Vista de historial: últimos envíos a GLPI (fecha, resultado, ticket ID si aplica)
+- **Backend (basado en B2l):**
+    - Usar modelo `IntegrationConfig` de B2l con campo adicional `autoOnShiftClose: boolean`
+    - En `backend/src/routes/checklist.js`, al procesar cierre: buscar `IntegrationConfig` con `autoOnShiftClose=true`
+    - Construir payload y llamar a `integrationDispatcher` (de B2l)
+    - Guardar resultado en tabla `ShiftClosureLog` (o similar)
+- **Validación:**
+    - Si GLPI no responde, registrar error pero permitir que el cierre de turno se complete normalmente (no bloquear)
+    - Log de todos los intentos de envío
+- **Archivos relevantes:** `backend/src/models/IntegrationConfig.js`, `backend/src/routes/checklist.js`, `backend/src/routes/integrations.js`, `backend/src/utils/integrationDispatcher.js`
 
 #### **B2m** **Estado de turno + cierre automatico (envio via integracion)**
 - **Objetivo:** Registrar el estado del turno y, al hacer "cierre de turno", enviar automaticamente checklist + entradas del periodo a una integracion (ej: GLPI).
