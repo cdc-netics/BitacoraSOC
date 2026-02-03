@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { body, query } = require('express-validator');
 const Entry = require('../models/Entry');
 const CatalogLogSource = require('../models/CatalogLogSource');
@@ -491,9 +492,10 @@ router.put('/admin/edit',
         stack: error.stack,
         requestId: req.requestId,
         userId: req.user._id,
-        body: req.body,
-        sanitizedUpdates: sanitizedUpdates
+        body: req.body
       }, 'Error in admin bulk edit');
+
+      console.error('❌ [Admin Edit] Error:', error);
 
       res.status(500).json({ 
         message: 'Error al editar entradas',

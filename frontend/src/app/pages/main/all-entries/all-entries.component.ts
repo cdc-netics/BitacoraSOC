@@ -270,10 +270,13 @@ Tags: ${tags}`;
     });
 
     dialogRef.afterClosed().subscribe((updates) => {
+      console.log('🔵 [Admin Edit] Dialog closed with updates:', updates);
       if (!updates) return; // Cancelado
 
+      console.log('🟢 [Admin Edit] Calling adminEditEntries with:', { entryIds, updates });
       this.entryService.adminEditEntries(entryIds, updates).subscribe({
         next: (response) => {
+          console.log('✅ [Admin Edit] Response:', response);
           this.snackBar.open(
             `✅ ${response.modifiedCount} entrada(s) actualizada(s)`,
             'Cerrar',
@@ -283,6 +286,7 @@ Tags: ${tags}`;
           this.loadEntries();
         },
         error: (err) => {
+          console.error('❌ [Admin Edit] Error:', err);
           const msg = err.error?.message || 'Error editando entradas';
           this.snackBar.open(`❌ ${msg}`, 'Cerrar', { duration: 4000 });
         }

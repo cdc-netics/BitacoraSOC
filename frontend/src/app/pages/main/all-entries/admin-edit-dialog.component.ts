@@ -265,6 +265,7 @@ export class AdminEditDialogComponent implements OnInit {
   }
 
   onSave(): void {
+    console.log('🔵 [Dialog] onSave called, formValue:', this.editForm.value);
     const formValue = this.editForm.value;
     const updates: any = {};
 
@@ -286,12 +287,17 @@ export class AdminEditDialogComponent implements OnInit {
       updates.entryType = formValue.entryType;
     }
 
+    console.log('🟢 [Dialog] Updates object:', updates);
+    console.log('🟡 [Dialog] Object.keys(updates).length:', Object.keys(updates).length);
+
     // Si no hay cambios, cerrar
     if (Object.keys(updates).length === 0) {
+      console.log('⚠️ [Dialog] No updates, closing without data');
       this.dialogRef.close();
       return;
     }
 
+    console.log('✅ [Dialog] Closing with updates:', updates);
     this.dialogRef.close(updates);
   }
 }
