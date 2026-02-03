@@ -172,7 +172,8 @@ export class EntryEditDialogComponent implements OnInit {
 
   loadLogSources(): void {
     this.catalogService.getAllLogSources().subscribe({
-      next: (sources: any) => {
+      next: (response: any) => {
+        const sources = response.items || response;
         this.logSources = sources.filter((s: any) => s.enabled);
       },
       error: (err: any) => {
