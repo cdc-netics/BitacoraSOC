@@ -22,6 +22,8 @@ const validate = require('../middleware/validate');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // 🎫 Generar token JWT con expiración diferenciada por rol
 // Guest: 2h (sesión corta), Admin/User: 24h
 const generateToken = (userId, role) => {
@@ -47,8 +49,11 @@ router.post('/login',
       const { username, password } = req.body;
 
       // Buscar por username O email
+      const normalized = (username || '').trim();
+      const exactMatch = new RegExp(`^${escapeRegex(normalized)}$`, 'i');
+
       const user = await User.findOne({ 
-        $or: [{ username }, { email: username }]
+        $or: [{ username: exactMatch }, { email: exactMatch }]
       });
       console.log('🔵 Usuario encontrado:', !!user);
 

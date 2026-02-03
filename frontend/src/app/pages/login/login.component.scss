@@ -181,7 +181,10 @@ $crt-font: 'Courier New', monospace;
   margin: 0;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(0, 204, 119, 0.5);
+  text-shadow: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 // Form
