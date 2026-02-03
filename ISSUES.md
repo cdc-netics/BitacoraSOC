@@ -7,6 +7,7 @@
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
 | B1c | Pendiente | Bugs | Version no se muestra en sidebar | Placeholder __APP_VERSION__ no reemplazado en build |
+| B2p | Pendiente | Mejoras | Config TLS/SSL en backend (admin) | Permitir cargar certificados sin reconstruir imagen |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2o | Pendiente | Mejoras | Envio automatico de entradas a GLPI al cierre de turno | Depende de B2l; toma entradas del día y crea ticket |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
@@ -313,6 +314,354 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - **Ejemplos:**
   - Antes: "Bitácora SOC __APP_VERSION__" o "Bitácora SOC VDEV"
   - Después: "Bitácora SOC 1.1.0" (en prod) o "Bitácora SOC dev" (en dev)
+
+#### **B2p** **Configuración TLS/SSL en backend (sin reconstruir imagen)**
+- **Objetivo:** Permitir que el admin pueda cargar certificados SSL/TLS en tiempo de ejecución (sin rebuild de Docker) para habilitar HTTPS en el backend. Similar a Portainer.
+- **Casos de uso:**
+  - Desarrollo local: carga de certificados autofirmados (self-signed)
+  - Producción: carga de certificados válidos (Let's Encrypt, DigiCert, etc.)
+  - Cambio de certificados sin reiniciar contenedores
+- **Requisitos:**
+  - UI en Admin Panel para subir archivo `.crt` (certificate) y `.key` (private key)
+  - Validación de certificados antes de activar HTTPS
+  - Fallback a HTTP si HTTPS falla (no bloquear aplicación)
+  - Almacenar certificados encriptados en modelo MongoDB
+  - Endpoint `/health` disponible en ambos puertos (HTTP y HTTPS)
+  - Reinicio de servidor Express (sin reinicio de contenedor)
+- **Flujo de usuario:**
+  1. Admin va a "Configuración → Seguridad TLS/SSL"
+  2. Ve estado actual: "HTTP activado, HTTPS desactivado"
+  3. Sube archivo `.crt` y `.key`
+  4. Sistema valida certificados (fecha expiración, dominio coincide, etc.)
+  5. Guarda certificados encriptados en DB
+  6. Reinicia servidor Express en HTTPS
+  7. Todos los nuevos requests van a HTTPS (puerto 443 ó 8443)
+  8. HTTP redirecciona a HTTPS (opcional)
+- **Archivos relevantes:**
+  - `backend/src/server.js` - Agregar soporte HTTPS con `https` module de Node
+  - `backend/src/models/TlsConfig.js` - Modelo para certificados (nuevo)
+  - `backend/src/routes/config.js` - Endpoint para subir/validar certificados
+  - `backend/src/utils/certificateValidator.js` - Validar certificados
+  - `frontend/src/app/pages/main/settings/` - UI para cargar certificados (nuevo tab)
+- **Archivos que NO cambian (importante):**
+  - `backend/Dockerfile` - Sin cambios; soporta HTTPS vía env vars
+  - `docker-compose.yml` - Agregar puertos 443 y 8443 opcionalmente
+  - Estructura de `uploads/` ya existe (reutilizar)
+
+**Implementación técnica propuesta:**
+
+**1. Modelo: TlsConfig.js (nuevo)**
+```javascript
+const tlsConfigSchema = new mongoose.Schema({
+  enabled: { type: Boolean, default: false },
+  protocol: { type: String, enum: ['http', 'https'], default: 'http' },
+  httpPort: { type: Number, default: 3000 },
+  httpsPort: { type: Number, default: 8443 },
+  certificatePem: String, // Encriptado (utils/encryption)
+  privateKeyPem: String, // Encriptado (utils/encryption)
+  certificatePath: String, // Ruta en /app/certs/ ej: /app/certs/server.crt
+  privateKeyPath: String, // Ruta en /app/certs/ ej: /app/certs/server.key
+  certificateValidFrom: Date,
+  certificateValidUntil: Date,
+  certificateIssuer: String,
+  certificateSubject: String,
+  certificateError: String, // Error si validación falló
+  lastUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  redirectHttpToHttps: { type: Boolean, default: false },
+  createdAt: Date,
+  updatedAt: Date
+}, { timestamps: true });
+
+module.exports = mongoose.model('TlsConfig', tlsConfigSchema);
+```
+
+**2. Modificación en server.js (agregar HTTPS)**
+```javascript
+const https = require('https');
+const TlsConfig = require('./models/TlsConfig');
+
+let server = null;
+
+const initializeServer = async () => {
+  const tlsConfig = await TlsConfig.findOne();
+  
+  if (tlsConfig?.enabled && tlsConfig?.certificatePem && tlsConfig?.privateKeyPem) {
+    try {
+      const { decrypt } = require('./utils/encryption');
+      const httpsOptions = {
+        cert: decrypt(tlsConfig.certificatePem),
+        key: decrypt(tlsConfig.privateKeyPem)
+      };
+      
+      server = https.createServer(httpsOptions, app);
+      const httpsPort = tlsConfig.httpsPort || 8443;
+      
+      server.listen(httpsPort, HOST, () => {
+        console.log(`✅ HTTPS activado en puerto ${httpsPort}`);
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Error iniciando HTTPS');
+      startHttpServer();
+    }
+  } else {
+    startHttpServer();
+  }
+};
+
+const startHttpServer = () => {
+  server = app.listen(PORT, HOST, () => {
+    console.log(`✅ HTTP activado en puerto ${PORT}`);
+  });
+};
+
+// Llamar en el startup
+(async () => {
+  await initializeServer();
+})();
+```
+
+**3. Utilidad: certificateValidator.js (nuevo)**
+```javascript
+const crypto = require('crypto');
+const { X509Certificate } = require('crypto');
+
+const validateCertificates = (certPem, keyPem) => {
+  try {
+    // Validar formato PEM
+    if (!certPem.includes('-----BEGIN CERTIFICATE-----') || 
+        !keyPem.includes('-----BEGIN PRIVATE KEY-----')) {
+      throw new Error('Formato PEM inválido');
+    }
+    
+    // Parsear certificado
+    const cert = new X509Certificate(certPem);
+    
+    // Extraer datos
+    const now = new Date();
+    const validFrom = new Date(cert.validFrom);
+    const validUntil = new Date(cert.validTo);
+    
+    // Validar fechas
+    if (now < validFrom) {
+      throw new Error('Certificado aún no es válido');
+    }
+    if (now > validUntil) {
+      throw new Error('Certificado expirado');
+    }
+    
+    // Validar que falten menos de 30 días (warning)
+    const daysLeft = Math.ceil((validUntil - now) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 30) {
+      console.warn(`⚠️ Certificado expirará en ${daysLeft} días`);
+    }
+    
+    return {
+      valid: true,
+      issuer: cert.issuer,
+      subject: cert.subject,
+      validFrom,
+      validUntil,
+      daysLeft
+    };
+  } catch (error) {
+    return {
+      valid: false,
+      error: error.message
+    };
+  }
+};
+
+module.exports = { validateCertificates };
+```
+
+**4. Ruta: POST /api/config/tls (en config.js)**
+```javascript
+const multer = require('multer');
+const TlsConfig = require('../models/TlsConfig');
+const { validateCertificates } = require('../utils/certificateValidator');
+const { encrypt, decrypt } = require('../utils/encryption');
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 1024 * 1024 } // 1MB max
+});
+
+// POST /api/config/tls - Subir y validar certificados
+router.post('/tls', 
+  authenticate, 
+  authorize('admin'), 
+  upload.fields([{ name: 'certificate' }, { name: 'privateKey' }]),
+  async (req, res) => {
+    try {
+      const certFile = req.files.certificate?.[0];
+      const keyFile = req.files.privateKey?.[0];
+      
+      if (!certFile || !keyFile) {
+        return res.status(400).json({ message: 'Debes subir certificado y private key' });
+      }
+      
+      const certPem = certFile.buffer.toString('utf-8');
+      const keyPem = keyFile.buffer.toString('utf-8');
+      
+      // Validar certificados
+      const validation = validateCertificates(certPem, keyPem);
+      if (!validation.valid) {
+        return res.status(400).json({ message: validation.error });
+      }
+      
+      // Guardar encriptado
+      let tlsConfig = await TlsConfig.findOne();
+      if (!tlsConfig) tlsConfig = new TlsConfig();
+      
+      tlsConfig.certificatePem = encrypt(certPem);
+      tlsConfig.privateKeyPem = encrypt(keyPem);
+      tlsConfig.certificateValidFrom = validation.validFrom;
+      tlsConfig.certificateValidUntil = validation.validUntil;
+      tlsConfig.certificateIssuer = validation.issuer;
+      tlsConfig.certificateSubject = validation.subject;
+      tlsConfig.certificateError = null;
+      tlsConfig.lastUpdatedBy = req.user._id;
+      
+      await tlsConfig.save();
+      
+      res.json({
+        message: 'Certificados subidos exitosamente',
+        validUntil: validation.validUntil,
+        daysLeft: validation.daysLeft
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Error subiendo certificados');
+      res.status(500).json({ message: 'Error al subir certificados' });
+    }
+  }
+);
+
+// POST /api/config/tls/enable - Activar HTTPS
+router.post('/tls/enable', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    let tlsConfig = await TlsConfig.findOne();
+    if (!tlsConfig || !tlsConfig.certificatePem) {
+      return res.status(400).json({ message: 'No hay certificados cargados' });
+    }
+    
+    tlsConfig.enabled = true;
+    await tlsConfig.save();
+    
+    // Aquí se reiniciaría el servidor Express
+    // (podría ser vía signal, API call, etc.)
+    
+    res.json({ message: 'HTTPS activado. El servidor se reiniciará en 5s' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error activando HTTPS' });
+  }
+});
+
+// GET /api/config/tls - Obtener estado TLS
+router.get('/tls', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const tlsConfig = await TlsConfig.findOne();
+    if (!tlsConfig) {
+      return res.json({
+        enabled: false,
+        protocol: 'http',
+        httpPort: 3000,
+        message: 'Sin certificados cargados'
+      });
+    }
+    
+    res.json({
+      enabled: tlsConfig.enabled,
+      protocol: tlsConfig.enabled ? 'https' : 'http',
+      httpPort: tlsConfig.httpPort,
+      httpsPort: tlsConfig.httpsPort,
+      certificateValidUntil: tlsConfig.certificateValidUntil,
+      daysLeft: Math.ceil((tlsConfig.certificateValidUntil - new Date()) / (1000 * 60 * 60 * 24))
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error obteniendo config TLS' });
+  }
+});
+```
+
+**5. UI Frontend (nuevo tab en Settings)**
+```html
+<!-- settings.component.html - agregar tab TLS -->
+<mat-tab label="🔒 TLS/SSL">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Configuración TLS/SSL (HTTPS)</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="tls-status">
+        <p><strong>Estado actual:</strong> {{ tlsStatus?.enabled ? 'HTTPS Activado' : 'HTTP Activado' }}</p>
+        <p *ngIf="tlsStatus?.certificateValidUntil">
+          <strong>Válido hasta:</strong> {{ tlsStatus.certificateValidUntil | date:'short' }}
+          ({{ tlsStatus.daysLeft }} días restantes)
+        </p>
+        <div *ngIf="tlsStatus?.daysLeft && tlsStatus?.daysLeft < 30" class="warning-box">
+          ⚠️ Certificado expirará pronto. Por favor renovar.
+        </div>
+      </div>
+      
+      <mat-divider></mat-divider>
+      
+      <h3>Cargar Certificados</h3>
+      <div class="upload-section">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Certificado (.crt o .pem)</mat-label>
+          <input matInput type="file" 
+                 #certInput accept=".crt,.pem" (change)="onCertificateSelected($event)">
+          {{ certificateFile?.name || 'Sin seleccionar' }}
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Private Key (.key o .pem)</mat-label>
+          <input matInput type="file" 
+                 #keyInput accept=".key,.pem" (change)="onPrivateKeySelected($event)">
+          {{ privateKeyFile?.name || 'Sin seleccionar' }}
+        </mat-form-field>
+        
+        <button mat-raised-button color="primary" (click)="uploadCertificates()">
+          <mat-icon>upload</mat-icon> Subir Certificados
+        </button>
+      </div>
+      
+      <mat-divider></mat-divider>
+      
+      <div *ngIf="tlsStatus?.enabled">
+        <button mat-raised-button color="warn" (click)="disableHttps()">
+          <mat-icon>security_off</mat-icon> Desactivar HTTPS
+        </button>
+      </div>
+      <div *ngIf="!tlsStatus?.enabled && certificateFile && privateKeyFile">
+        <button mat-raised-button color="accent" (click)="enableHttps()">
+          <mat-icon>security</mat-icon> Activar HTTPS
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</mat-tab>
+```
+
+**6. docker-compose.yml (agregar puertos HTTPS)**
+```yaml
+backend:
+  ports:
+    - "3000:3000"    # HTTP
+    - "8443:8443"    # HTTPS (opcional)
+  volumes:
+    - ./certs:/app/certs   # Volumen para certificados (compartir con host)
+```
+
+**Ventajas de esta implementación:**
+✅ No requiere reconstruir imagen Docker
+✅ Certificados almacenados encriptados en MongoDB
+✅ Validación automática de certificados
+✅ UI intuitiva (similar a Portainer)
+✅ Warnings si certificado está por expirar
+✅ Fallback a HTTP si HTTPS falla
+✅ Soporte para cambiar certificados sin restart de contenedor
+✅ Compatible con certificados autofirmados y válidos
 
 ---
 
