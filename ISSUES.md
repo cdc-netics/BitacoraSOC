@@ -6,6 +6,7 @@
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
+| B1c | Pendiente | Bugs | Version no se muestra en sidebar | Placeholder __APP_VERSION__ no reemplazado en build |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2o | Pendiente | Mejoras | Envio automatico de entradas a GLPI al cierre de turno | Depende de B2l; toma entradas del día y crea ticket |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
@@ -292,6 +293,26 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - **Reporte Original:** El contenido introducido en las notas no se guardaba.
 - **Verificación:** Código de autoguardado funcionando correctamente (commit d3112bd).
 - **Estado:** Confirmado funcionando. Autoguardado cada 3 segundos operando sin errores.
+
+#### **B1c** **Versión no se muestra en sidebar**
+- **Problema:** El placeholder `__APP_VERSION__` en `frontend/src/environments/environment.prod.ts` no se reemplaza durante el build Docker, quedando como texto literal en lugar de mostrar la versión real.
+- **Síntomas:** En la barra de herramientas del sidebar izquierdo dice "Bitácora SOC VDEV" pero debería mostrar "Bitácora SOC 1.1.0" (o la versión correspondiente).
+- **Causa:** El script de build en `frontend/Dockerfile` usa `sed` para reemplazar `__APP_VERSION__`, pero el patrón no coincide porque:
+  - El archivo environment.ts tiene `appVersion: '__APP_VERSION__'` (comillas simples)
+  - El comando `sed` debe buscar con delimitadores correctos
+- **Solución propuesta:**
+  1. Actualizar el Dockerfile para usar patrón correcto: `sed -i "s|__APP_VERSION__|1.1.0|g"` en lugar de patrón incorrecto
+  2. O mejor: leer versión desde `package.json` dinámicamente: `VERSION=$(grep '"version"' package.json | grep -o '[0-9.]*')`
+  3. Mostrar versión en el componente principal (MainLayoutComponent) leyendo desde `environment.appVersion`
+  4. Agregar tests para validar que la versión se reemplaza correctamente en build
+- **Archivos afectados:**
+  - `frontend/Dockerfile` - Script de build
+  - `frontend/src/environments/environment.prod.ts` - Placeholder
+  - `frontend/src/app/pages/main/main-layout.component.html` - Mostrar versión
+  - `frontend/src/app/pages/main/main-layout.component.ts` - Importar versión
+- **Ejemplos:**
+  - Antes: "Bitácora SOC __APP_VERSION__" o "Bitácora SOC VDEV"
+  - Después: "Bitácora SOC 1.1.0" (en prod) o "Bitácora SOC dev" (en dev)
 
 ---
 
