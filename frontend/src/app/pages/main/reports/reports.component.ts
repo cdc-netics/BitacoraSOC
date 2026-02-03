@@ -88,7 +88,7 @@ export class ReportsComponent implements OnInit {
     name: 'heatmap',
     selectable: true,
     group: ScaleType.Linear,
-    domain: ['#1aa333', '#4db849', '#a4d65e', '#f5f5a4', '#ffb84d', '#ff7f42', '#e63946']
+    domain: ['#d7f5b8', '#8bd35f', '#1f9d55', '#f6c343', '#e53935']
   };
   
   // Selección de tags para comparación
