@@ -12,8 +12,8 @@ import { MatInput } from '@angular/material/input';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatSelect, MatOption } from '@angular/material/select';
 import { NgFor } from '@angular/common';
-import { CatalogService } from '../../services/catalog.service';
-import { ConfigService } from '../../services/config.service';
+import { CatalogService } from '../../../services/catalog.service';
+import { ConfigService } from '../../../services/config.service';
 
 @Component({
     selector: 'app-logo',
@@ -56,7 +56,7 @@ export class LogoComponent implements OnInit {
       next: (response: any) => {
         this.logSources = response.items || response || [];
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error cargando LogSources:', err);
         this.snackBar.open('Error cargando LogSources', 'Cerrar', { duration: 3000 });
       }
@@ -75,7 +75,7 @@ export class LogoComponent implements OnInit {
           });
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error cargando config:', err);
       }
     });
@@ -94,7 +94,7 @@ export class LogoComponent implements OnInit {
         this.savingBranding = false;
         this.snackBar.open('Configuración de branding guardada', 'Cerrar', { duration: 3000 });
       },
-      error: (err) => {
+      error: (err: any) => {
         this.savingBranding = false;
         this.snackBar.open(err.error?.message || 'Error guardando configuración', 'Cerrar', { duration: 3000 });
       }
