@@ -7,17 +7,19 @@ import { Entry } from '../../../models/entry.model';
 import { NgIf, NgFor, SlicePipe, DatePipe } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatChipSet, MatChip } from '@angular/material/chips';
-import { MatIconButton } from '@angular/material/button';
+import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { EntryDetailDialogComponent } from '../all-entries/entry-detail-dialog.component';
+import { EntryEditDialogComponent } from './entry-edit-dialog.component';
 
 @Component({
     selector: 'app-my-entries',
     templateUrl: './my-entries.component.html',
     styleUrls: ['./my-entries.component.scss'],
-  imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe, MatDialogModule, EntryDetailDialogComponent]
+  imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe, MatDialogModule, EntryDetailDialogComponent, MatButton]
 })
 export class MyEntriesComponent implements OnInit {
   displayedColumns: string[] = ['date', 'time', 'type', 'content', 'tags', 'actions'];
@@ -30,7 +32,8 @@ export class MyEntriesComponent implements OnInit {
   constructor(
     private entryService: EntryService,
     private authService: AuthService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -66,14 +69,33 @@ export class MyEntriesComponent implements OnInit {
   }
 
   editEntry(entry: Entry): void {
-    // TODO: Implementar edición
-    console.log('Editar:', entry);
+    const dialogRef = this.dialog.open(EntryEditDialogComponent, {
+      data: { entry },
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '85vh'
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.loadMyEntries();
+        this.snackBar.open('✅ Entrada actualizada exitosamente', 'Cerrar', { duration: 3000 });
+      }
+    });
   }
 
   deleteEntry(entry: Entry): void {
     if (confirm('¿Estás seguro de eliminar esta entrada?')) {
-      // TODO: Implementar eliminación
-      console.log('Eliminar:', entry);
+      this.entryService.deleteEntry(entry._id).subscribe({
+        next: () => {
+          this.snackBar.open('✅ Entrada eliminada', 'Cerrar', { duration: 3000 });
+          this.loadMyEntries();
+        },
+        error: (err: any) => {
+          console.error('Error eliminando:', err);
+          this.snackBar.open('Error al eliminar entrada', 'Cerrar', { duration: 3000 });
+        }
+      });
     }
   }
 

@@ -6,6 +6,13 @@
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
+| B5 | Pendiente | Bugs CRÍTICO | Acceso a rutas sin autenticación | Vulnerabilidad: posible acceso y modificación sin login |
+| B6 | Pendiente | Bugs | Dark Mode: contraste y legibilidad | Textos/botones invisibles, inputs blancos con letra blanca |
+| B7 | ✅ Resuelto | Bugs | No se podían editar entradas | Implementado diálogo de edición en my-entries component |
+| B8 | Pendiente | Mejoras | Edición masiva/individual de entradas (admin) | Admin puede editar entradas de otros, pero NO contenido/hora/fecha/autor |
+| C5 | Pendiente | Cambios | Token de recuperación: reducir a 5 min | Actualmente dura 1 hora, riesgo de seguridad |
+| C6 | Pendiente | Cambios | Sesión JWT muy larga (24h) | Reducir a 4h + implementar refresh token rotation |
+| M7 | Pendiente | Mejoras | Tema Cyberpunk/Neon | Investigar implementación sin los problemas del dark mode |
 | B1c | Pendiente | Bugs | Version no se muestra en sidebar | Placeholder __APP_VERSION__ no reemplazado en build |
 | B2p | Pendiente | Mejoras | Config TLS/SSL en backend (admin) | Permitir cargar certificados sin reconstruir imagen |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
@@ -1355,4 +1362,71 @@ Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos 
 **Prioridad:** 🟢 BAJA - Feature nice-to-have, no crítica
 
 ---
+
+### B8 - Mejora: Edición masiva/individual de entradas (Admin)
+
+**Descripción:**  
+Los administradores necesitan poder editar entradas de otros usuarios (de forma individual o masiva) para correcciones y ajustes, pero sin poder alterar la integridad de los datos originales (contenido, hora, fecha, autor).
+
+**Casos de uso:**
+- Admin ajusta tipo de entrada (operativa → incidente) de múltiples registros
+- Admin reclasifica entradas con tags correctos
+- Admin cambia LogSource/Cliente asociado
+- Admin modifica entryType en lote para reorganizar datos
+- Auditoría: autor/fecha/hora/contenido permanecen intactos (trazabilidad)
+
+**Campos que Admin PUEDE modificar:**
+- ✅ `entryType` (operativa/incidente)
+- ✅ `tags` (agregar/remover)
+- ✅ `clientId` (cambiar Log Source/Cliente)
+- ✅ Otros metadatos que se agreguen
+
+**Campos que Admin NO PUEDE modificar (inmutables):**
+- ❌ `content` (contenido original)
+- ❌ `entryTime` (hora del evento)
+- ❌ `entryDate` (fecha del evento)
+- ❌ `createdBy` / `createdByUsername` (autor original)
+- ❌ `createdAt` / `updatedAt` (timestamps)
+
+**Root Cause (análisis):**
+- Actualmente, los usuarios solo pueden editar sus propias entradas
+- No existe interfaz de admin para editar/reclasificar entradas de otros
+- No existe funcionalidad de edición en lote (bulk edit)
+- El backend permite edición de cualquier campo por admin, sin restricciones
+
+**Impacto:** MEDIO - Mejora operacional, necesario para auditoría y correcciones
+
+**Solución recomendada:**
+
+1. **Backend:**
+   - Crear endpoint `PATCH /api/entries/admin/bulk-edit` (edición masiva)
+   - Crear endpoint `PATCH /api/entries/:id/admin` (edición individual por admin)
+   - Validar que solo ciertos campos pueden ser editados por admin
+   - Agregar auditoría: registrar quién hizo el cambio y qué se modificó
+   - No permitir cambios en: content, entryTime, entryDate, createdBy
+
+2. **Frontend:**
+   - Crear componente `AdminEntriesComponent` (similar a All-Entries)
+   - Agregar opción de edición en tabla (icono de lápiz)
+   - Crear diálogo `AdminEntryEditDialogComponent` con campos restringidos
+   - Implementar checkbox en tabla para seleccionar múltiples entradas
+   - Agregar botón de "Editar seleccionadas" con formulario de bulk-edit
+   - Mostrar advertencia: "Campos no editables: contenido, hora, fecha, autor"
+
+3. **Validaciones:**
+   - Solo admin puede usar estos endpoints
+   - Validar que nuevos valores sean válidos (ej: entryType ∈ ['operativa', 'incidente'])
+   - Validar clientId si se proporciona (debe existir y estar habilitado)
+   - No permitir cambios que afecten integridad (ej: cambiar createdBy)
+
+4. **Auditoría:**
+   - Registrar en AuditLog cada cambio realizado por admin
+   - Campos modificados, valores anteriores/nuevos
+   - Admin que realizó el cambio
+   - Timestamp del cambio
+
+**Prioridad:** 🟠 MEDIO - Mejora operacional importante
+
+---
+
 
