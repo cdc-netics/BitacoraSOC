@@ -74,7 +74,7 @@
 | B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios/log-sources), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend, /entries-by-logsource y /heatmap |
 | C5 | Cambios | Token de recuperación: reducir a 5 min | Reducido de 1h a 5 minutos en auth.js. Email y frontend actualizados con aviso temporal |
 | C6 | Cambios | Sesión JWT reducida a 4h | JWT reducido de 24h a 4h para admin/user, guest mantiene 2h. Aviso en login sobre duración |
-| B8 | Mejoras | Edición masiva/individual de entradas (admin) | Backend: PUT /admin/edit con whitelist (tags, clientId, entryType) y blacklist (content, timestamp, author). Frontend: checkboxes selección, dialog AdminEditDialogComponent. Audit log registra bulk edits |
+| B8 | ⏳ Pendiente | Mejoras | Edición masiva/individual de entradas (admin) | Backend implementado. Frontend: botón "Guardar Cambios" en dialog no responde al clickear. Revisar formulario submit handler |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
