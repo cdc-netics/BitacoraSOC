@@ -88,7 +88,7 @@ export class EntryService {
     updates: {
       tags?: string[];
       clientId?: string | null;
-      entryType?: 'operativa' | 'incidente';
+      entryType?: 'operativa' | 'incidente' | 'ofensa';
     }
   ): Observable<{ message: string; modifiedCount: number; matchedCount: number }> {
     return this.http.put<{ message: string; modifiedCount: number; matchedCount: number }>(

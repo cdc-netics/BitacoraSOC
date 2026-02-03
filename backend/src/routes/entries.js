@@ -36,7 +36,7 @@ router.post('/',
   captureMetadata,
   [
     body('content').trim().notEmpty().withMessage('El contenido es requerido'),
-    body('entryType').isIn(['operativa', 'incidente']).withMessage('Tipo de entrada inválido'),
+    body('entryType').isIn(['operativa', 'incidente', 'ofensa']).withMessage('Tipo de entrada inválido'),
     body('entryDate').isISO8601().withMessage('Fecha inválida'),
     body('entryTime').matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage('Hora inválida (formato HH:mm)'),
     body('clientId').optional({ checkFalsy: true }).isMongoId().withMessage('ClientId inválido')
@@ -144,7 +144,7 @@ router.get('/',
     query('search').optional().trim(),
     query('tags').optional(),
     query('clientId').optional().isMongoId(),
-    query('entryType').optional().isIn(['operativa', 'incidente']),
+    query('entryType').optional().isIn(['operativa', 'incidente', 'ofensa']),
     query('startDate').optional().isISO8601(),
     query('endDate').optional().isISO8601(),
     query('userId').optional().isMongoId()
@@ -258,7 +258,7 @@ router.put('/:id',
   authenticate,
   [
     body('content').optional().trim().notEmpty(),
-    body('entryType').optional().isIn(['operativa', 'incidente']),
+    body('entryType').optional().isIn(['operativa', 'incidente', 'ofensa']),
     body('entryDate').optional().isISO8601(),
     body('entryTime').optional().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
     body('clientId').optional({ checkFalsy: true }).isMongoId()
@@ -413,8 +413,8 @@ router.put('/admin/edit',
               return res.status(400).json({ message: 'clientId debe ser un ObjectId válido o null' });
             }
           }
-          if (field === 'entryType' && !['operativa', 'incidente'].includes(updates[field])) {
-            return res.status(400).json({ message: 'entryType debe ser "operativa" o "incidente"' });
+          if (field === 'entryType' && !['operativa', 'incidente', 'ofensa'].includes(updates[field])) {
+            return res.status(400).json({ message: 'entryType debe ser "operativa", "incidente" o "ofensa"' });
           }
           
           sanitizedUpdates[field] = updates[field];

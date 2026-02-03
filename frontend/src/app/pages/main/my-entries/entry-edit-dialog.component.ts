@@ -34,10 +34,13 @@ import { Entry } from '../../../models/entry.model';
             <label>Tipo de Entrada</label>
             <mat-radio-group formControlName="entryType" class="entry-type-group">
               <mat-radio-button value="operativa" color="primary">
-                📋 Operativa
+                ✅ Operativa
+              </mat-radio-button>
+              <mat-radio-button value="ofensa" color="accent">
+                🔔 Ofensa
               </mat-radio-button>
               <mat-radio-button value="incidente" color="warn">
-                🚨 Incidente
+                ❗ Incidente
               </mat-radio-button>
             </mat-radio-group>
           </div>

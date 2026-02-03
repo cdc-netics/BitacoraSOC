@@ -55,20 +55,27 @@
             <mat-radio-group formControlName="entryType" class="entry-type-selector">
               <mat-radio-button value="operativa" color="primary">
                 <span class="entry-type-label">
-                  <mat-icon>description</mat-icon>
+                  <mat-icon>done_outline</mat-icon>
                   Operativa
+                </span>
+              </mat-radio-button>
+              <mat-radio-button value="ofensa" color="accent">
+                <span class="entry-type-label">
+                  <mat-icon>notifications_active</mat-icon>
+                  Ofensa
                 </span>
               </mat-radio-button>
               <mat-radio-button value="incidente" color="warn">
                 <span class="entry-type-label">
-                  <mat-icon>warning</mat-icon>
+                  <mat-icon>priority_high</mat-icon>
                   Incidente
                 </span>
               </mat-radio-button>
             </mat-radio-group>
             <p class="entry-type-hint">
               <strong>Operativa:</strong> Eventos rutinarios<br>
-              <strong>Incidente:</strong> Eventos que requieren respuesta
+              <strong>Incidente:</strong> Eventos que requieren respuesta inmediata<br>
+              <strong>Ofensa:</strong> alerta enviada desde Siem/Soar automaticamente el cual requieren respuesta
             </p>
 
             <!-- Cliente / Log Source (B2i) -->

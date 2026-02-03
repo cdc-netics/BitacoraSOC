@@ -64,6 +64,7 @@ export class AllEntriesComponent implements OnInit {
   entryTypeOptions: { value: string; label: string }[] = [
     { value: '', label: 'Todos' },
     { value: 'operativa', label: 'Operativa' },
+    { value: 'ofensa', label: 'Ofensa' },
     { value: 'incidente', label: 'Incidente' }
   ];
 
@@ -175,7 +176,11 @@ export class AllEntriesComponent implements OnInit {
     const author = entry.createdByUsername || 'N/A';
     const date = entry.entryDate;
     const time = entry.entryTime;
-    const type = entry.entryType === 'incidente' ? 'INCIDENTE' : 'Operativa';
+    const type = entry.entryType === 'incidente'
+      ? 'INCIDENTE'
+      : entry.entryType === 'ofensa'
+        ? 'OFENSA'
+        : 'OPERATIVA';
     const tags = entry.tags?.join(', ') || 'Sin tags';
 
     const details = `Fecha: ${date} ${time}

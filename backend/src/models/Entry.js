@@ -27,7 +27,7 @@ const entrySchema = new mongoose.Schema({
   },
   entryType: {
     type: String,
-    enum: ['operativa', 'incidente'],
+    enum: ['operativa', 'incidente', 'ofensa'],
     default: 'operativa',
     required: true
   },

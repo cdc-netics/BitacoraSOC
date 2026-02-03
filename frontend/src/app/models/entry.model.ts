@@ -2,7 +2,7 @@
  * Modelo de Entry - DEBE coincidir con backend Entry schema
  * 
  * Campos críticos SOC:
- *   - entryType: OBLIGATORIO ('operativa' | 'incidente')
+ *   - entryType: OBLIGATORIO ('operativa' | 'incidente' | 'ofensa')
  *   - entryDate + entryTime: fecha/hora del evento (no creación)
  *   - tags: extraídos automáticamente de hashtags en backend
  */
@@ -29,7 +29,7 @@ export interface Entry {
   updatedAt?: Date;
 }
 
-export type EntryType = 'operativa' | 'incidente';
+export type EntryType = 'operativa' | 'incidente' | 'ofensa';
 
 export interface CreateEntryRequest {
   content: string;

@@ -3,6 +3,7 @@ export interface ReportOverview {
   entriesByType: {
     operativa?: number;
     incidente?: number;
+    ofensa?: number;
   };
   incidentsByUser: Array<{
     _id: string;

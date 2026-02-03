@@ -17,7 +17,7 @@ export interface AdminEditDialogData {
   currentValues?: {
     tags?: string[];
     clientId?: string | null;
-    entryType?: 'operativa' | 'incidente';
+    entryType?: 'operativa' | 'incidente' | 'ofensa';
   };
 }
 
@@ -79,8 +79,9 @@ export interface AdminEditDialogData {
           <mat-label>Tipo de Entrada</mat-label>
           <mat-select formControlName="entryType">
             <mat-option [value]="'__no_change__'">-- No modificar --</mat-option>
-            <mat-option value="operativa">📋 Operativa</mat-option>
-            <mat-option value="incidente">🚨 Incidente</mat-option>
+            <mat-option value="operativa">✅ Operativa</mat-option>
+            <mat-option value="ofensa">🔔 Ofensa</mat-option>
+            <mat-option value="incidente">❗ Incidente</mat-option>
           </mat-select>
           <mat-icon matSuffix>category</mat-icon>
         </mat-form-field>

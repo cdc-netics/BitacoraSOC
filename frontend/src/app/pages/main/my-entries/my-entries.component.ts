@@ -61,7 +61,14 @@ export class MyEntriesComponent implements OnInit {
   }
 
   getTypeLabel(type: string): string {
-    return type === 'incidente' ? '🚨 Incidente' : '📋 Operativa';
+    switch (type) {
+      case 'incidente':
+        return '❗ Incidente';
+      case 'ofensa':
+        return '🔔 Ofensa';
+      default:
+        return '✅ Operativa';
+    }
   }
 
   formatDate(date: string): string {
@@ -103,7 +110,11 @@ export class MyEntriesComponent implements OnInit {
     const author = entry.createdByUsername || this.currentUser?.username || 'N/A';
     const date = entry.entryDate;
     const time = entry.entryTime;
-    const type = entry.entryType === 'incidente' ? 'INCIDENTE' : 'Operativa';
+    const type = entry.entryType === 'incidente'
+      ? 'INCIDENTE'
+      : entry.entryType === 'ofensa'
+        ? 'OFENSA'
+        : 'OPERATIVA';
     const tags = entry.tags?.join(', ') || 'Sin tags';
 
     const details = `Fecha: ${date} ${time}
