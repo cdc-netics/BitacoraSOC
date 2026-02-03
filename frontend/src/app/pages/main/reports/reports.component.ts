@@ -30,6 +30,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ReportService } from '../../../services/report.service';
 import { ReportOverview } from '../../../models/report.model';
+import { Color, ScaleType } from '@swimlane/ngx-charts';
 import { NgIf, NgFor } from '@angular/common';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -74,7 +75,10 @@ export class ReportsComponent implements OnInit {
   
   // Configuración de gráficos
   view: [number, number] = [700, 300];
-  colorScheme = {
+  colorScheme: Color = {
+    name: 'soc',
+    selectable: true,
+    group: ScaleType.Ordinal,
     domain: ['#00ff99', '#00ccff', '#ff6b6b', '#ffd700', '#9b59b6', '#3498db', '#e74c3c', '#2ecc71']
   };
   
@@ -121,9 +125,9 @@ export class ReportsComponent implements OnInit {
     }];
     
     // 2. Entradas por tipo (pie chart)
-    this.entriesByTypeData = Object.keys(this.overview.entriesByType).map(key => ({
+    this.entriesByTypeData = Object.keys(this.overview.entriesByType || {}).map(key => ({
       name: key.charAt(0).toUpperCase() + key.slice(1),
-      value: this.overview.entriesByType[key]
+      value: (this.overview!.entriesByType as any)[key]
     }));
     
     // 3. Incidentes por usuario (bar chart horizontal)

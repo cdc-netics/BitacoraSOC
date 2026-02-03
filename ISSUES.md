@@ -6,9 +6,6 @@
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
-| P1 | Completado | Actualizacion Angular 20 | Plan general de actualizacion |  |
-| F4-3 | Completado | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
-| B2f | En progreso | Mejoras | Reportes: graficos | NGX-Charts instalado, backend endpoints listos, HTML pendiente |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
 | B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) | No aplicar masivo; definir alcance (carpeta) para evitar romper imports |
@@ -20,6 +17,8 @@
 
 | ID | Seccion | Tarea | Notas |
 | --- | --- | --- | --- |
+| P1 | Actualizacion Angular 20 | Plan general de actualizacion | Actualización completa Angular 17→20 |
+| F4-3 | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
 | F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Rama `feature/angular-20-upgrade` creada |
 | F0-2 | Fase 0 (Preparacion) | Limpieza del entorno | Reinstaladas dependencias en backend y frontend |
 | F0-3 | Fase 0 (Preparacion) | Verificar pruebas | `ng test` no configurado (sin target de test) |
@@ -65,6 +64,7 @@
 | B4-10 | Configuracion | ENCRYPTION_KEY longitud invalida | Actualizado a 64 hex chars (32 bytes) |
 | B4-11 | UI/UX | Mejora visibilidad texto login/recovery CRT theme | Todos los elementos forzados a #ffffff con !important + text-shadow green glow |
 | B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Backend: RaciEntry con contactos {name, email, phone}. Frontend: form admin + vista analista con iconos |
+| B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend y /heatmap |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
