@@ -1210,3 +1210,149 @@ module.exports = { sendViaIntegration };
     4. Implementar el primer complemento (AQL) y documentar buenas practicas.
     5. Tests de smoke + auditoria basica de uso/errores.
 
+---
+
+## 🔴 BUGS CRÍTICOS - SEGURIDAD Y FUNCIONALIDAD
+
+### B5 - CRÍTICO: Acceso a rutas sin autenticación
+
+**Descripción:**  
+Se identificó una vulnerabilidad crítica donde es posible ingresar al sistema y modificar datos sin estar autenticado, conociendo directamente las direcciones/rutas de API.
+
+**Root Cause (investigación):**
+- Las rutas de admin (`/api/admin/catalog/*`) aplican `authenticate` + `requireAdmin` middleware correctamente
+- Las rutas protegidas (`/api/entries`, `/api/notes`, `/api/checklist`, etc.) requieren JWT válido
+- **Sin embargo**, el middleware de autenticación solo valida la presencia del token pero hay casos donde:
+  - Rutas desprotegidas pueden ser accedidas sin token
+  - Posibles brechas en validación de permisos en ciertos endpoints
+  - Falta auditoría de accesos no autorizados
+
+**Impacto:** CRÍTICO - Modificación de datos sin autenticación, acceso a información sensible
+
+**Solución recomendada:**
+1. Auditar todas las rutas para asegurar que `authenticate` middleware está aplicado
+2. Implementar validación de JWT más estricta (verificar expiración, revocación)
+3. Agregar rate limiting por IP para endpoints de recuperación de contraseña
+4. Implementar CSRF tokens para cambios de estado críticos
+5. Agregar logging detallado de intentos de acceso no autorizado
+
+**Prioridad:** 🔴 CRÍTICO - Solucionar antes de cualquier despliegue
+
+---
+
+### B6 - Dark Mode: Contraste y legibilidad deficientes
+
+**Descripción:**  
+El tema oscuro tiene múltiples problemas de legibilidad:
+- Cajas de texto blancas con letras blancas (texto invisible)
+- Botones ilegibles por falta de contraste
+- Líneas/bordes no visibles en componentes
+- Información que se pierde por cambio de color a oscuro
+
+**Root Cause (investigación):**
+- En `frontend/src/styles.scss` hay variables CSS para tema dark: `--text-primary: #f7f9ff`, `--surface-color: #1a1d27`
+- Las reglas de Material Design no se aplican correctamente para inputs y campos
+- Los estilos `!important` fuerzan colores pero no tienen suficiente contraste
+- Componentes de Material (mdc) no reaccionan bien a los cambios de tema
+
+**Impacto:** ALTO - Imposibilidad de usar la aplicación en modo dark, experiencia de usuario pésima
+
+**Solución recomendada:**
+1. Revisar todas las combinaciones color/fondo en dark mode
+2. Validar contraste mínimo WCAG AA (4.5:1 para texto, 3:1 para componentes)
+3. Ajustar variables CSS para asegurar legibilidad
+4. Aplicar estilos específicos a inputs, buttons, labels en dark mode
+5. Testear en navegador real con DevTools dark mode
+6. Considerar borders/outlines adicionales para componentes sin suficiente contraste
+
+**Prioridad:** 🟠 ALTO - Afecta usabilidad general
+
+---
+
+### C5 - Mejora: Token de recuperación de contraseña - Reducir duración
+
+**Descripción:**  
+El token de recuperación de contraseña (`resetPasswordToken`) tiene una duración de **1 hora**, lo cual es demasiado tiempo. Debería reducirse a **5 minutos** por seguridad.
+
+**Root Cause (investigación):**
+- En `backend/src/routes/auth.js` línea ~206:
+  ```javascript
+  user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+  ```
+- No hay validación de intentos fallidos o rate limiting específico para este endpoint
+- El token se almacena en BD sin encriptación adicional (solo hash SHA256)
+
+**Impacto:** MEDIO - Riesgo de seguridad (ventana de ataque de 60 min vs 5 min)
+
+**Solución recomendada:**
+1. Cambiar duración de 1 hora a 5 minutos: `5 * 60 * 1000`
+2. Agregar rate limiting al endpoint `/api/auth/forgot-password` (máx 3 intentos/15 min)
+3. Implementar rate limiting al endpoint `/api/auth/reset-password` (máx 5 intentos/token)
+4. Considerar token de un solo uso (invalidar después de primer intento fallido)
+5. Enviar notificación de seguridad si se solicita reset sin iniciar sesión
+
+**Prioridad:** 🟠 ALTO - Mejora de seguridad
+
+---
+
+### C6 - Mejora: Duración de sesión (JWT) muy larga
+
+**Descripción:**  
+Los tokens JWT tienen una duración de **24 horas**, lo cual es muy largo. Para una aplicación SOC, debería reducirse a un tiempo más seguro (ej: 1-2 horas).
+
+**Root Cause (investigación):**
+- En `backend/src/routes/auth.js` línea ~30:
+  ```javascript
+  const expiresIn = role === 'guest' ? '2h' : (process.env.JWT_EXPIRES_IN || '24h');
+  ```
+- Los tokens de admin/user duran 24 horas (rol 'guest' dura solo 2h)
+- No hay refresh token rotation o revocación centralizada
+- Las sesiones no se validan contra una lista negra
+
+**Impacto:** MEDIO - Si un token se roba, el atacante tiene 24 horas de acceso
+
+**Solución recomendada:**
+1. Reducir duración de JWT a **2 horas** (o 1 hora para admin)
+2. Implementar **refresh tokens** con duración mayor (7 días) rotados en cada refresh
+3. Agregar endpoint de revocación de tokens (`/api/auth/logout`)
+4. Implementar blacklist de tokens revocados en Redis o BD
+5. Mostrar advertencia cuando token esté próximo a expirar (~15 min antes)
+6. Hacer refresh automático en background antes de expiración
+
+**Prioridad:** 🟠 ALTO - Mejora de seguridad
+
+---
+
+## 🟢 MEJORAS - UX/INTERFACE
+
+### M7 - Agregar tema Cyberpunk/Neon
+
+**Descripción:**  
+Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos de brillo, y estética futurista. Similar a interfaces hacker en películas.
+
+**Características deseadas:**
+- Colores neón (cian, magenta, verde, amarillo)
+- Textos con glow/sombra
+- Efectos de hover con animaciones
+- Fondo oscuro con tonos azul/púrpura
+- Bordes con brillo o efecto neon
+- NO replicar los problemas de contraste del dark mode
+
+**Recomendaciones técnicas (pre-investigación):**
+1. Agregar nuevo tema en `frontend/src/styles.scss` (ej: `[data-theme="cyberpunk"]`)
+2. Variables CSS necesarias:
+   - `--primary-color: #0ff` (cian)
+   - `--accent-color: #ff00ff` (magenta)
+   - `--background-color: #0a0e27` (azul oscuro profundo)
+   - `--text-glow-color: #0ff` o `#ff00ff`
+   - Nuevas variables para efectos: `--glow-shadow`, `--border-glow`
+3. Usar `text-shadow` y `box-shadow` para efecto neón
+4. Agregar transiciones suaves para animar cambios
+5. Aplicar a través del ThemeService (agregar 'cyberpunk' al enum `Theme`)
+6. **Validar contraste** para asegurar legibilidad (evitar problemas dark mode)
+7. Testear en componentes principales: inputs, buttons, cards, modals
+
+**Prioridad:** 🟢 BAJA - Feature nice-to-have, no crítica
+
+---
+

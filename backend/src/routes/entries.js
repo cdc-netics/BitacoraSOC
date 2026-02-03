@@ -37,7 +37,7 @@ router.post('/',
     body('entryType').isIn(['operativa', 'incidente']).withMessage('Tipo de entrada inválido'),
     body('entryDate').isISO8601().withMessage('Fecha inválida'),
     body('entryTime').matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage('Hora inválida (formato HH:mm)'),
-    body('clientId').optional().isMongoId().withMessage('ClientId inválido')
+    body('clientId').optional({ checkFalsy: true }).isMongoId().withMessage('ClientId inválido')
   ],
   validate,
   async (req, res) => {
