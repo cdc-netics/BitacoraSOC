@@ -8,26 +8,30 @@ export interface AuditLog {
   changes?: Record<string, any>;
   ipAddress: string;
   userAgent: string;
-  timestamp: Date;
+  timestamp: string;
   status: 'success' | 'failure';
   errorMessage?: string;
 }
 
 export interface AuditLogFilters {
+  page?: number;
+  limit?: number;
   userId?: string;
-  action?: string;
-  entityType?: string;
-  startDate?: Date;
-  endDate?: Date;
-  status?: 'success' | 'failure';
-  searchTerm?: string;
+  event?: string;
+  level?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
 }
 
 export interface AuditLogResponse {
-  data: AuditLog[];
-  total: number;
-  page: number;
-  pageSize: number;
+  logs: AuditLog[];
+  pagination: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    itemsPerPage: number;
+  };
 }
 
 export interface AuditStats {
