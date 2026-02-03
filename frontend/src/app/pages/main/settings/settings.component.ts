@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfigService } from '../../../services/config.service';
 import { SmtpService } from '../../../services/smtp.service';
-import { CatalogService } from '../../../services/catalog.service';
 import { UpdateConfigRequest } from '../../../models/config.model';
 import { SmtpConfigRequest, SmtpConfig } from '../../../models/smtp.model';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
@@ -12,8 +11,6 @@ import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { NgClass, NgFor, NgIf } from '@angular/common';
-import { MatSelect } from '@angular/material/select';
-import { MatOption } from '@angular/material/core';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
@@ -33,9 +30,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
         MatInput,
         MatButton,
         NgClass,
-        MatSelect,
         NgFor,
-        MatOption,
         NgIf,
         MatProgressSpinner,
     ]
@@ -47,7 +42,6 @@ export class SettingsComponent implements OnInit {
   connectionStatus: 'conectado' | 'desconectado' | 'sin-config' = 'sin-config';
   testing = false;
   savingSmtp = false;
-  logSources: any[] = [];
 
   providers = [
     { value: 'office365', label: 'Office 365' },
@@ -63,14 +57,12 @@ export class SettingsComponent implements OnInit {
     private fb: FormBuilder,
     private configService: ConfigService,
     private smtpService: SmtpService,
-    private catalogService: CatalogService,
     private snackBar: MatSnackBar
   ) {
     this.appConfigForm = this.fb.group({
       guestEnabled: [false],
       checklistAlertEnabled: [true],
-      checklistAlertTime: ['09:30', [Validators.required]],
-      defaultLogSourceId: [null]
+      checklistAlertTime: ['09:30', [Validators.required]]
     });
 
     this.smtpForm = this.fb.group({
@@ -95,33 +87,18 @@ export class SettingsComponent implements OnInit {
   ngOnInit(): void {
     this.loadConfig();
     this.loadSmtpConfig();
-    this.loadLogSources();
   }
 
   loadConfig(): void {
     this.configService.getConfig().subscribe({
       next: (config) => {
-        const defaultLogSourceId = typeof config.defaultLogSourceId === 'object' && config.defaultLogSourceId 
-          ? config.defaultLogSourceId._id 
-          : config.defaultLogSourceId;
-          
         this.appConfigForm.patchValue({
           guestEnabled: config.guestModeEnabled,
           checklistAlertEnabled: config.checklistAlertEnabled ?? true,
-          checklistAlertTime: config.checklistAlertTime || '09:30',
-          defaultLogSourceId: defaultLogSourceId || null
+          checklistAlertTime: config.checklistAlertTime || '09:30'
         });
       },
       error: (err) => console.error('Error cargando config:', err)
-    });
-  }
-
-  loadLogSources(): void {
-    this.catalogService.getAllLogSources().subscribe({
-      next: (response: any) => {
-        this.logSources = (response.items || response).filter((s: any) => s.enabled);
-      },
-      error: (err: any) => console.error('Error loading log sources:', err)
     });
   }
 
@@ -161,8 +138,7 @@ export class SettingsComponent implements OnInit {
       const data: UpdateConfigRequest = {
         guestModeEnabled: this.appConfigForm.value.guestEnabled,
         checklistAlertEnabled: this.appConfigForm.value.checklistAlertEnabled,
-        checklistAlertTime: this.appConfigForm.value.checklistAlertTime,
-        defaultLogSourceId: this.appConfigForm.value.defaultLogSourceId
+        checklistAlertTime: this.appConfigForm.value.checklistAlertTime
       };
       this.configService.updateConfig(data).subscribe({
         next: () => this.snackBar.open('Configuracion guardada', 'Cerrar', { duration: 2000 }),

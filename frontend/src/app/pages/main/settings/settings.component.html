@@ -23,17 +23,6 @@
           </mat-form-field>
         </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>LogSource por Defecto</mat-label>
-          <mat-select formControlName="defaultLogSourceId">
-            <mat-option [value]="null">-- Sin LogSource predeterminado --</mat-option>
-            <mat-option *ngFor="let source of logSources" [value]="source._id">
-              {{ source.name }}{{ source.parent ? ' (' + source.parent + ')' : '' }}
-            </mat-option>
-          </mat-select>
-          <mat-hint>Se asignará automáticamente al crear entradas sin seleccionar cliente</mat-hint>
-        </mat-form-field>
-
         <button mat-raised-button color="primary" type="submit"
                 [disabled]="!appConfigForm.valid">
           Guardar

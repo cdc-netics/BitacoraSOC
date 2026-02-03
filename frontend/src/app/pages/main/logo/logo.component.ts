@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -9,28 +9,96 @@ import { MatButton } from '@angular/material/button';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatFormField, MatLabel, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { MatSelect, MatOption } from '@angular/material/select';
+import { NgFor } from '@angular/common';
+import { CatalogService } from '../../services/catalog.service';
+import { ConfigService } from '../../services/config.service';
 
 @Component({
     selector: 'app-logo',
     templateUrl: './logo.component.html',
     styleUrls: ['./logo.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, NgIf, MatIcon, MatButton, MatProgressSpinner, MatFormField, MatLabel, MatInput, ReactiveFormsModule, FormsModule, MatHint]
+    imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, NgIf, MatIcon, MatButton, MatProgressSpinner, MatFormField, MatLabel, MatInput, ReactiveFormsModule, FormsModule, MatHint, MatSelect, MatOption, NgFor]
 })
 export class LogoComponent implements OnInit {
+  private http = inject(HttpClient);
+  private snackBar = inject(MatSnackBar);
+  private fb = inject(FormBuilder);
+  private catalogService = inject(CatalogService);
+  private configService = inject(ConfigService);
+
   currentLogo: string = '';
   logoUrl: string = '';
   isLoading = false;
   previewUrl: string = '';
   private backendBaseUrl = environment.backendBaseUrl;
 
-  constructor(
-    private http: HttpClient,
-    private snackBar: MatSnackBar
-  ) {}
+  // LogSource
+  logSources: any[] = [];
+  brandingForm: FormGroup;
+  savingBranding = false;
+
+  constructor() {
+    this.brandingForm = this.fb.group({
+      defaultLogSourceId: [null]
+    });
+  }
 
   ngOnInit(): void {
     this.loadCurrentLogo();
+    this.loadLogSources();
+    this.loadBrandingConfig();
+  }
+
+  loadLogSources(): void {
+    this.catalogService.getAllLogSources().subscribe({
+      next: (response: any) => {
+        this.logSources = response.items || response || [];
+      },
+      error: (err) => {
+        console.error('Error cargando LogSources:', err);
+        this.snackBar.open('Error cargando LogSources', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  loadBrandingConfig(): void {
+    this.configService.getConfig().subscribe({
+      next: (config: any) => {
+        if (config.defaultLogSourceId) {
+          const sourceId = typeof config.defaultLogSourceId === 'object' 
+            ? config.defaultLogSourceId._id 
+            : config.defaultLogSourceId;
+          this.brandingForm.patchValue({
+            defaultLogSourceId: sourceId
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando config:', err);
+      }
+    });
+  }
+
+  saveBrandingConfig(): void {
+    if (!this.brandingForm.valid) return;
+
+    this.savingBranding = true;
+    const data = {
+      defaultLogSourceId: this.brandingForm.value.defaultLogSourceId
+    };
+
+    this.configService.updateConfig(data).subscribe({
+      next: () => {
+        this.savingBranding = false;
+        this.snackBar.open('Configuración de branding guardada', 'Cerrar', { duration: 3000 });
+      },
+      error: (err) => {
+        this.savingBranding = false;
+        this.snackBar.open(err.error?.message || 'Error guardando configuración', 'Cerrar', { duration: 3000 });
+      }
+    });
   }
 
   getAssetUrl(url: string): string {
