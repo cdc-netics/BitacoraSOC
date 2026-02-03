@@ -66,9 +66,37 @@
   <mat-card class="results-card">
     <mat-card-header>
       <mat-card-title>Resultados ({{ totalEntries }} entradas)</mat-card-title>
+      <div class="bulk-actions" *ngIf="isAdmin && selectedEntries.size > 0">
+        <button mat-raised-button color="accent" (click)="openAdminEditDialog()">
+          <mat-icon>edit</mat-icon>
+          Editar {{ selectedEntries.size }} seleccionada(s)
+        </button>
+        <button mat-button (click)="clearSelection()">
+          <mat-icon>clear</mat-icon>
+          Deseleccionar
+        </button>
+      </div>
     </mat-card-header>
     <mat-card-content>
       <table mat-table [dataSource]="entries" class="entries-table">
+        <!-- Columna de selección (solo admin) -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox
+              [checked]="allSelected"
+              [indeterminate]="selectedEntries.size > 0 && !allSelected"
+              (change)="toggleSelectAll()"
+              matTooltip="Seleccionar todas">
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let entry">
+            <mat-checkbox
+              [checked]="isEntrySelected(entry._id)"
+              (change)="toggleSelectEntry(entry._id)">
+            </mat-checkbox>
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="entryDate">
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
           <td mat-cell *matCellDef="let entry">{{ entry.entryDate | date:'dd/MM/yyyy':'UTC' }}</td>

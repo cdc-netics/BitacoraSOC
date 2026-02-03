@@ -9,7 +9,6 @@
 | B5 | Pendiente | Bugs CRÍTICO | Acceso a rutas sin autenticación | Vulnerabilidad: posible acceso y modificación sin login |
 | B6 | Pendiente | Bugs | Dark Mode: contraste y legibilidad | Textos/botones invisibles, inputs blancos con letra blanca |
 | B7 | ✅ Resuelto | Bugs | No se podían editar entradas | Implementado diálogo de edición en my-entries component |
-| B8 | Pendiente | Mejoras | Edición masiva/individual de entradas (admin) | Admin puede editar entradas de otros, pero NO contenido/hora/fecha/autor |
 | M7 | Pendiente | Mejoras | Tema Cyberpunk/Neon | Investigar implementación sin los problemas del dark mode |
 | B1c | Pendiente | Bugs | Version no se muestra en sidebar | Placeholder __APP_VERSION__ no reemplazado en build |
 | B2p | Pendiente | Mejoras | Config TLS/SSL en backend (admin) | Permitir cargar certificados sin reconstruir imagen |
@@ -75,6 +74,7 @@
 | B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios/log-sources), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend, /entries-by-logsource y /heatmap |
 | C5 | Cambios | Token de recuperación: reducir a 5 min | Reducido de 1h a 5 minutos en auth.js. Email y frontend actualizados con aviso temporal |
 | C6 | Cambios | Sesión JWT reducida a 4h | JWT reducido de 24h a 4h para admin/user, guest mantiene 2h. Aviso en login sobre duración |
+| B8 | Mejoras | Edición masiva/individual de entradas (admin) | Backend: PUT /admin/edit con whitelist (tags, clientId, entryType) y blacklist (content, timestamp, author). Frontend: checkboxes selección, dialog AdminEditDialogComponent. Audit log registra bulk edits |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 

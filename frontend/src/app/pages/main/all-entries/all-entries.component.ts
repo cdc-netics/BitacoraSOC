@@ -12,6 +12,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { EntryService } from '../../../services/entry.service';
 import { CatalogService } from '../../../services/catalog.service';
@@ -19,6 +21,7 @@ import { CatalogLogSource } from '../../../models/catalog.model';
 import { Entry } from '../../../models/entry.model';
 import { AuthService } from '../../../services/auth.service';
 import { EntryDetailDialogComponent } from './entry-detail-dialog.component';
+import { AdminEditDialogComponent } from './admin-edit-dialog.component';
 
 @Component({
     selector: 'app-all-entries',
@@ -36,7 +39,8 @@ import { EntryDetailDialogComponent } from './entry-detail-dialog.component';
         MatChipsModule,
         MatSnackBarModule,
         MatDialogModule,
-        EntryDetailDialogComponent
+        MatCheckboxModule,
+        MatTooltipModule
     ],
     templateUrl: './all-entries.component.html',
     styleUrl: './all-entries.component.scss'
@@ -48,7 +52,12 @@ export class AllEntriesComponent implements OnInit {
   pageSize = 20;
   currentPage = 1;
   isGuest = false;
+  isAdmin = false;
   logSources: CatalogLogSource[] = [];
+  
+  // Selección masiva
+  selectedEntries: Set<string> = new Set();
+  allSelected = false;
 
   displayedColumns: string[] = ['entryDate', 'entryTime', 'entryType', 'content', 'tags', 'clientId', 'author', 'actions'];
 
@@ -80,6 +89,12 @@ export class AllEntriesComponent implements OnInit {
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     this.isGuest = user?.role === 'guest';
+    this.isAdmin = user?.role === 'admin';
+    
+    // Admin ve columna de selección, guest no ve acciones
+    if (this.isAdmin) {
+      this.displayedColumns = ['select', ...this.displayedColumns];
+    }
     if (this.isGuest) {
       this.displayedColumns = this.displayedColumns.filter(col => col !== 'actions');
     }
@@ -183,11 +198,95 @@ Tags: ${tags}`;
     this.searchForm.reset({
       query: '',
       entryType: '',
+      clientId: '',
       startDate: '',
       endDate: '',
       tags: ''
     });
     this.currentPage = 1;
     this.loadEntries();
+  }
+
+  // Selección masiva
+  toggleSelectAll(): void {
+    if (this.allSelected) {
+      this.selectedEntries.clear();
+      this.allSelected = false;
+    } else {
+      this.entries.forEach(entry => this.selectedEntries.add(entry._id));
+      this.allSelected = true;
+    }
+  }
+
+  toggleSelectEntry(entryId: string): void {
+    if (this.selectedEntries.has(entryId)) {
+      this.selectedEntries.delete(entryId);
+      this.allSelected = false;
+    } else {
+      this.selectedEntries.add(entryId);
+      if (this.selectedEntries.size === this.entries.length) {
+        this.allSelected = true;
+      }
+    }
+  }
+
+  isEntrySelected(entryId: string): boolean {
+    return this.selectedEntries.has(entryId);
+  }
+
+  clearSelection(): void {
+    this.selectedEntries.clear();
+    this.allSelected = false;
+  }
+
+  // Edición masiva (admin)
+  openAdminEditDialog(): void {
+    if (this.selectedEntries.size === 0) {
+      this.snackBar.open('⚠️ Selecciona al menos una entrada', 'Cerrar', { duration: 2000 });
+      return;
+    }
+
+    const entryIds = Array.from(this.selectedEntries);
+    
+    // Si es edición individual, pre-cargar valores actuales
+    const currentValues = entryIds.length === 1
+      ? this.entries.find(e => e._id === entryIds[0])
+      : undefined;
+
+    const dialogRef = this.dialog.open(AdminEditDialogComponent, {
+      data: {
+        entryCount: entryIds.length,
+        currentValues: currentValues
+          ? {
+              tags: currentValues.tags,
+              clientId: currentValues.clientId,
+              entryType: currentValues.entryType
+            }
+          : undefined
+      },
+      width: '600px',
+      maxWidth: '95vw',
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe((updates) => {
+      if (!updates) return; // Cancelado
+
+      this.entryService.adminEditEntries(entryIds, updates).subscribe({
+        next: (response) => {
+          this.snackBar.open(
+            `✅ ${response.modifiedCount} entrada(s) actualizada(s)`,
+            'Cerrar',
+            { duration: 3000 }
+          );
+          this.clearSelection();
+          this.loadEntries();
+        },
+        error: (err) => {
+          const msg = err.error?.message || 'Error editando entradas';
+          this.snackBar.open(`❌ ${msg}`, 'Cerrar', { duration: 4000 });
+        }
+      });
+    });
   }
 }

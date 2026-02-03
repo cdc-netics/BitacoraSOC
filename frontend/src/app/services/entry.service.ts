@@ -77,4 +77,23 @@ export class EntryService {
     const params = new HttpParams().set('q', query);
     return this.http.get<TagSuggestion[]>(`${this.API_URL}/tags/suggest`, { params });
   }
+
+  /**
+   * Edición masiva/individual de entradas por admin
+   * Solo admin puede editar: tags, clientId, entryType
+   * Campos inmutables: content, timestamp, author
+   */
+  adminEditEntries(
+    entryIds: string[],
+    updates: {
+      tags?: string[];
+      clientId?: string | null;
+      entryType?: 'operativa' | 'incidente';
+    }
+  ): Observable<{ message: string; modifiedCount: number; matchedCount: number }> {
+    return this.http.put<{ message: string; modifiedCount: number; matchedCount: number }>(
+      `${this.API_URL}/admin/edit`,
+      { entryIds, updates }
+    );
+  }
 }

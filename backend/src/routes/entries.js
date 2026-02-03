@@ -377,4 +377,105 @@ router.get('/tags/suggest', authenticate, async (req, res) => {
   }
 });
 
+// PUT /api/entries/admin/edit - Edición masiva/individual por admin
+router.put('/admin/edit',
+  authenticate,
+  [
+    body('entryIds').isArray({ min: 1 }).withMessage('Debe proporcionar al menos un ID de entrada'),
+    body('entryIds.*').isMongoId().withMessage('IDs inválidos'),
+    body('updates').isObject().withMessage('Actualizaciones requeridas'),
+    body('updates.tags').optional().isArray(),
+    body('updates.clientId').optional({ checkFalsy: true }).custom((value) => {
+      return value === null || mongoose.Types.ObjectId.isValid(value);
+    }),
+    body('updates.entryType').optional().isIn(['operativa', 'incidente'])
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      // Solo admin puede usar este endpoint
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Solo administradores pueden editar entradas de otros' });
+      }
+
+      const { entryIds, updates } = req.body;
+
+      // Whitelist de campos editables por admin
+      const allowedFields = ['tags', 'clientId', 'clientName', 'entryType'];
+      const sanitizedUpdates = {};
+
+      // Procesar campos permitidos
+      for (const field of allowedFields) {
+        if (updates[field] !== undefined) {
+          sanitizedUpdates[field] = updates[field];
+        }
+      }
+
+      // Blacklist explícito (protección extra - campos inmutables)
+      delete sanitizedUpdates.content;
+      delete sanitizedUpdates.timestamp;
+      delete sanitizedUpdates.entryDate;
+      delete sanitizedUpdates.entryTime;
+      delete sanitizedUpdates.createdBy;
+      delete sanitizedUpdates.createdByUsername;
+      delete sanitizedUpdates.user;
+      delete sanitizedUpdates.author;
+      delete sanitizedUpdates.createdAt;
+      delete sanitizedUpdates.updatedAt;
+
+      // Si se está actualizando clientId, resolver el clientName
+      if (sanitizedUpdates.clientId !== undefined) {
+        if (sanitizedUpdates.clientId === null) {
+          sanitizedUpdates.clientName = null;
+        } else {
+          const logSource = await CatalogLogSource.findById(sanitizedUpdates.clientId);
+          if (!logSource) {
+            return res.status(400).json({ message: 'LogSource no encontrado' });
+          }
+          sanitizedUpdates.clientName = logSource.name;
+        }
+      }
+
+      // Verificar que las entradas existen
+      const entries = await Entry.find({ _id: { $in: entryIds } });
+      if (entries.length !== entryIds.length) {
+        return res.status(404).json({ message: 'Una o más entradas no encontradas' });
+      }
+
+      // Actualizar entradas
+      const result = await Entry.updateMany(
+        { _id: { $in: entryIds } },
+        { $set: sanitizedUpdates }
+      );
+
+      // Auditar la acción
+      await audit(req, {
+        event: 'entry.admin_bulk_edit',
+        level: 'warn',
+        result: { success: true },
+        metadata: {
+          entryCount: entryIds.length,
+          entryIds: entryIds.slice(0, 10), // Solo primeros 10 IDs
+          updatedFields: Object.keys(sanitizedUpdates),
+          adminUsername: req.user.username
+        }
+      });
+
+      res.json({
+        message: `${result.modifiedCount} entrada(s) actualizada(s)`,
+        modifiedCount: result.modifiedCount,
+        matchedCount: result.matchedCount
+      });
+    } catch (error) {
+      logger.error({
+        err: error,
+        requestId: req.requestId,
+        userId: req.user._id
+      }, 'Error in admin bulk edit');
+
+      res.status(500).json({ message: 'Error al editar entradas' });
+    }
+  }
+);
+
 module.exports = router;
