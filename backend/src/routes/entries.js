@@ -254,7 +254,8 @@ router.put('/:id',
     body('content').optional().trim().notEmpty(),
     body('entryType').optional().isIn(['operativa', 'incidente']),
     body('entryDate').optional().isISO8601(),
-    body('entryTime').optional().matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    body('entryTime').optional().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
+    body('clientId').optional({ checkFalsy: true }).isMongoId()
   ],
   validate,
   async (req, res) => {
@@ -270,7 +271,7 @@ router.put('/:id',
         return res.status(403).json({ message: 'No tienes permiso para editar esta entrada' });
       }
 
-      const { content, entryType, entryDate, entryTime } = req.body;
+      const { content, entryType, entryDate, entryTime, clientId } = req.body;
 
       if (content) {
         entry.content = content;
@@ -279,6 +280,33 @@ router.put('/:id',
       if (entryType) entry.entryType = entryType;
       if (entryDate) entry.entryDate = entryDate;
       if (entryTime) entry.entryTime = entryTime;
+      
+      // Manejar cambio de clientId
+      if (clientId !== undefined) {
+        if (clientId === null) {
+          // Si es null, auto-asignar Netics
+          const neticsSource = await CatalogLogSource.findOne({ 
+            name: 'Netics',
+            enabled: true 
+          });
+          if (neticsSource) {
+            entry.clientId = neticsSource._id;
+            entry.clientName = neticsSource.name;
+          } else {
+            entry.clientId = null;
+            entry.clientName = null;
+          }
+        } else {
+          // Buscar el LogSource especificado
+          const logSource = await CatalogLogSource.findById(clientId);
+          if (logSource && logSource.enabled) {
+            entry.clientId = logSource._id;
+            entry.clientName = logSource.name;
+          } else {
+            return res.status(400).json({ message: 'Log Source no válido o inactivo' });
+          }
+        }
+      }
 
       await entry.save();
 

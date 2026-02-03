@@ -22,7 +22,7 @@ import { EntryEditDialogComponent } from './entry-edit-dialog.component';
   imports: [NgIf, MatProgressSpinner, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatChipSet, NgFor, MatChip, MatIconButton, MatTooltip, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatPaginator, SlicePipe, DatePipe, MatDialogModule]
 })
 export class MyEntriesComponent implements OnInit {
-  displayedColumns: string[] = ['date', 'time', 'type', 'content', 'tags', 'actions'];
+  displayedColumns: string[] = ['date', 'time', 'type', 'content', 'clientName', 'tags', 'actions'];
   dataSource = new MatTableDataSource<Entry>([]);
   isLoading = false;
   currentUser: any;

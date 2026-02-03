@@ -83,6 +83,12 @@ const sampleEvents = [
 // Datos de ejemplo - Log Sources
 const sampleLogSources = [
   {
+    name: 'Netics',
+    parent: 'Sistema Interno',
+    description: 'Log source por defecto del sistema',
+    enabled: true
+  },
+  {
     name: 'Firewall Cisco ASA',
     parent: 'Cliente ABC Corp',
     description: 'Firewall perimetral principal',

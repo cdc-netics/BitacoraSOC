@@ -46,6 +46,14 @@
         </td>
       </ng-container>
 
+      <!-- Client/LogSource Column -->
+      <ng-container matColumnDef="clientName">
+        <th mat-header-cell *matHeaderCellDef>Cliente / Log Source</th>
+        <td mat-cell *matCellDef="let entry">
+          {{ entry.clientName || 'Netics' }}
+        </td>
+      </ng-container>
+
       <!-- Actions Column -->
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>Acciones</th>

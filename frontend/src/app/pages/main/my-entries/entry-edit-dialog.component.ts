@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,8 +7,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { EntryService } from '../../../services/entry.service';
+import { CatalogService } from '../../../services/catalog.service';
 import { Entry } from '../../../models/entry.model';
 
 @Component({
@@ -52,6 +54,18 @@ import { Entry } from '../../../models/entry.model';
               <input matInput type="time" formControlName="entryTime" placeholder="HH:MM">
             </mat-form-field>
           </div>
+
+          <!-- Cliente / Log Source -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Cliente / Log Source</mat-label>
+            <mat-select formControlName="clientId">
+              <mat-option [value]="null">-- Netics (por defecto) --</mat-option>
+              <mat-option *ngFor="let source of logSources" [value]="source._id">
+                {{ source.name }}
+              </mat-option>
+            </mat-select>
+            <mat-hint>El Log Source de donde proviene esta entrada</mat-hint>
+          </mat-form-field>
         </form>
       </mat-dialog-content>
 
@@ -120,16 +134,19 @@ import { Entry } from '../../../models/entry.model';
     MatButtonModule,
     MatIconModule,
     MatRadioModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ]
 })
-export class EntryEditDialogComponent {
+export class EntryEditDialogComponent implements OnInit {
   editForm: FormGroup;
   isSubmitting = false;
+  logSources: any[] = [];
 
   constructor(
     private fb: FormBuilder,
     private entryService: EntryService,
+    private catalogService: CatalogService,
     public dialogRef: MatDialogRef<EntryEditDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { entry: Entry }
   ) {
@@ -144,7 +161,23 @@ export class EntryEditDialogComponent {
       content: [entry.content, [Validators.required, Validators.maxLength(50000)]],
       entryType: [entry.entryType, Validators.required],
       entryDate: [dateString, Validators.required],
-      entryTime: [entry.entryTime, [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)]]
+      entryTime: [entry.entryTime, [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)]],
+      clientId: [entry.clientId || null]
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadLogSources();
+  }
+
+  loadLogSources(): void {
+    this.catalogService.getAllLogSources().subscribe({
+      next: (sources: any) => {
+        this.logSources = sources.filter((s: any) => s.enabled);
+      },
+      error: (err: any) => {
+        console.error('Error loading log sources:', err);
+      }
     });
   }
 
@@ -163,7 +196,8 @@ export class EntryEditDialogComponent {
       content: formValue.content,
       entryType: formValue.entryType,
       entryDate: entryDate,
-      entryTime: formValue.entryTime
+      entryTime: formValue.entryTime,
+      clientId: formValue.clientId
     };
 
     this.entryService.updateEntry(this.data.entry._id, updateData).subscribe({
