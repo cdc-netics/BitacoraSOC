@@ -56,9 +56,23 @@ router.post('/',
       // Extraer tags del contenido
       const tags = extractHashtags(content);
 
-      // Buscar nombre del cliente si se proporciona clientId
+      // Si no hay clientId, buscar automáticamente "Netics"
+      let finalClientId = clientId;
       let clientName = null;
-      if (clientId) {
+      
+      if (!clientId) {
+        // Buscar LogSource "Netics"
+        const neticsSource = await CatalogLogSource.findOne({ 
+          name: 'Netics',
+          enabled: true 
+        }).select('_id name');
+        
+        if (neticsSource) {
+          finalClientId = neticsSource._id;
+          clientName = neticsSource.name;
+        }
+      } else {
+        // Si se proporciona clientId, obtener su nombre
         const logSource = await CatalogLogSource.findById(clientId).select('name enabled');
         if (logSource && logSource.enabled !== false) {
           clientName = logSource.name;
@@ -74,7 +88,7 @@ router.post('/',
         entryDate,
         entryTime,
         tags,
-        clientId: clientId || null,
+        clientId: finalClientId || null,
         clientName: clientName,
         createdBy: req.user._id,
         createdByUsername: req.user.username,
