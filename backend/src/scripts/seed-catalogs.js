@@ -15,10 +15,7 @@ const CatalogLogSource = require('../models/CatalogLogSource');
 const CatalogOperationType = require('../models/CatalogOperationType');
 
 // Conectar a MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bitacora-soc', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bitacora-soc');
 
 // Datos de ejemplo - Eventos SOC
 const sampleEvents = [
