@@ -4,14 +4,17 @@
  * Funcionalidad:
  *   - Vista general de KPIs operacionales (últimos 30 días default)
  *   - Selección de período (7, 15, 30, 60, 90 días)
+ *   - Gráficos interactivos con NGX-Charts
  *   - Exportación de entradas a CSV
  * 
  * Métricas mostradas:
  *   - Entradas por tipo (operativa/incidente) - pie chart
- *   - Incidentes por analista (top 10) - bar chart
- *   - Tags más usados (top 15) - tag cloud
- *   - Servicios con rojos (frecuencia) - bar chart
  *   - Tendencia temporal de entradas - line chart
+ *   - Incidentes por analista (top 10) - bar chart
+ *   - Tags más usados (top 15) - bar chart
+ *   - Servicios con rojos (frecuencia) - bar chart
+ *   - Comparación de tags por tendencia - multi-line chart
+ *   - Mapa de calor día vs hora - heatmap
  *   - Total usuarios activos - card
  *   - Total checks de turno - card
  * 
@@ -27,20 +30,62 @@
 import { Component, OnInit } from '@angular/core';
 import { ReportService } from '../../../services/report.service';
 import { ReportOverview } from '../../../models/report.model';
-import { NgIf } from '@angular/common';
+import { NgIf, NgFor } from '@angular/common';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
+import { NgxChartsModule } from '@swimlane/ngx-charts';
 
 @Component({
     selector: 'app-reports',
     templateUrl: './reports.component.html',
     styleUrls: ['./reports.component.scss'],
-    imports: [NgIf, MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, MatIcon]
+    imports: [
+      NgIf, 
+      NgFor,
+      MatCard, 
+      MatCardHeader, 
+      MatCardTitle, 
+      MatCardContent, 
+      MatButton, 
+      MatIconButton,
+      MatIcon,
+      MatButtonToggleModule,
+      MatFormFieldModule,
+      MatSelectModule,
+      FormsModule,
+      NgxChartsModule
+    ]
 })
 export class ReportsComponent implements OnInit {
   overview: ReportOverview | null = null;
   selectedDays = 30;
+  
+  // Datos para gráficos
+  entriesTrendData: any[] = [];
+  entriesByTypeData: any[] = [];
+  incidentsByUserData: any[] = [];
+  topTagsData: any[] = [];
+  redsByServiceData: any[] = [];
+  
+  // Configuración de gráficos
+  view: [number, number] = [700, 300];
+  colorScheme = {
+    domain: ['#00ff99', '#00ccff', '#ff6b6b', '#ffd700', '#9b59b6', '#3498db', '#e74c3c', '#2ecc71']
+  };
+  
+  // Selección de tags para comparación
+  availableTags: string[] = [];
+  selectedTagsForComparison: string[] = [];
+  tagComparisonData: any[] = [];
+  
+  // Configuración del mapa de calor
+  heatmapData: any[] = [];
+  showHeatmap = false;
 
   constructor(private reportService: ReportService) {}
 
@@ -50,8 +95,105 @@ export class ReportsComponent implements OnInit {
 
   loadOverview(): void {
     this.reportService.getOverview(this.selectedDays).subscribe({
-      next: (data) => this.overview = data,
+      next: (data) => {
+        this.overview = data;
+        this.prepareChartData();
+      },
       error: (err) => console.error('Error cargando reporte:', err)
+    });
+  }
+  
+  onPeriodChange(days: number): void {
+    this.selectedDays = days;
+    this.loadOverview();
+  }
+  
+  prepareChartData(): void {
+    if (!this.overview) return;
+    
+    // 1. Tendencia de entradas (line chart)
+    this.entriesTrendData = [{
+      name: 'Entradas',
+      series: this.overview.entriesTrend.map((item: any) => ({
+        name: item._id,
+        value: item.count
+      }))
+    }];
+    
+    // 2. Entradas por tipo (pie chart)
+    this.entriesByTypeData = Object.keys(this.overview.entriesByType).map(key => ({
+      name: key.charAt(0).toUpperCase() + key.slice(1),
+      value: this.overview.entriesByType[key]
+    }));
+    
+    // 3. Incidentes por usuario (bar chart horizontal)
+    this.incidentsByUserData = this.overview.incidentsByUser.map((item: any) => ({
+      name: item._id || 'Sin usuario',
+      value: item.count
+    }));
+    
+    // 4. Top tags (bar chart horizontal)
+    this.topTagsData = this.overview.topTags.map((item: any) => ({
+      name: item._id,
+      value: item.count
+    }));
+    
+    // 5. Servicios con rojos (bar chart horizontal)
+    this.redsByServiceData = this.overview.redsByService.map((item: any) => ({
+      name: item._id,
+      value: item.count
+    }));
+    
+    // 6. Tags disponibles para comparación
+    this.availableTags = this.overview.topTags.map((item: any) => item._id);
+  }
+  
+  onTagSelectionChange(): void {
+    if (this.selectedTagsForComparison.length === 0) {
+      this.tagComparisonData = [];
+      return;
+    }
+    
+    // Solicitar datos de tendencia por tags seleccionados
+    this.reportService.getTagsTrend(this.selectedTagsForComparison, this.selectedDays).subscribe({
+      next: (data) => {
+        this.tagComparisonData = data.map((tagData: any) => ({
+          name: tagData.tag,
+          series: tagData.trend.map((item: any) => ({
+            name: item._id,
+            value: item.count
+          }))
+        }));
+      },
+      error: (err) => console.error('Error cargando tendencia de tags:', err)
+    });
+  }
+  
+  toggleHeatmap(): void {
+    this.showHeatmap = !this.showHeatmap;
+    if (this.showHeatmap && this.heatmapData.length === 0) {
+      this.loadHeatmap();
+    }
+  }
+  
+  loadHeatmap(): void {
+    this.reportService.getHeatmapData(this.selectedDays).subscribe({
+      next: (data) => {
+        // Transformar datos para el formato de heatmap
+        // data viene como [{dayOfWeek, hour, count}]
+        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        this.heatmapData = days.map((day, dayIndex) => ({
+          name: day,
+          series: Array.from({length: 24}, (_, hour) => {
+            const dataPoint = data.find((d: any) => d.dayOfWeek === dayIndex && d.hour === hour);
+            return {
+              name: `${hour}:00`,
+              value: dataPoint ? dataPoint.count : 0
+            };
+          })
+        }));
+      },
+      error: (err) => console.error('Error cargando heatmap:', err)
     });
   }
 
@@ -66,5 +208,14 @@ export class ReportsComponent implements OnInit {
       },
       error: (err) => console.error('Error exportando:', err)
     });
+  }
+  
+  // Formateo personalizado para tooltips
+  formatLabel(value: number): string {
+    return value.toLocaleString();
+  }
+  
+  formatPercentage(value: number): string {
+    return `${value.toFixed(1)}%`;
   }
 }

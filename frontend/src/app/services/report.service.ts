@@ -52,4 +52,16 @@ export class ReportService {
       responseType: 'blob'
     });
   }
+
+  getTagsTrend(tags: string[], days = 30): Observable<any[]> {
+    let params = new HttpParams()
+      .set('days', days.toString())
+      .set('tags', tags.join(','));
+    return this.http.get<any[]>(`${this.API_URL}/tags-trend`, { params });
+  }
+
+  getHeatmapData(days = 30): Observable<any[]> {
+    const params = new HttpParams().set('days', days.toString());
+    return this.http.get<any[]>(`${this.API_URL}/heatmap`, { params });
+  }
 }

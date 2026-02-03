@@ -1,29 +1,150 @@
 .reports-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 20px;
+
+  h1 {
+    margin-bottom: 24px;
+  }
+}
+
+.period-selector {
+  margin-bottom: 24px;
+
+  mat-card-content {
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.stat-item {
+.stat-card {
   text-align: center;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 8px;
+  transition: transform 0.2s;
 
-  h3 {
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  &.incidentes {
+    .stat-value {
+      color: #ff6b6b;
+    }
+  }
+
+  mat-card-content {
+    padding: 24px !important;
+  }
+
+  .stat-value {
     font-size: 2.5em;
+    font-weight: bold;
     margin: 0 0 8px 0;
     color: var(--primary-color);
   }
 
-  p {
+  .stat-label {
     margin: 0;
-    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.chart-card {
+  margin-bottom: 24px;
+
+  mat-card-header {
+    background: rgba(0, 255, 153, 0.05);
+    padding: 16px;
+    margin: -16px -16px 16px -16px;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1.2em;
+      color: var(--text-primary);
+
+      .toggle-btn {
+        margin-left: auto;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: 24px;
+  }
+
+  .chart-description {
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+
+  .no-data {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px;
+    font-style: italic;
+  }
+
+  .full-width {
+    width: 100%;
+    margin-bottom: 24px;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+  margin-bottom: 32px;
+
+  button {
+    min-width: 200px;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .reports-container {
+    padding: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card .stat-value {
+    font-size: 2em;
+  }
+
+  .chart-card mat-card-content {
+    padding: 16px;
+  }
+}
+
+// Dark mode
+.dark-theme {
+  .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+
+    .stat-label {
+      color: var(--text-secondary);
+    }
+  }
+
+  .chart-card mat-card-header {
+    background: rgba(0, 255, 153, 0.08);
   }
 }

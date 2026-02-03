@@ -138,4 +138,87 @@ router.get('/export-entries', authenticate, authorize('admin'), async (req, res)
   }
 });
 
+// GET /api/reports/tags-trend - Tendencia de tags específicos
+router.get('/tags-trend', authenticate, async (req, res) => {
+  try {
+    const { days = 30, tags } = req.query;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+    
+    const tagsList = tags ? tags.split(',') : [];
+    
+    if (tagsList.length === 0) {
+      return res.json([]);
+    }
+    
+    // Tendencia para cada tag
+    const trendsPromises = tagsList.map(async (tag) => {
+      const trend = await Entry.aggregate([
+        { 
+          $match: { 
+            createdAt: { $gte: startDate },
+            tags: tag.trim()
+          } 
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'America/Santiago' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]);
+      
+      return {
+        tag: tag.trim(),
+        trend
+      };
+    });
+    
+    const results = await Promise.all(trendsPromises);
+    res.json(results);
+  } catch (error) {
+    console.error('Error al obtener tendencias de tags:', error);
+    res.status(500).json({ message: 'Error al obtener tendencias de tags' });
+  }
+});
+
+// GET /api/reports/heatmap - Mapa de calor día/hora
+router.get('/heatmap', authenticate, async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+    
+    const heatmapData = await Entry.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            dayOfWeek: { $dayOfWeek: { date: '$createdAt', timezone: 'America/Santiago' } },
+            hour: { $hour: { date: '$createdAt', timezone: 'America/Santiago' } }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          dayOfWeek: { $subtract: ['$_id.dayOfWeek', 1] }, // Ajustar domingo=0
+          hour: '$_id.hour',
+          count: '$count'
+        }
+      },
+      { $sort: { dayOfWeek: 1, hour: 1 } }
+    ]);
+    
+    res.json(heatmapData);
+  } catch (error) {
+    console.error('Error al generar heatmap:', error);
+    res.status(500).json({ message: 'Error al generar heatmap' });
+  }
+});
+
 module.exports = router;

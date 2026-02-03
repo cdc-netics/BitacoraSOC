@@ -8,8 +8,7 @@
 | --- | --- | --- | --- | --- |
 | P1 | Completado | Actualizacion Angular 20 | Plan general de actualizacion |  |
 | F4-3 | Completado | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
-| B2f | Pendiente | Mejoras | Reportes: graficos |  |
-| B2j | Completado | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Implementado con contactos completos (nombre, email, telefono) |
+| B2f | En progreso | Mejoras | Reportes: graficos | NGX-Charts instalado, backend endpoints listos, HTML pendiente |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
 | B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) | No aplicar masivo; definir alcance (carpeta) para evitar romper imports |

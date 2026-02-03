@@ -1,34 +1,220 @@
 <div class="reports-container">
-  <h1>Reportes y Estadísticas</h1>
+  <h1>📊 Reportes y Estadísticas</h1>
 
-  <mat-card *ngIf="overview">
-    <mat-card-header>
-      <mat-card-title>Resumen (últimos {{ selectedDays }} días)</mat-card-title>
-    </mat-card-header>
+  <!-- Selector de período -->
+  <mat-card class="period-selector">
     <mat-card-content>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <h3>{{ overview.entriesByType.operativa || 0 }}</h3>
-          <p>Operativa</p>
-        </div>
-        <div class="stat-item">
-          <h3>{{ overview.entriesByType.incidente || 0 }}</h3>
-          <p>Incidentes</p>
-        </div>
-        <div class="stat-item">
-          <h3>{{ overview.totalUsers }}</h3>
-          <p>Usuarios Activos</p>
-        </div>
-        <div class="stat-item">
-          <h3>{{ overview.totalChecks }}</h3>
-          <p>Checks Realizados</p>
-        </div>
-      </div>
-
-      <button mat-raised-button color="primary" (click)="exportEntries()">
-        <mat-icon>download</mat-icon>
-        Exportar CSV
-      </button>
+      <mat-button-toggle-group [(ngModel)]="selectedDays" (change)="onPeriodChange(selectedDays)">
+        <mat-button-toggle [value]="7">7 días</mat-button-toggle>
+        <mat-button-toggle [value]="15">15 días</mat-button-toggle>
+        <mat-button-toggle [value]="30">30 días</mat-button-toggle>
+        <mat-button-toggle [value]="60">60 días</mat-button-toggle>
+        <mat-button-toggle [value]="90">90 días</mat-button-toggle>
+      </mat-button-toggle-group>
     </mat-card-content>
   </mat-card>
+
+  <div *ngIf="overview">
+    <!-- KPIs Cards -->
+    <div class="stats-grid">
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ overview.entriesByType.operativa || 0 }}</div>
+          <div class="stat-label">Operativa</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card incidentes">
+        <mat-card-content>
+          <div class="stat-value">{{ overview.entriesByType.incidente || 0 }}</div>
+          <div class="stat-label">Incidentes</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ overview.totalUsers }}</div>
+          <div class="stat-label">Usuarios Activos</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ overview.totalChecks }}</div>
+          <div class="stat-label">Checks Realizados</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Gráfico de tendencia de entradas -->
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>📈 Tendencia de Entradas (últimos {{ selectedDays }} días)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-line-chart
+          [view]="view"
+          [results]="entriesTrendData"
+          [xAxis]="true"
+          [yAxis]="true"
+          [legend]="true"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Fecha"
+          yAxisLabel="Cantidad"
+          [scheme]="colorScheme"
+          [animations]="true">
+        </ngx-charts-line-chart>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Entradas por tipo (Pie chart) -->
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>🥧 Distribución por Tipo</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-pie-chart
+          [view]="view"
+          [results]="entriesByTypeData"
+          [legend]="true"
+          [labels]="true"
+          [doughnut]="false"
+          [scheme]="colorScheme">
+        </ngx-charts-pie-chart>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Incidentes por usuario -->
+    <mat-card class="chart-card" *ngIf="incidentsByUserData.length > 0">
+      <mat-card-header>
+        <mat-card-title>👤 Top 10 Analistas con Más Incidentes</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-bar-horizontal
+          [view]="view"
+          [results]="incidentsByUserData"
+          [xAxis]="true"
+          [yAxis]="true"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Cantidad"
+          yAxisLabel="Analista"
+          [scheme]="colorScheme">
+        </ngx-charts-bar-horizontal>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Tags más usados -->
+    <mat-card class="chart-card" *ngIf="topTagsData.length > 0">
+      <mat-card-header>
+        <mat-card-title>🏷️ Top 15 Tags Más Usados</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-bar-horizontal
+          [view]="view"
+          [results]="topTagsData"
+          [xAxis]="true"
+          [yAxis]="true"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Frecuencia"
+          yAxisLabel="Tag"
+          [scheme]="colorScheme">
+        </ngx-charts-bar-horizontal>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Servicios con rojos -->
+    <mat-card class="chart-card" *ngIf="redsByServiceData.length > 0">
+      <mat-card-header>
+        <mat-card-title>🔴 Servicios con Más Rojos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-bar-horizontal
+          [view]="view"
+          [results]="redsByServiceData"
+          [xAxis]="true"
+          [yAxis]="true"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Frecuencia"
+          yAxisLabel="Servicio"
+          [scheme]="colorScheme">
+        </ngx-charts-bar-horizontal>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Comparación de tags -->
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>📊 Comparar Tendencias por Tags</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Selecciona tags para comparar (hasta 5)</mat-label>
+          <mat-select [(ngModel)]="selectedTagsForComparison" multiple (selectionChange)="onTagSelectionChange()">
+            <mat-option *ngFor="let tag of availableTags" [value]="tag">
+              {{ tag }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>Compara la evolución de hasta 5 tags diferentes</mat-hint>
+        </mat-form-field>
+
+        <div *ngIf="tagComparisonData.length > 0">
+          <ngx-charts-line-chart
+            [view]="view"
+            [results]="tagComparisonData"
+            [xAxis]="true"
+            [yAxis]="true"
+            [legend]="true"
+            [showXAxisLabel]="true"
+            [showYAxisLabel]="true"
+            xAxisLabel="Fecha"
+            yAxisLabel="Cantidad"
+            [scheme]="colorScheme"
+            [animations]="true">
+          </ngx-charts-line-chart>
+        </div>
+        <p *ngIf="tagComparisonData.length === 0" class="no-data">
+          Selecciona tags para ver la comparación
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Mapa de calor -->
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>
+          🔥 Mapa de Calor: Día vs Hora
+          <button mat-icon-button (click)="toggleHeatmap()" class="toggle-btn">
+            <mat-icon>{{ showHeatmap ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="showHeatmap">
+        <p class="chart-description">
+          Visualiza los picos de actividad: horas y días con más entradas
+        </p>
+        <div *ngIf="heatmapData.length > 0">
+          <ngx-charts-heat-map
+            [view]="[900, 400]"
+            [results]="heatmapData"
+            [xAxis]="true"
+            [yAxis]="true"
+            [showXAxisLabel]="true"
+            [showYAxisLabel]="true"
+            xAxisLabel="Hora del Día"
+            yAxisLabel="Día de la Semana"
+            [scheme]="colorScheme">
+          </ngx-charts-heat-map>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Acciones -->
+    <div class="actions">
+      <button mat-raised-button color="primary" (click)="exportEntries()">
+        <mat-icon>download</mat-icon>
+        Exportar Entradas a CSV
+      </button>
+    </div>
+  </div>
 </div>
