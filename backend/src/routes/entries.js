@@ -386,9 +386,14 @@ router.put('/admin/edit',
     body('updates').isObject().withMessage('Actualizaciones requeridas'),
     body('updates.tags').optional().isArray(),
     body('updates.clientId').optional({ checkFalsy: true }).custom((value) => {
-      return value === null || mongoose.Types.ObjectId.isValid(value);
+      // Acepta: null, '__no_change__', o MongoId válido
+      if (value === null || value === '__no_change__') return true;
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new Error('clientId debe ser un ObjectId válido, null, o "__no_change__"');
+      }
+      return true;
     }),
-    body('updates.entryType').optional().isIn(['operativa', 'incidente'])
+    body('updates.entryType').optional().isIn(['operativa', 'incidente']).withMessage('entryType inválido')
   ],
   validate,
   async (req, res) => {
@@ -406,7 +411,7 @@ router.put('/admin/edit',
 
       // Procesar campos permitidos
       for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
+        if (updates[field] !== undefined && updates[field] !== '__no_change__') {
           sanitizedUpdates[field] = updates[field];
         }
       }
