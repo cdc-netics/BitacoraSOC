@@ -59,12 +59,25 @@ docker-compose up -d
 
 **D. Ejecutar script de migración:**
 
-Opción 1: Ejecutar desde el contenedor backend
+**Opción 1 (RECOMENDADO): Script automatizado**
+
+Linux/Mac:
+```bash
+chmod +x scripts/migrate-netics-logsource.sh
+./scripts/migrate-netics-logsource.sh
+```
+
+Windows (PowerShell):
+```powershell
+.\scripts\migrate-netics-logsource.ps1
+```
+
+**Opción 2: Ejecutar desde el contenedor backend**
 ```bash
 docker exec bitacora-backend node scripts/add-netics.js
 ```
 
-Opción 2: Ejecutar directamente en MongoDB
+**Opción 3: Ejecutar directamente en MongoDB**
 ```bash
 docker exec bitacora-mongodb mongosh \
   --username admin \
