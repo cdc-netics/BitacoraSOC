@@ -50,6 +50,13 @@ router.get('/contacts', authenticate, escalationController.getContactsPublic);
  */
 router.get('/internal-shifts', authenticate, escalationController.getInternalShiftsNow);
 
+/**
+ * @route   GET /api/escalation/raci?clientId=...&serviceId=...
+ * @desc    Obtener matriz RACI por cliente/servicio
+ * @access  Private (Analyst/Admin)
+ */
+router.get('/raci', authenticate, escalationController.getRaciByClient);
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🔧 CRUD ADMIN - Clientes
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -76,6 +83,15 @@ router.get('/admin/contacts', authenticate, requireAdmin, escalationController.g
 router.post('/admin/contacts', authenticate, requireAdmin, escalationController.createContact);
 router.put('/admin/contacts/:id', authenticate, requireAdmin, escalationController.updateContact);
 router.delete('/admin/contacts/:id', authenticate, requireAdmin, escalationController.deleteContact);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 CRUD ADMIN - RACI
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+router.get('/admin/raci', authenticate, requireAdmin, escalationController.getRaciAdmin);
+router.post('/admin/raci', authenticate, requireAdmin, escalationController.createRaci);
+router.put('/admin/raci/:id', authenticate, requireAdmin, escalationController.updateRaci);
+router.delete('/admin/raci/:id', authenticate, requireAdmin, escalationController.deleteRaci);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🔧 CRUD ADMIN - Reglas de Escalación

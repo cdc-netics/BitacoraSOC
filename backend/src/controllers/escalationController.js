@@ -8,6 +8,7 @@ const ShiftAssignment = require('../models/ShiftAssignment');
 const ShiftOverride = require('../models/ShiftOverride');
 const User = require('../models/User');
 const ExternalPerson = require('../models/ExternalPerson');
+const RaciEntry = require('../models/RaciEntry');
 const { logger } = require('../utils/logger');
 
 /**
@@ -238,6 +239,34 @@ exports.getContactsPublic = async (req, res) => {
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📖 RACI (Analyst/Admin)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+exports.getRaciByClient = async (req, res) => {
+  try {
+    const { clientId, serviceId } = req.query;
+    if (!clientId) {
+      return res.status(400).json({ error: 'clientId es requerido' });
+    }
+
+    const filter = { clientId, active: true };
+    if (serviceId) {
+      filter.serviceId = serviceId;
+    }
+
+    const raciEntries = await RaciEntry.find(filter)
+      .populate('clientId', 'name')
+      .populate('serviceId', 'name')
+      .sort({ activity: 1 });
+
+    res.json(raciEntries);
+  } catch (error) {
+    logger.error('Error in getRaciByClient:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🔧 CRUD ADMIN - Clientes
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -438,6 +467,78 @@ exports.deleteContact = async (req, res) => {
     res.json({ message: 'Contact deleted successfully' });
   } catch (error) {
     logger.error('Error in deleteContact:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 CRUD ADMIN - RACI
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+exports.getRaciAdmin = async (req, res) => {
+  try {
+    const { clientId, serviceId } = req.query;
+    const filter = {};
+    if (clientId) filter.clientId = clientId;
+    if (serviceId) filter.serviceId = serviceId;
+
+    const raciEntries = await RaciEntry.find(filter)
+      .populate('clientId', 'name')
+      .populate('serviceId', 'name')
+      .sort({ createdAt: -1 });
+
+    res.json(raciEntries);
+  } catch (error) {
+    logger.error('Error in getRaciAdmin:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.createRaci = async (req, res) => {
+  try {
+    const data = { ...req.body };
+    const raciEntry = await RaciEntry.create(data);
+    const populated = await RaciEntry.findById(raciEntry._id)
+      .populate('clientId', 'name')
+      .populate('serviceId', 'name');
+
+    res.status(201).json(populated);
+  } catch (error) {
+    logger.error('Error in createRaci:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateRaci = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = { ...req.body };
+
+    const updated = await RaciEntry.findByIdAndUpdate(id, data, { new: true })
+      .populate('clientId', 'name')
+      .populate('serviceId', 'name');
+
+    if (!updated) {
+      return res.status(404).json({ error: 'RACI no encontrado' });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    logger.error('Error in updateRaci:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteRaci = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await RaciEntry.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'RACI no encontrado' });
+    }
+    res.json({ message: 'RACI eliminado' });
+  } catch (error) {
+    logger.error('Error in deleteRaci:', error);
     res.status(500).json({ error: error.message });
   }
 };

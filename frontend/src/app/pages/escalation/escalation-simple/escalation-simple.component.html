@@ -106,7 +106,7 @@
     <div class="client-selector" *ngIf="allClients.length > 0">
       <mat-form-field appearance="outline" class="client-field">
         <mat-label>Seleccionar Cliente</mat-label>
-        <mat-select [(ngModel)]="selectedClient">
+        <mat-select [(ngModel)]="selectedClient" (selectionChange)="onClientChange()">
           <mat-option *ngFor="let client of allClients" [value]="client">
             {{ client.name }}
           </mat-option>
@@ -151,6 +151,44 @@
             </tr>
             <tr *ngIf="!service.contacts || service.contacts.length === 0" class="no-data-row">
               <td colspan="4" class="text-center text-muted">Sin contactos configurados</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- RACI por cliente -->
+      <div class="service-section">
+        <h3>📋 RACI</h3>
+        <p class="subtitle">Matriz de responsabilidades por cliente</p>
+
+        <div *ngIf="loadingRaci" class="loading-container">
+          <mat-spinner diameter="32"></mat-spinner>
+        </div>
+
+        <table *ngIf="!loadingRaci" class="excel-table simple-table">
+          <thead>
+            <tr>
+              <th>Actividad/Proceso</th>
+              <th>Responsable (R)</th>
+              <th>Aprobador (A)</th>
+              <th>Consultado (C)</th>
+              <th>Informado (I)</th>
+              <th>Servicio</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let raci of raciEntries" class="data-row">
+              <td class="cell-name">{{ raci.activity }}</td>
+              <td>{{ raci.responsible || '-' }}</td>
+              <td>{{ raci.accountable || '-' }}</td>
+              <td>{{ raci.consulted || '-' }}</td>
+              <td>{{ raci.informed || '-' }}</td>
+              <td>{{ raci.serviceId?.name || '-' }}</td>
+              <td>{{ raci.notes || '-' }}</td>
+            </tr>
+            <tr *ngIf="!raciEntries || raciEntries.length === 0" class="no-data-row">
+              <td colspan="7" class="text-center text-muted">No hay datos de RACI disponibles</td>
             </tr>
           </tbody>
         </table>

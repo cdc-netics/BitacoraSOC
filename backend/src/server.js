@@ -25,6 +25,7 @@ const connectDB = require('./config/database');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const requestIdMiddleware = require('./middleware/requestId');
 const { logger } = require('./utils/logger');
+const { startChecklistAlertScheduler } = require('./utils/checklistAlertScheduler');
 
 const app = express();
 const HOST = process.env.HOST || '0.0.0.0';
@@ -195,6 +196,8 @@ const server = app.listen(PORT, HOST, () => {
 ║  API Docs: http://${HOST}:${PORT}/api-docs ${' '.repeat(3)}║
 ╚════════════════════════════════════════╝
   `);
+
+  startChecklistAlertScheduler();
 });
 
 // Manejo de errores de escucha y apagado ordenado

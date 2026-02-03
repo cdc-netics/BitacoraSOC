@@ -377,5 +377,158 @@
         </div>
       </div>
     </mat-tab>
+
+    <!-- TAB 3: RACI -->
+    <mat-tab label="📋 RACI">
+      <div class="tab-content">
+        <h2>Matriz RACI por Cliente</h2>
+        <p class="subtitle">Configura responsables, aprobadores y consultados por actividad</p>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente</mat-label>
+            <mat-select [(ngModel)]="selectedRaciClientId" (selectionChange)="onRaciFilterChange()">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let client of clients" [value]="client._id">
+                {{ client.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Servicio (opcional)</mat-label>
+            <mat-select [(ngModel)]="selectedRaciServiceId" (selectionChange)="onRaciFilterChange()">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let service of services" [value]="service._id">
+                {{ service.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" (click)="addRaciEntry()">
+            <mat-icon>add</mat-icon>
+            Nuevo RACI
+          </button>
+        </div>
+
+        <!-- Formulario RACI -->
+        <mat-card *ngIf="showRaciForm" class="form-card">
+          <h3>{{ editingRaciId ? 'Editar' : 'Nuevo' }} RACI</h3>
+          <form [formGroup]="raciForm" (ngSubmit)="saveRaciEntry()">
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Cliente</mat-label>
+                <mat-select formControlName="clientId" required>
+                  <mat-option *ngFor="let client of clients" [value]="client._id">
+                    {{ client.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Servicio (opcional)</mat-label>
+                <mat-select formControlName="serviceId">
+                  <mat-option value="">Sin servicio</mat-option>
+                  <mat-option *ngFor="let service of services" [value]="service._id">
+                    {{ service.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Actividad / Proceso</mat-label>
+                <input matInput formControlName="activity" required>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Responsable (R)</mat-label>
+                <input matInput formControlName="responsible" required>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Aprobador (A)</mat-label>
+                <input matInput formControlName="accountable" required>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Consultado (C)</mat-label>
+                <input matInput formControlName="consulted">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Informado (I)</mat-label>
+                <input matInput formControlName="informed">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Notas</mat-label>
+                <textarea matInput rows="2" formControlName="notes"></textarea>
+              </mat-form-field>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="raciForm.invalid">
+                Guardar
+              </button>
+              <button mat-button type="button" (click)="showRaciForm = false">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </mat-card>
+
+        <!-- Tabla RACI -->
+        <div *ngIf="!loadingRaci" class="simple-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Actividad</th>
+                <th>R</th>
+                <th>A</th>
+                <th>C</th>
+                <th>I</th>
+                <th>Cliente</th>
+                <th>Servicio</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let raci of raciEntries">
+                <td>{{ raci.activity }}</td>
+                <td>{{ raci.responsible }}</td>
+                <td>{{ raci.accountable }}</td>
+                <td>{{ raci.consulted || '-' }}</td>
+                <td>{{ raci.informed || '-' }}</td>
+                <td>{{ raci.clientId?.name || '-' }}</td>
+                <td>{{ raci.serviceId?.name || '-' }}</td>
+                <td>
+                  <button mat-icon-button (click)="editRaciEntry(raci)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="deleteRaciEntry(raci._id)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="raciEntries.length === 0">
+                <td colspan="8" class="text-center text-muted">No hay registros RACI</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="loadingRaci" class="loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      </div>
+    </mat-tab>
   </mat-tab-group>
 </div>

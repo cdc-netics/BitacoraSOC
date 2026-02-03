@@ -49,7 +49,9 @@ router.get('/', authenticate, async (req, res) => {
       config = await AppConfig.create({
         guestModeEnabled: false,
         guestMaxDurationDays: 2,
-        shiftCheckCooldownHours: 4
+        shiftCheckCooldownHours: 4,
+        checklistAlertEnabled: true,
+        checklistAlertTime: '09:30'
       });
     }
 
@@ -68,6 +70,8 @@ router.put('/',
     body('guestModeEnabled').optional().isBoolean(),
     body('guestMaxDurationDays').optional().isInt({ min: 1, max: 30 }).toInt(),
     body('shiftCheckCooldownHours').optional().isInt({ min: 1, max: 24 }).toInt(),
+    body('checklistAlertEnabled').optional().isBoolean(),
+    body('checklistAlertTime').optional().matches(/^\d{2}:\d{2}$/).withMessage('Formato de hora inválido (HH:mm)'),
     body('logoUrl').optional().trim()
   ],
   validate,

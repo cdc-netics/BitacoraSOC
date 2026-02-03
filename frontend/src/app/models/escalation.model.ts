@@ -47,6 +47,21 @@ export interface ExternalPerson {
   updatedAt?: string;
 }
 
+export interface RaciEntry {
+  _id: string;
+  clientId: string | Client;
+  serviceId?: string | Service | null;
+  activity: string;
+  responsible: string;
+  accountable: string;
+  consulted?: string;
+  informed?: string;
+  notes?: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface EscalationRule {
   _id: string;
   serviceId: string | Service;
@@ -224,5 +239,17 @@ export interface ShiftOverrideFormData {
   startDate: string; // ISO 8601
   endDate: string; // ISO 8601
   reason: string;
+  active: boolean;
+}
+
+export interface RaciEntryFormData {
+  clientId: string;
+  serviceId?: string | null;
+  activity: string;
+  responsible: string;
+  accountable: string;
+  consulted?: string;
+  informed?: string;
+  notes?: string;
   active: boolean;
 }

@@ -48,6 +48,8 @@ export class EscalationSimpleComponent implements OnInit {
   selectedClient: any = null;
   unassignedContacts: any[] = [];
   loading = false;
+  raciEntries: any[] = [];
+  loadingRaci = false;
 
   // Datos para turnos de la semana
   weekShifts: any = {
@@ -132,6 +134,7 @@ export class EscalationSimpleComponent implements OnInit {
       // Seleccionar primer cliente por defecto
       if (this.allClients.length > 0 && !this.selectedClient) {
         this.selectedClient = this.allClients[0];
+        this.loadRaciEntries();
       }
       
       this.loading = false;
@@ -146,6 +149,31 @@ export class EscalationSimpleComponent implements OnInit {
   get selectedClientData(): any {
     if (!this.selectedClient) return null;
     return this.escalationData.find((d: any) => d.client._id === this.selectedClient._id);
+  }
+
+  onClientChange(): void {
+    this.loadRaciEntries();
+  }
+
+  loadRaciEntries(): void {
+    if (!this.selectedClient?._id) {
+      this.raciEntries = [];
+      return;
+    }
+
+    this.loadingRaci = true;
+    this.escalationService.getRaci(this.selectedClient._id).subscribe({
+      next: (entries) => {
+        this.raciEntries = entries || [];
+        this.loadingRaci = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading RACI:', err);
+        this.raciEntries = [];
+        this.loadingRaci = false;
+      }
+    });
   }
 
   setCurrentWeek(): void {

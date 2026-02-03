@@ -18,7 +18,9 @@ import {
   ShiftRotationCycleFormData,
   ShiftAssignmentFormData,
   ShiftOverrideFormData,
-  ExternalPerson
+  ExternalPerson,
+  RaciEntry,
+  RaciEntryFormData
 } from '../models/escalation.model';
 
 @Injectable({
@@ -87,6 +89,17 @@ export class EscalationService {
     return this.http.get<Contact[]>(`${this.apiUrl}/contacts`);
   }
 
+  /**
+   * Obtener matriz RACI por cliente/servicio
+   */
+  getRaci(clientId: string, serviceId?: string): Observable<RaciEntry[]> {
+    let params = new HttpParams().set('clientId', clientId);
+    if (serviceId) {
+      params = params.set('serviceId', serviceId);
+    }
+    return this.http.get<RaciEntry[]>(`${this.apiUrl}/raci`, { params });
+  }
+
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 🔧 CRUD ADMIN - Clientes
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -145,6 +158,33 @@ export class EscalationService {
 
   deleteContact(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/admin/contacts/${id}`);
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 🔧 CRUD ADMIN - RACI
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  getRaciAdmin(clientId?: string, serviceId?: string): Observable<RaciEntry[]> {
+    let params = new HttpParams();
+    if (clientId) {
+      params = params.set('clientId', clientId);
+    }
+    if (serviceId) {
+      params = params.set('serviceId', serviceId);
+    }
+    return this.http.get<RaciEntry[]>(`${this.apiUrl}/admin/raci`, { params });
+  }
+
+  createRaci(data: RaciEntryFormData): Observable<RaciEntry> {
+    return this.http.post<RaciEntry>(`${this.apiUrl}/admin/raci`, data);
+  }
+
+  updateRaci(id: string, data: RaciEntryFormData): Observable<RaciEntry> {
+    return this.http.put<RaciEntry>(`${this.apiUrl}/admin/raci/${id}`, data);
+  }
+
+  deleteRaci(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/admin/raci/${id}`);
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

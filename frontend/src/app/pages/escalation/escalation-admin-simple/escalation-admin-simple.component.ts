@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, NgZone, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,6 +28,7 @@ class MondayFirstNativeDateAdapter extends NativeDateAdapter {
     selector: 'app-escalation-admin-simple',
     imports: [
         CommonModule,
+      FormsModule,
         ReactiveFormsModule,
         MatCardModule,
         MatButtonModule,
@@ -89,6 +90,15 @@ export class EscalationAdminSimpleComponent implements OnInit {
   contactForm!: FormGroup;
   editingContactId: string | null = null;
 
+  // RACI
+  raciEntries: any[] = [];
+  loadingRaci = false;
+  showRaciForm = false;
+  raciForm!: FormGroup;
+  editingRaciId: string | null = null;
+  selectedRaciClientId: string | null = null;
+  selectedRaciServiceId: string | null = null;
+
   constructor(
     private fb: FormBuilder,
     private escalationService: EscalationService,
@@ -133,6 +143,18 @@ export class EscalationAdminSimpleComponent implements OnInit {
       active: [true]
     });
 
+    this.raciForm = this.fb.group({
+      clientId: ['', Validators.required],
+      serviceId: [''],
+      activity: ['', Validators.required],
+      responsible: ['', Validators.required],
+      accountable: ['', Validators.required],
+      consulted: [''],
+      informed: [''],
+      notes: [''],
+      active: [true]
+    });
+
     this.externalPersonForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -149,6 +171,7 @@ export class EscalationAdminSimpleComponent implements OnInit {
     this.loadClients();
     this.loadServices();
     this.loadContacts();
+    this.loadRaciEntries();
   }
 
   // ============ TURNOS INTERNOS ============
@@ -279,6 +302,10 @@ export class EscalationAdminSimpleComponent implements OnInit {
     this.escalationService.getAllClients().subscribe({
       next: (data) => {
         this.clients = [...data];
+        if (!this.selectedRaciClientId && this.clients.length > 0) {
+          this.selectedRaciClientId = this.clients[0]._id;
+          this.loadRaciEntries();
+        }
         this.loadingClients = false;
         this.cdr.detectChanges();
       },
@@ -391,6 +418,102 @@ export class EscalationAdminSimpleComponent implements OnInit {
       error: (err) => {
         console.error('Error:', err);
         this.loadingContacts = false;
+      }
+    });
+  }
+
+  // ============ RACI ============
+  loadRaciEntries(): void {
+    this.loadingRaci = true;
+    this.escalationService.getRaciAdmin(this.selectedRaciClientId || undefined, this.selectedRaciServiceId || undefined)
+      .subscribe({
+        next: (data) => {
+          this.raciEntries = [...data];
+          this.loadingRaci = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading RACI:', err);
+          this.loadingRaci = false;
+        }
+      });
+  }
+
+  onRaciFilterChange(): void {
+    this.loadRaciEntries();
+  }
+
+  addRaciEntry(): void {
+    this.showRaciForm = true;
+    this.editingRaciId = null;
+    this.raciForm.reset({
+      clientId: this.selectedRaciClientId || '',
+      serviceId: this.selectedRaciServiceId || '',
+      activity: '',
+      responsible: '',
+      accountable: '',
+      consulted: '',
+      informed: '',
+      notes: '',
+      active: true
+    });
+  }
+
+  editRaciEntry(entry: any): void {
+    this.showRaciForm = true;
+    this.editingRaciId = entry._id;
+    this.raciForm.reset({
+      clientId: entry.clientId?._id || entry.clientId,
+      serviceId: entry.serviceId?._id || entry.serviceId || '',
+      activity: entry.activity,
+      responsible: entry.responsible,
+      accountable: entry.accountable,
+      consulted: entry.consulted || '',
+      informed: entry.informed || '',
+      notes: entry.notes || '',
+      active: entry.active !== false
+    });
+  }
+
+  saveRaciEntry(): void {
+    if (this.raciForm.invalid) {
+      this.showError('Completa los campos obligatorios de RACI');
+      return;
+    }
+
+    const payload = this.raciForm.value;
+    if (!payload.serviceId) {
+      payload.serviceId = null;
+    }
+
+    const request$ = this.editingRaciId
+      ? this.escalationService.updateRaci(this.editingRaciId, payload)
+      : this.escalationService.createRaci(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.showSuccess('RACI guardado correctamente');
+        this.showRaciForm = false;
+        this.editingRaciId = null;
+        this.loadRaciEntries();
+      },
+      error: (err) => {
+        console.error('Error saving RACI:', err);
+        this.showError('Error guardando RACI');
+      }
+    });
+  }
+
+  deleteRaciEntry(id: string): void {
+    if (!confirm('¿Eliminar este registro RACI?')) return;
+    this.escalationService.deleteRaci(id).subscribe({
+      next: () => {
+        this.showSuccess('RACI eliminado');
+        this.loadRaciEntries();
+      },
+      error: (err) => {
+        console.error('Error deleting RACI:', err);
+        this.showError('Error eliminando RACI');
       }
     });
   }

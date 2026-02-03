@@ -41,6 +41,19 @@ const appConfigSchema = new mongoose.Schema({
     min: 1,
     max: 24
   },
+  // Alertas de checklist (B4-7)
+  checklistAlertEnabled: {
+    type: Boolean,
+    default: true
+  },
+  checklistAlertTime: {
+    type: String,
+    default: '09:30'
+  },
+  lastChecklistAlertDate: {
+    type: Date,
+    default: null
+  },
   // Logo
   logoUrl: {
     type: String,

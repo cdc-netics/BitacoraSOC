@@ -348,5 +348,54 @@ const sendChecklistEmail = async (check, services) => {
   }
 };
 
+// Helper exportado para alertas de checklist no realizado
+const sendChecklistAlertEmail = async ({ recipients, alertTime, dateLabel }) => {
+  try {
+    if (!recipients || recipients.length === 0) {
+      return;
+    }
+
+    const config = await SmtpConfig.findOne({ isActive: true });
+    if (!config) {
+      console.log('No hay configuracion SMTP activa');
+      return;
+    }
+
+    const decryptedPassword = decrypt(config.password);
+
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.useTLS,
+      auth: {
+        user: config.username,
+        pass: decryptedPassword
+      }
+    });
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+        <h2 style="color: #d32f2f;">⚠️ Checklist no realizado</h2>
+        <p>No se registró el checklist antes de las <strong>${alertTime}</strong> (${dateLabel}).</p>
+        <p>Por favor revisar y completar el checklist correspondiente.</p>
+        <hr style="margin-top: 20px;">
+        <small style="color: #666;">Bitácora SOC - ${new Date().toLocaleString()}</small>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"${config.senderName}" <${config.senderEmail}>`,
+      to: recipients.join(', '),
+      subject: '[Bitácora SOC] Checklist pendiente',
+      html: emailHtml
+    });
+
+    console.log('Correo de alerta de checklist enviado');
+  } catch (error) {
+    console.error('Error al enviar correo de alerta de checklist:', error);
+  }
+};
+
 module.exports = router;
 module.exports.sendChecklistEmail = sendChecklistEmail;
+module.exports.sendChecklistAlertEmail = sendChecklistAlertEmail;
