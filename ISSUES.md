@@ -64,7 +64,7 @@
 | B4-10 | Configuracion | ENCRYPTION_KEY longitud invalida | Actualizado a 64 hex chars (32 bytes) |
 | B4-11 | UI/UX | Mejora visibilidad texto login/recovery CRT theme | Todos los elementos forzados a #ffffff con !important + text-shadow green glow |
 | B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Backend: RaciEntry con contactos {name, email, phone}. Frontend: form admin + vista analista con iconos |
-| B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend y /heatmap |
+| B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios/log-sources), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend, /entries-by-logsource y /heatmap |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 

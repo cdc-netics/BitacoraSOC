@@ -36,9 +36,9 @@ router.get('/overview', authenticate, async (req, res) => {
       { $group: { _id: '$entryType', count: { $sum: 1 } } }
     ]);
 
-    // 2. Incidentes por analista
+    // 2. Top usuarios por total de entradas (operativa + incidente)
     const incidentsByUser = await Entry.aggregate([
-      { $match: { entryType: 'incidente', createdAt: { $gte: startDate } } },
+      { $match: { createdAt: { $gte: startDate } } },
       { $group: { _id: '$createdByUsername', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 10 }
@@ -218,6 +218,38 @@ router.get('/heatmap', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error al generar heatmap:', error);
     res.status(500).json({ message: 'Error al generar heatmap' });
+  }
+});
+
+// GET /api/reports/entries-by-logsource - Entradas por Log Source (Cliente)
+router.get('/entries-by-logsource', authenticate, async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+    
+    const entriesBySource = await Entry.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: '$clientName',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 15 }
+    ]);
+    
+    // Transformar para NGX-Charts (name, value)
+    const data = entriesBySource.map(item => ({
+      name: item._id || 'Sin asignar',
+      value: item.count
+    }));
+    
+    res.json(data);
+  } catch (error) {
+    console.error('Error al obtener entradas por log source:', error);
+    res.status(500).json({ message: 'Error al obtener entradas por log source' });
   }
 });
 

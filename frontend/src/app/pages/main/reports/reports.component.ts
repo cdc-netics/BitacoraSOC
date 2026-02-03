@@ -72,6 +72,7 @@ export class ReportsComponent implements OnInit {
   incidentsByUserData: any[] = [];
   topTagsData: any[] = [];
   redsByServiceData: any[] = [];
+  entriesByLogSourceData: any[] = [];
   
   // Configuración de gráficos
   view: [number, number] = [700, 300];
@@ -150,6 +151,18 @@ export class ReportsComponent implements OnInit {
     
     // 6. Tags disponibles para comparación
     this.availableTags = this.overview.topTags.map((item: any) => item._id);
+    
+    // 7. Cargar entradas por Log Source
+    this.loadEntriesByLogSource();
+  }
+  
+  loadEntriesByLogSource(): void {
+    this.reportService.getEntriesByLogSource(this.selectedDays).subscribe({
+      next: (data) => {
+        this.entriesByLogSourceData = data;
+      },
+      error: (err) => console.error('Error cargando entradas por log source:', err)
+    });
   }
   
   onTagSelectionChange(): void {

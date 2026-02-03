@@ -64,4 +64,9 @@ export class ReportService {
     const params = new HttpParams().set('days', days.toString());
     return this.http.get<any[]>(`${this.API_URL}/heatmap`, { params });
   }
+
+  getEntriesByLogSource(days = 30): Observable<any[]> {
+    const params = new HttpParams().set('days', days.toString());
+    return this.http.get<any[]>(`${this.API_URL}/entries-by-logsource`, { params });
+  }
 }

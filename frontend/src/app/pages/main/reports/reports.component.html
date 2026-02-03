@@ -85,7 +85,7 @@
     <!-- Incidentes por usuario -->
     <mat-card class="chart-card" *ngIf="incidentsByUserData.length > 0">
       <mat-card-header>
-        <mat-card-title>👤 Top 10 Analistas con Más Incidentes</mat-card-title>
+        <mat-card-title>👤 Top 10 Analistas Más Activos</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <ngx-charts-bar-horizontal
@@ -176,6 +176,26 @@
         <p *ngIf="tagComparisonData.length === 0" class="no-data">
           Selecciona tags para ver la comparación
         </p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Entradas por Log Source (Cliente) -->
+    <mat-card class="chart-card" *ngIf="entriesByLogSourceData.length > 0">
+      <mat-card-header>
+        <mat-card-title>🖥️ Entradas por Log Source / Cliente</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ngx-charts-bar-horizontal
+          [view]="view"
+          [results]="entriesByLogSourceData"
+          [xAxis]="true"
+          [yAxis]="true"
+          [showXAxisLabel]="true"
+          [showYAxisLabel]="true"
+          xAxisLabel="Cantidad de Entradas"
+          yAxisLabel="Log Source"
+          [scheme]="colorScheme">
+        </ngx-charts-bar-horizontal>
       </mat-card-content>
     </mat-card>
 
