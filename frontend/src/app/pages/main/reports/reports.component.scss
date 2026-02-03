@@ -39,6 +39,12 @@
     }
   }
 
+  &.ofensas {
+    .stat-value {
+      color: #ff9800;
+    }
+  }
+
   mat-card-content {
     padding: 24px !important;
   }

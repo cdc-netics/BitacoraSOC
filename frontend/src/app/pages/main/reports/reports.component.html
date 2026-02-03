@@ -23,6 +23,12 @@
           <div class="stat-label">Operativa</div>
         </mat-card-content>
       </mat-card>
+      <mat-card class="stat-card ofensas">
+        <mat-card-content>
+          <div class="stat-value">{{ overview.entriesByType.ofensa || 0 }}</div>
+          <div class="stat-label">Ofensas</div>
+        </mat-card-content>
+      </mat-card>
       <mat-card class="stat-card incidentes">
         <mat-card-content>
           <div class="stat-value">{{ overview.entriesByType.incidente || 0 }}</div>
