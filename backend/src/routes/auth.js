@@ -206,7 +206,17 @@ router.post('/forgot-password',
       user.resetPasswordExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
       await user.save();
 
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/auth/reset-password?token=${resetToken}`;
+      // Construir URL del frontend dinámicamente:
+      // 1. Intenta obtener el host del header de la request (X-Forwarded-Host o Host)
+      // 2. Si no existe, usa HOST_DOMAIN (del .env) o localhost
+      const requestHost = req.headers['x-forwarded-host'] || req.headers.host || process.env.HOST_DOMAIN || 'localhost';
+      const frontendPort = process.env.FRONTEND_PORT || '4200';
+      
+      // Si el host ya incluye puerto (ej: 10.0.100.13:3000), extraer solo el host
+      const hostWithoutPort = requestHost.split(':')[0];
+      const frontendUrl = `http://${hostWithoutPort}:${frontendPort}`;
+      
+      const resetUrl = `${frontendUrl}/auth/reset-password?token=${resetToken}`;
 
       // Intentar enviar email si SMTP está configurado
       const SmtpConfig = require('../models/SmtpConfig');
