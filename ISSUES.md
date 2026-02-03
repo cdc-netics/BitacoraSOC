@@ -6,10 +6,10 @@
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
-| P1 | Pendiente | Actualizacion Angular 20 | Plan general de actualizacion |  |
-| F4-3 | Pendiente | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
+| P1 | Completado | Actualizacion Angular 20 | Plan general de actualizacion |  |
+| F4-3 | Completado | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
 | B2f | Pendiente | Mejoras | Reportes: graficos |  |
-| B2j | Pendiente | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) |  |
+| B2j | Completado | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Implementado con contactos completos (nombre, email, telefono) |
 | B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
 | B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
 | B4-4 | Pendiente | Observaciones | Consistencia en nombres (kebab-case) | No aplicar masivo; definir alcance (carpeta) para evitar romper imports |
@@ -64,6 +64,8 @@
 | B4-8 | Infraestructura | Deshabilitar Rate Limiter en desarrollo | NODE_ENV=development en docker-compose |
 | B4-9 | Bugs | Navegacion password recovery (NG04002 auth/login) | Corregido en forgot-password.component.ts |
 | B4-10 | Configuracion | ENCRYPTION_KEY longitud invalida | Actualizado a 64 hex chars (32 bytes) |
+| B4-11 | UI/UX | Mejora visibilidad texto login/recovery CRT theme | Todos los elementos forzados a #ffffff con !important + text-shadow green glow |
+| B2j | Mejoras | Tabla RACI por cliente (vista + admin Escalamiento) | Backend: RaciEntry con contactos {name, email, phone}. Frontend: form admin + vista analista con iconos |
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 

@@ -47,15 +47,21 @@ export interface ExternalPerson {
   updatedAt?: string;
 }
 
+export interface RaciContact {
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface RaciEntry {
   _id: string;
   clientId: string | Client;
   serviceId?: string | Service | null;
   activity: string;
-  responsible: string;
-  accountable: string;
-  consulted?: string;
-  informed?: string;
+  responsible: RaciContact;
+  accountable: RaciContact;
+  consulted?: RaciContact;
+  informed?: RaciContact;
   notes?: string;
   active: boolean;
   createdAt?: string;

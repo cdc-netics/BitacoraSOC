@@ -21,7 +21,7 @@
  *   - Guest expirado (401)
  *   - Rate limit superado (429)
  */
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -36,7 +36,8 @@ type ViewState = 'login' | 'recovery';
 @Component({
     selector: 'app-login',
     templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss'],
+    styleUrl: './login.component.scss',
+    encapsulation: ViewEncapsulation.None,
     imports: [
       CommonModule,
       RouterModule,

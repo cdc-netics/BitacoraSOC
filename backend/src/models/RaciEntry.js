@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const raciEntrySchema = new mongoose.Schema({
   clientId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Client',
+    ref: 'CatalogLogSource',
     required: true
   },
   serviceId: {
@@ -20,24 +20,24 @@ const raciEntrySchema = new mongoose.Schema({
     trim: true
   },
   responsible: {
-    type: String,
-    required: true,
-    trim: true
+    name: { type: String, required: true, trim: true },
+    email: { type: String, default: '', trim: true },
+    phone: { type: String, default: '', trim: true }
   },
   accountable: {
-    type: String,
-    required: true,
-    trim: true
+    name: { type: String, required: true, trim: true },
+    email: { type: String, default: '', trim: true },
+    phone: { type: String, default: '', trim: true }
   },
   consulted: {
-    type: String,
-    default: '',
-    trim: true
+    name: { type: String, default: '', trim: true },
+    email: { type: String, default: '', trim: true },
+    phone: { type: String, default: '', trim: true }
   },
   informed: {
-    type: String,
-    default: '',
-    trim: true
+    name: { type: String, default: '', trim: true },
+    email: { type: String, default: '', trim: true },
+    phone: { type: String, default: '', trim: true }
   },
   notes: {
     type: String,

@@ -1,6 +1,8 @@
 // CRT Retro Theme Variables
 $crt-green: #00cc77;
 $crt-dark-green: #00aa55;
+$crt-text: #ffffff;
+$crt-text-strong: #ffffff;
 $crt-bg: #0a0a0a;
 $crt-grid: rgba(0, 204, 119, 0.03);
 $crt-glow: 0 0 20px rgba(0, 204, 119, 0.6), 0 0 40px rgba(0, 204, 119, 0.3);
@@ -99,26 +101,39 @@ $crt-font: 'Courier New', monospace;
   animation: bannerIn 0.3s ease-out;
   
   &.banner-success {
-    background-color: rgba(0, 204, 119, 0.1);
-    color: $crt-green;
+    background-color: rgba(0, 204, 119, 0.25);
+    color: #ffffff;
+    .banner-text {
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(0, 255, 153, 0.9), 0 0 20px rgba(0, 204, 119, 0.6), 2px 2px 4px rgba(0, 0, 0, 0.9);
+    }
   }
   
   &.banner-error {
     border-color: #ff3366;
     box-shadow: 0 0 20px rgba(255, 51, 102, 0.6), 0 0 40px rgba(255, 51, 102, 0.3), inset 0 0 20px rgba(255, 51, 102, 0.1);
-    background-color: rgba(255, 51, 102, 0.1);
-    color: #ff3366;
+    background-color: rgba(255, 51, 102, 0.2);
+    color: #ffffff;
+    .banner-text {
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 51, 102, 0.9), 0 0 20px rgba(255, 51, 102, 0.6), 2px 2px 4px rgba(0, 0, 0, 0.9);
+    }
   }
 }
 
 .banner-text {
   line-height: 1.4;
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(0, 255, 153, 0.8), 0 0 15px rgba(0, 204, 119, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+  font-weight: bold;
 }
 
 .banner-secondary {
   font-size: 12px;
   margin-top: 8px;
-  opacity: 0.8;
+  opacity: 1;
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.6), 0 0 12px rgba(0, 204, 119, 0.3), 1px 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 @keyframes bannerIn {
@@ -177,11 +192,11 @@ $crt-font: 'Courier New', monospace;
 .panel-title {
   font-size: 20px;
   font-weight: bold;
-  color: $crt-green;
+  color: #ffffff !important;
   margin: 0;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  text-shadow: none;
+  text-shadow: 0 0 8px rgba(0, 255, 153, 0.8), 0 0 15px rgba(0, 204, 119, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -204,9 +219,10 @@ $crt-font: 'Courier New', monospace;
 .form-label {
   font-size: 12px;
   font-weight: bold;
-  color: $crt-green;
+  color: #ffffff !important;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.7), 0 0 12px rgba(0, 204, 119, 0.4), 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 // Input wrapper
@@ -271,7 +287,7 @@ $crt-font: 'Courier New', monospace;
 .visibility-toggle {
   background: none;
   border: none;
-  color: $crt-green;
+  color: #ffffff !important;
   font-family: $crt-font;
   font-size: 11px;
   font-weight: bold;
@@ -280,10 +296,11 @@ $crt-font: 'Courier New', monospace;
   padding: 0;
   white-space: nowrap;
   transition: all 0.2s ease;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.7), 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
   
   &:hover:not(:disabled) {
-    color: #00ff99;
-    text-shadow: 0 0 10px rgba(0, 255, 153, 0.6);
+    color: #00ff99 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 153, 0.6) !important;
   }
   
   &:disabled {
@@ -324,7 +341,7 @@ $crt-font: 'Courier New', monospace;
   padding: 14px 20px;
   border: 2px solid $crt-green;
   background-color: transparent;
-  color: $crt-green;
+  color: #ffffff !important;
   font-family: $crt-font;
   font-size: 13px;
   font-weight: bold;
@@ -333,12 +350,22 @@ $crt-font: 'Courier New', monospace;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: inset 0 0 20px rgba(0, 204, 119, 0.1);
+  text-shadow: 0 0 8px rgba(0, 255, 153, 0.8), 0 0 15px rgba(0, 204, 119, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+  
+  span {
+    color: #ffffff !important;
+    text-shadow: 0 0 8px rgba(0, 255, 153, 0.8), 0 0 15px rgba(0, 204, 119, 0.5), 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+  }
   
   &:hover:not(:disabled) {
     background-color: rgba(0, 204, 119, 0.1);
     box-shadow: $crt-glow, inset 0 0 20px rgba(0, 204, 119, 0.15);
-    color: #00ff99;
+    color: #00ff99 !important;
     border-color: #00ff99;
+    
+    span {
+      color: #00ff99 !important;
+    }
   }
   
   &:active:not(:disabled) {
@@ -382,7 +409,7 @@ $crt-font: 'Courier New', monospace;
 .recover-link {
   background: none;
   border: none;
-  color: $crt-green;
+  color: #ffffff !important;
   font-family: $crt-font;
   font-size: 12px;
   font-weight: bold;
@@ -391,9 +418,10 @@ $crt-font: 'Courier New', monospace;
   cursor: pointer;
   padding: 8px 0;
   transition: all 0.2s ease;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.7), 0 0 12px rgba(0, 204, 119, 0.4), 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
   
   &:hover:not(:disabled) {
-    color: #00ff99;
+    color: #00ff99 !important;
     text-shadow: 0 0 10px rgba(0, 255, 153, 0.6);
   }
   
@@ -413,14 +441,16 @@ $crt-font: 'Courier New', monospace;
 
 .footer-text {
   font-size: 11px;
-  color: rgba(0, 204, 119, 0.7);
+  color: #ffffff !important;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1.6;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.6), 0 0 12px rgba(0, 204, 119, 0.3), 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
   
   &.small {
     font-size: 10px;
-    opacity: 0.6;
+    color: #ffffff !important;
+    opacity: 0.8;
   }
 }
 

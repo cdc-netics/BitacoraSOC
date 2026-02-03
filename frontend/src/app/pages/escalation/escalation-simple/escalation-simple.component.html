@@ -156,45 +156,6 @@
         </table>
       </div>
 
-      <!-- RACI por cliente -->
-      <div class="service-section">
-        <h3>📋 RACI</h3>
-        <p class="subtitle">Matriz de responsabilidades por cliente</p>
-
-        <div *ngIf="loadingRaci" class="loading-container">
-          <mat-spinner diameter="32"></mat-spinner>
-        </div>
-
-        <table *ngIf="!loadingRaci" class="excel-table simple-table">
-          <thead>
-            <tr>
-              <th>Actividad/Proceso</th>
-              <th>Responsable (R)</th>
-              <th>Aprobador (A)</th>
-              <th>Consultado (C)</th>
-              <th>Informado (I)</th>
-              <th>Servicio</th>
-              <th>Notas</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let raci of raciEntries" class="data-row">
-              <td class="cell-name">{{ raci.activity }}</td>
-              <td>{{ raci.responsible || '-' }}</td>
-              <td>{{ raci.accountable || '-' }}</td>
-              <td>{{ raci.consulted || '-' }}</td>
-              <td>{{ raci.informed || '-' }}</td>
-              <td>{{ raci.serviceId?.name || '-' }}</td>
-              <td>{{ raci.notes || '-' }}</td>
-            </tr>
-            <tr *ngIf="!raciEntries || raciEntries.length === 0" class="no-data-row">
-              <td colspan="7" class="text-center text-muted">No hay datos de RACI disponibles</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-
       <!-- Sin servicios -->
       <div *ngIf="!selectedClientData.services || selectedClientData.services.length === 0" class="no-data-message">
         <mat-icon>info</mat-icon>
@@ -206,6 +167,103 @@
     <div *ngIf="!loading && (!selectedClient || allClients.length === 0)" class="no-data-message">
       <mat-icon>warning</mat-icon>
       <p>No hay datos de escalamiento disponibles</p>
+    </div>
+  </mat-card>
+
+  <!-- SECCIÓN 3: RACI POR CLIENTE -->
+  <mat-card class="section-card" *ngIf="!loading">
+    <h2>📋 RACI</h2>
+    <p class="subtitle">Matriz de responsabilidades por cliente</p>
+
+    <div class="client-selector" *ngIf="raciClients.length > 0">
+      <mat-form-field appearance="outline" class="client-field">
+        <mat-label>Seleccionar Cliente</mat-label>
+        <mat-select [(ngModel)]="selectedRaciClient" (selectionChange)="onRaciClientChange()">
+          <mat-option *ngFor="let client of raciClients" [value]="client">
+            {{ client.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div *ngIf="loadingRaci" class="loading-container">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loadingRaci && selectedRaciClient" class="excel-table-container">
+      <table class="excel-table simple-table">
+        <thead>
+          <tr>
+            <th>Actividad/Proceso</th>
+            <th>Responsable (R)</th>
+            <th>Aprobador (A)</th>
+            <th>Consultado (C)</th>
+            <th>Informado (I)</th>
+            <th>Servicio</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let raci of raciEntries" class="data-row">
+            <td class="cell-name">{{ raci.activity }}</td>
+            <td>
+              <div *ngIf="raci.responsible?.name">
+                <strong>{{ raci.responsible.name }}</strong><br>
+                <small *ngIf="raci.responsible.email" class="clickable" (click)="copyToClipboard(raci.responsible.email)">
+                  📧 {{ raci.responsible.email }}
+                </small><br *ngIf="raci.responsible.email">
+                <small *ngIf="raci.responsible.phone" class="highlight">📱 {{ raci.responsible.phone }}</small>
+              </div>
+              <span *ngIf="!raci.responsible?.name">-</span>
+            </td>
+            <td>
+              <div *ngIf="raci.accountable?.name">
+                <strong>{{ raci.accountable.name }}</strong><br>
+                <small *ngIf="raci.accountable.email" class="clickable" (click)="copyToClipboard(raci.accountable.email)">
+                  📧 {{ raci.accountable.email }}
+                </small><br *ngIf="raci.accountable.email">
+                <small *ngIf="raci.accountable.phone" class="highlight">📱 {{ raci.accountable.phone }}</small>
+              </div>
+              <span *ngIf="!raci.accountable?.name">-</span>
+            </td>
+            <td>
+              <div *ngIf="raci.consulted?.name">
+                <strong>{{ raci.consulted.name }}</strong><br>
+                <small *ngIf="raci.consulted.email" class="clickable" (click)="copyToClipboard(raci.consulted.email)">
+                  📧 {{ raci.consulted.email }}
+                </small><br *ngIf="raci.consulted.email">
+                <small *ngIf="raci.consulted.phone" class="highlight">📱 {{ raci.consulted.phone }}</small>
+              </div>
+              <span *ngIf="!raci.consulted?.name">-</span>
+            </td>
+            <td>
+              <div *ngIf="raci.informed?.name">
+                <strong>{{ raci.informed.name }}</strong><br>
+                <small *ngIf="raci.informed.email" class="clickable" (click)="copyToClipboard(raci.informed.email)">
+                  📧 {{ raci.informed.email }}
+                </small><br *ngIf="raci.informed.email">
+                <small *ngIf="raci.informed.phone" class="highlight">📱 {{ raci.informed.phone }}</small>
+              </div>
+              <span *ngIf="!raci.informed?.name">-</span>
+            </td>
+            <td>{{ raci.serviceId?.name || '-' }}</td>
+            <td>{{ raci.notes || '-' }}</td>
+          </tr>
+          <tr *ngIf="!raciEntries || raciEntries.length === 0" class="no-data-row">
+            <td colspan="7" class="text-center text-muted">No hay datos de RACI disponibles</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loadingRaci && raciClients.length === 0" class="no-data-message">
+      <mat-icon>warning</mat-icon>
+      <p>No hay clientes (Log Sources) disponibles</p>
+    </div>
+
+    <div *ngIf="!loadingRaci && raciClients.length > 0 && !selectedRaciClient" class="no-data-message">
+      <mat-icon>info</mat-icon>
+      <p>Selecciona un cliente para ver la matriz RACI</p>
     </div>
   </mat-card>
 

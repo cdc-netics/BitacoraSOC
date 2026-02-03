@@ -17,6 +17,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EscalationService } from '../../../services/escalation.service';
+import { CatalogService } from '../../../services/catalog.service';
+import { CatalogLogSource } from '../../../models/catalog.model';
 
 @Component({
     selector: 'app-escalation-simple',
@@ -48,6 +50,9 @@ export class EscalationSimpleComponent implements OnInit {
   selectedClient: any = null;
   unassignedContacts: any[] = [];
   loading = false;
+  raciClients: CatalogLogSource[] = [];
+  selectedRaciClient: CatalogLogSource | null = null;
+  loadingRaciClients = false;
   raciEntries: any[] = [];
   loadingRaci = false;
 
@@ -63,6 +68,7 @@ export class EscalationSimpleComponent implements OnInit {
 
   constructor(
     private escalationService: EscalationService,
+    private catalogService: CatalogService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
@@ -70,6 +76,7 @@ export class EscalationSimpleComponent implements OnInit {
   ngOnInit(): void {
     this.setCurrentWeek();
     this.loadEscalationView();
+    this.loadRaciClients();
     this.loadWeekShifts();
   }
 
@@ -134,7 +141,6 @@ export class EscalationSimpleComponent implements OnInit {
       // Seleccionar primer cliente por defecto
       if (this.allClients.length > 0 && !this.selectedClient) {
         this.selectedClient = this.allClients[0];
-        this.loadRaciEntries();
       }
       
       this.loading = false;
@@ -146,23 +152,45 @@ export class EscalationSimpleComponent implements OnInit {
     }
   }
 
+  async loadRaciClients(): Promise<void> {
+    this.loadingRaciClients = true;
+    try {
+      const response = await firstValueFrom(this.catalogService.searchLogSources('', undefined, 200));
+      this.raciClients = (response?.items || []).filter((c) => c.enabled !== false);
+      if (this.raciClients.length > 0 && !this.selectedRaciClient) {
+        this.selectedRaciClient = this.raciClients[0];
+        this.loadRaciEntries();
+      }
+      this.loadingRaciClients = false;
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Error loading RACI clients:', err);
+      this.loadingRaciClients = false;
+    }
+  }
+
   get selectedClientData(): any {
     if (!this.selectedClient) return null;
     return this.escalationData.find((d: any) => d.client._id === this.selectedClient._id);
   }
 
   onClientChange(): void {
+    // Selector de contactos (no afecta RACI)
+  }
+
+  onRaciClientChange(): void {
     this.loadRaciEntries();
   }
 
   loadRaciEntries(): void {
-    if (!this.selectedClient?._id) {
+    if (!this.selectedRaciClient?._id) {
       this.raciEntries = [];
+      this.loadingRaci = false;
       return;
     }
 
     this.loadingRaci = true;
-    this.escalationService.getRaci(this.selectedClient._id).subscribe({
+    this.escalationService.getRaci(this.selectedRaciClient._id).subscribe({
       next: (entries) => {
         this.raciEntries = entries || [];
         this.loadingRaci = false;

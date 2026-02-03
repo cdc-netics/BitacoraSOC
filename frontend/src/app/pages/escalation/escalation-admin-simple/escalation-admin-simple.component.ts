@@ -15,6 +15,8 @@ import { MatNativeDateModule, DateAdapter, NativeDateAdapter, MAT_DATE_LOCALE } 
 import { MatTabsModule } from '@angular/material/tabs';
 import { EscalationService } from '../../../services/escalation.service';
 import { UserService } from '../../../services/user.service';
+import { CatalogService } from '../../../services/catalog.service';
+import { CatalogLogSource } from '../../../models/catalog.model';
 
 @Injectable()
 class MondayFirstNativeDateAdapter extends NativeDateAdapter {
@@ -91,6 +93,8 @@ export class EscalationAdminSimpleComponent implements OnInit {
   editingContactId: string | null = null;
 
   // RACI
+  raciClients: CatalogLogSource[] = [];
+  loadingRaciClients = false;
   raciEntries: any[] = [];
   loadingRaci = false;
   showRaciForm = false;
@@ -103,6 +107,7 @@ export class EscalationAdminSimpleComponent implements OnInit {
     private fb: FormBuilder,
     private escalationService: EscalationService,
     private userService: UserService,
+    private catalogService: CatalogService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
@@ -147,10 +152,26 @@ export class EscalationAdminSimpleComponent implements OnInit {
       clientId: ['', Validators.required],
       serviceId: [''],
       activity: ['', Validators.required],
-      responsible: ['', Validators.required],
-      accountable: ['', Validators.required],
-      consulted: [''],
-      informed: [''],
+      responsible: this.fb.group({
+        name: ['', Validators.required],
+        email: [''],
+        phone: ['']
+      }),
+      accountable: this.fb.group({
+        name: ['', Validators.required],
+        email: [''],
+        phone: ['']
+      }),
+      consulted: this.fb.group({
+        name: [''],
+        email: [''],
+        phone: ['']
+      }),
+      informed: this.fb.group({
+        name: [''],
+        email: [''],
+        phone: ['']
+      }),
       notes: [''],
       active: [true]
     });
@@ -171,7 +192,7 @@ export class EscalationAdminSimpleComponent implements OnInit {
     this.loadClients();
     this.loadServices();
     this.loadContacts();
-    this.loadRaciEntries();
+    this.loadRaciClients();
   }
 
   // ============ TURNOS INTERNOS ============
@@ -302,10 +323,6 @@ export class EscalationAdminSimpleComponent implements OnInit {
     this.escalationService.getAllClients().subscribe({
       next: (data) => {
         this.clients = [...data];
-        if (!this.selectedRaciClientId && this.clients.length > 0) {
-          this.selectedRaciClientId = this.clients[0]._id;
-          this.loadRaciEntries();
-        }
         this.loadingClients = false;
         this.cdr.detectChanges();
       },
@@ -423,6 +440,26 @@ export class EscalationAdminSimpleComponent implements OnInit {
   }
 
   // ============ RACI ============
+  loadRaciClients(): void {
+    this.loadingRaciClients = true;
+    this.catalogService.getAllLogSources().subscribe({
+      next: (response) => {
+        const items = response?.items || response || [];
+        this.raciClients = [...items].filter((c: any) => c.enabled !== false);
+        if (!this.selectedRaciClientId && this.raciClients.length > 0) {
+          this.selectedRaciClientId = this.raciClients[0]._id;
+        }
+        this.loadingRaciClients = false;
+        this.loadRaciEntries();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading RACI clients:', err);
+        this.loadingRaciClients = false;
+      }
+    });
+  }
+
   loadRaciEntries(): void {
     this.loadingRaci = true;
     this.escalationService.getRaciAdmin(this.selectedRaciClientId || undefined, this.selectedRaciServiceId || undefined)
@@ -443,6 +480,14 @@ export class EscalationAdminSimpleComponent implements OnInit {
     this.loadRaciEntries();
   }
 
+  getRaciClientName(entry: any): string {
+    const directName = entry?.clientId?.name;
+    if (directName) return directName;
+    const id = entry?.clientId?._id || entry?.clientId;
+    const match = this.raciClients.find((client) => client._id === id);
+    return match?.name || '-';
+  }
+
   addRaciEntry(): void {
     this.showRaciForm = true;
     this.editingRaciId = null;
@@ -450,10 +495,10 @@ export class EscalationAdminSimpleComponent implements OnInit {
       clientId: this.selectedRaciClientId || '',
       serviceId: this.selectedRaciServiceId || '',
       activity: '',
-      responsible: '',
-      accountable: '',
-      consulted: '',
-      informed: '',
+      responsible: { name: '', email: '', phone: '' },
+      accountable: { name: '', email: '', phone: '' },
+      consulted: { name: '', email: '', phone: '' },
+      informed: { name: '', email: '', phone: '' },
       notes: '',
       active: true
     });
@@ -466,10 +511,26 @@ export class EscalationAdminSimpleComponent implements OnInit {
       clientId: entry.clientId?._id || entry.clientId,
       serviceId: entry.serviceId?._id || entry.serviceId || '',
       activity: entry.activity,
-      responsible: entry.responsible,
-      accountable: entry.accountable,
-      consulted: entry.consulted || '',
-      informed: entry.informed || '',
+      responsible: {
+        name: entry.responsible?.name || '',
+        email: entry.responsible?.email || '',
+        phone: entry.responsible?.phone || ''
+      },
+      accountable: {
+        name: entry.accountable?.name || '',
+        email: entry.accountable?.email || '',
+        phone: entry.accountable?.phone || ''
+      },
+      consulted: {
+        name: entry.consulted?.name || '',
+        email: entry.consulted?.email || '',
+        phone: entry.consulted?.phone || ''
+      },
+      informed: {
+        name: entry.informed?.name || '',
+        email: entry.informed?.email || '',
+        phone: entry.informed?.phone || ''
+      },
       notes: entry.notes || '',
       active: entry.active !== false
     });
