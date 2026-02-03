@@ -394,6 +394,7 @@ router.put('/admin/edit',
       }
 
       const { entryIds, updates } = req.body;
+      console.log('🔵 [Admin Edit] Received request:', { entryIds, updates });
 
       // Whitelist de campos editables por admin
       const allowedFields = ['tags', 'clientId', 'clientName', 'entryType'];
@@ -419,6 +420,8 @@ router.put('/admin/edit',
         }
       }
 
+      console.log('🟢 [Admin Edit] Sanitized updates:', sanitizedUpdates);
+
       // Blacklist explícito (protección extra - campos inmutables)
       delete sanitizedUpdates.content;
       delete sanitizedUpdates.timestamp;
@@ -433,10 +436,12 @@ router.put('/admin/edit',
 
       // Si se está actualizando clientId, resolver el clientName
       if (sanitizedUpdates.clientId !== undefined) {
+        console.log('🟡 [Admin Edit] Resolving clientName for clientId:', sanitizedUpdates.clientId);
         if (sanitizedUpdates.clientId === null) {
           sanitizedUpdates.clientName = null;
         } else {
           const logSource = await CatalogLogSource.findById(sanitizedUpdates.clientId);
+          console.log('🟡 [Admin Edit] CatalogLogSource found:', logSource);
           if (!logSource) {
             return res.status(400).json({ message: 'LogSource no encontrado' });
           }
@@ -445,18 +450,23 @@ router.put('/admin/edit',
       }
 
       // Verificar que las entradas existen
+      console.log('🔵 [Admin Edit] Checking entries exist...');
       const entries = await Entry.find({ _id: { $in: entryIds } });
+      console.log('🟢 [Admin Edit] Found entries:', entries.length);
       if (entries.length !== entryIds.length) {
         return res.status(404).json({ message: 'Una o más entradas no encontradas' });
       }
 
       // Actualizar entradas
+      console.log('🔵 [Admin Edit] Executing updateMany with:', { sanitizedUpdates });
       const result = await Entry.updateMany(
         { _id: { $in: entryIds } },
         { $set: sanitizedUpdates }
       );
+      console.log('🟢 [Admin Edit] UpdateMany result:', result);
 
       // Auditar la acción
+      console.log('🔵 [Admin Edit] Logging audit event...');
       await audit(req, {
         event: 'entry.admin_bulk_edit',
         level: 'warn',
@@ -468,7 +478,14 @@ router.put('/admin/edit',
           adminUsername: req.user.username
         }
       });
+      console.log('🟢 [Admin Edit] Audit logged successfully');
 
+      res.json({
+        message: `${result.modifiedCount} entrada(s) actualizada(s)`,
+        modifiedCount: result.modifiedCount,
+        matchedCount: result.matchedCount
+      });
+    }
       res.json({
         message: `${result.modifiedCount} entrada(s) actualizada(s)`,
         modifiedCount: result.modifiedCount,
@@ -477,11 +494,18 @@ router.put('/admin/edit',
     } catch (error) {
       logger.error({
         err: error,
+        stack: error.stack,
         requestId: req.requestId,
-        userId: req.user._id
+        userId: req.user._id,
+        body: req.body,
+        sanitizedUpdates: sanitizedUpdates
       }, 'Error in admin bulk edit');
 
-      res.status(500).json({ message: 'Error al editar entradas' });
+      res.status(500).json({ 
+        message: 'Error al editar entradas',
+        error: error.message,
+        requestId: req.requestId
+      });
     }
   }
 );
