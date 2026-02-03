@@ -78,7 +78,7 @@ export class AllEntriesComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.searchForm = this.fb.group({
-      query: [''],
+      search: [''],
       entryType: [''],
       clientId: [''],
       startDate: [''],
@@ -127,7 +127,7 @@ export class AllEntriesComponent implements OnInit {
       limit: this.pageSize
     };
 
-    if (filters.query?.trim()) params.query = filters.query.trim();
+    if (filters.search?.trim()) params.search = filters.search.trim();
     if (filters.entryType) params.entryType = filters.entryType;
     if (filters.clientId) params.clientId = filters.clientId; // Filtro cliente (B2i)
     if (filters.startDate) params.startDate = filters.startDate;
@@ -201,7 +201,7 @@ Tags: ${tags}`;
 
   clearSearch(): void {
     this.searchForm.reset({
-      query: '',
+      search: '',
       entryType: '',
       clientId: '',
       startDate: '',
