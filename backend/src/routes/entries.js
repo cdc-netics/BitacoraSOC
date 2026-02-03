@@ -485,12 +485,6 @@ router.put('/admin/edit',
         modifiedCount: result.modifiedCount,
         matchedCount: result.matchedCount
       });
-    }
-      res.json({
-        message: `${result.modifiedCount} entrada(s) actualizada(s)`,
-        modifiedCount: result.modifiedCount,
-        matchedCount: result.matchedCount
-      });
     } catch (error) {
       logger.error({
         err: error,
