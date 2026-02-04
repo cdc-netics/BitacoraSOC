@@ -7,6 +7,7 @@ const fs = require('fs').promises;
 const AppConfig = require('../models/AppConfig');
 const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const { invalidateCache } = require('../utils/email');
 
 // Configurar multer para logo
 const storage = multer.diskStorage({
@@ -49,7 +50,7 @@ router.get('/', authenticate, async (req, res) => {
       config = await AppConfig.create({
         guestModeEnabled: false,
         guestMaxDurationDays: 2,
-        shiftCheckCooldownHours: 4,
+        shiftCheckCooldownHours: 240,
         checklistAlertEnabled: true,
         checklistAlertTime: '09:30'
       });
@@ -69,11 +70,22 @@ router.put('/',
   [
     body('guestModeEnabled').optional().isBoolean(),
     body('guestMaxDurationDays').optional().isInt({ min: 1, max: 30 }).toInt(),
-    body('shiftCheckCooldownHours').optional().isInt({ min: 1, max: 24 }).toInt(),
+    body('shiftCheckCooldownHours').optional().isInt({ min: 1, max: 1440 }).toInt(),
     body('checklistAlertEnabled').optional().isBoolean(),
     body('checklistAlertTime').optional().matches(/^\d{2}:\d{2}$/).withMessage('Formato de hora inválido (HH:mm)'),
     body('logoUrl').optional().trim(),
-    body('defaultLogSourceId').optional({ checkFalsy: true }).isMongoId().withMessage('ID de LogSource inválido')
+    body('defaultLogSourceId').optional({ checkFalsy: true }).isMongoId().withMessage('ID de LogSource inválido'),
+    body('emailReportConfig.enabled').optional().isBoolean(),
+    body('emailReportConfig.recipients').optional().isArray(),
+    body('emailReportConfig.includeChecklist').optional().isBoolean(),
+    body('emailReportConfig.includeEntries').optional().isBoolean(),
+    body('emailReportConfig.subjectTemplate').optional().trim(),
+    body('smtpConfig.host').optional().trim(),
+    body('smtpConfig.port').optional().isInt({ min: 1, max: 65535 }).toInt(),
+    body('smtpConfig.secure').optional().isBoolean(),
+    body('smtpConfig.user').optional().trim(),
+    body('smtpConfig.pass').optional(),
+    body('smtpConfig.from').optional().trim()
   ],
   validate,
   async (req, res) => {
@@ -88,6 +100,11 @@ router.put('/',
 
       config.lastUpdatedBy = req.user._id;
       await config.save();
+
+      // Invalidar cache de SMTP si se actualizó
+      if (req.body.smtpConfig) {
+        invalidateCache();
+      }
 
       // Populate defaultLogSourceId para retornar nombre
       await config.populate('defaultLogSourceId', 'name enabled');
@@ -253,5 +270,27 @@ router.delete('/logo',
     }
   }
 );
+
+// DEBUG: GET /api/config/debug/check - Verificar configuración actual (solo admin)
+router.get('/debug/check', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const config = await AppConfig.findOne().select('emailReportConfig smtpConfig').lean();
+    
+    res.json({
+      configExists: !!config,
+      emailReportConfig: config?.emailReportConfig || null,
+      smtpConfig: config?.smtpConfig ? {
+        host: config.smtpConfig.host,
+        port: config.smtpConfig.port,
+        secure: config.smtpConfig.secure,
+        user: config.smtpConfig.user ? '***' : 'NOT SET',
+        pass: config.smtpConfig.pass ? '***' : 'NOT SET',
+        from: config.smtpConfig.from
+      } : null
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;

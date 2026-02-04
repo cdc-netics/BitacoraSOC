@@ -75,22 +75,24 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { icon: 'playlist_add_check', label: 'Historial Checklists', route: '/main/checklist-history', roles: ['admin', 'user', 'guest'] },
     { icon: 'contact_phone', label: 'Escalación', route: '/main/escalation/view', roles: ['admin', 'user', 'guest'] },
     { icon: 'table_chart', label: 'Generar Reporte', route: '/main/report-generator', roles: ['admin', 'user'] },
-    { icon: 'history', label: 'Mis Entradas', route: '/main/my-entries', roles: ['admin'] },
+    { icon: 'history', label: 'Mis Entradas', route: '/main/my-entries', roles: ['admin', 'user'] },
     { icon: 'public', label: 'Ver todas', route: '/main/all-entries', roles: ['admin', 'user', 'guest'] },
-    { icon: 'person', label: 'Mi Perfil', route: '/main/profile', roles: ['admin', 'user'] },
-    { icon: 'assessment', label: 'Reportes', route: '/main/reports', roles: ['admin', 'user'] }
+    { icon: 'assessment', label: 'Reportes', route: '/main/reports', roles: ['admin', 'user'] },
+    { icon: 'person', label: 'Mi Perfil', route: '/main/profile', roles: ['admin', 'user'] }
   ];
 
+
   configItems: MenuItem[] = [
+    { icon: 'fact_check', label: 'Checklist (Admin)', route: '/main/checklist-admin', roles: ['admin'] },
     { icon: 'people', label: 'Admin Usuarios', route: '/main/users', roles: ['admin'] },
+    { icon: 'schedule', label: 'Turnos de Trabajo', route: '/main/work-shifts', roles: ['admin'] },
     { icon: 'category', label: 'Admin Catálogos', route: '/main/catalog-admin', roles: ['admin'] },
     { icon: 'admin_panel_settings', label: 'Admin Escalación', route: '/main/escalation/admin', roles: ['admin'] },
     { icon: 'local_offer', label: 'Tags', route: '/main/tags', roles: ['admin'] },
-    { icon: 'history', label: 'Logs de Auditoría', route: '/main/audit-logs', roles: ['admin', 'auditor'] },
     { icon: 'image', label: 'Branding', route: '/main/logo', roles: ['admin'] },
-    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] },
+    { icon: 'history', label: 'Logs de Auditoría', route: '/main/audit-logs', roles: ['admin', 'auditor'] },
     { icon: 'settings', label: 'SMTP / Config', route: '/main/settings', roles: ['admin'] },
-    { icon: 'fact_check', label: 'Checklist (Admin)', route: '/main/checklist-admin', roles: ['admin'] }
+    { icon: 'backup', label: 'Backup', route: '/main/backup', roles: ['admin'] }
   ];
 
   visiblePrimaryMenu: MenuItem[] = [];

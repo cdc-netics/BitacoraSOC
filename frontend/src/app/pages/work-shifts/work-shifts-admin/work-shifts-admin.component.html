@@ -1,0 +1,375 @@
+<div class="container">
+  <mat-card class="page-header">
+    <mat-icon>schedule</mat-icon>
+    <div>
+      <h1>Administración de Turnos de Trabajo</h1>
+      <p>Configura los turnos con horarios personalizados</p>
+    </div>
+  </mat-card>
+
+  <!-- Botón agregar -->
+  <div class="actions-bar" *ngIf="!showForm">
+    <button mat-raised-button color="primary" (click)="addShift()">
+      <mat-icon>add</mat-icon>
+      Crear Turno
+    </button>
+  </div>
+
+  <!-- Formulario -->
+  <mat-card *ngIf="showForm" class="form-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>{{ editingShift ? 'edit' : 'add' }}</mat-icon>
+        {{ editingShift ? 'Editar Turno' : 'Nuevo Turno' }}
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="shiftForm" (ngSubmit)="saveShift()">
+        <div class="form-grid">
+          <!-- Nombre -->
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre del turno</mat-label>
+            <input matInput formControlName="name" placeholder="Ej: Turno Mañana">
+            <mat-icon matPrefix>label</mat-icon>
+            <mat-error *ngIf="shiftForm.get('name')?.hasError('required')">
+              Nombre requerido
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Código -->
+          <mat-form-field appearance="outline">
+            <mat-label>Código</mat-label>
+            <input matInput formControlName="code" placeholder="Ej: MORNING" style="text-transform: uppercase;">
+            <mat-icon matPrefix>code</mat-icon>
+            <mat-hint>Solo letras mayúsculas, números y guión bajo</mat-hint>
+            <mat-error *ngIf="shiftForm.get('code')?.hasError('required')">
+              Código requerido
+            </mat-error>
+            <mat-error *ngIf="shiftForm.get('code')?.hasError('pattern')">
+              Solo letras mayúsculas, números y _
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Tipo -->
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de turno</mat-label>
+            <mat-select formControlName="type">
+              <mat-option *ngFor="let option of shiftTypeOptions" [value]="option.value">
+                {{ option.label }} - {{ option.description }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix>category</mat-icon>
+          </mat-form-field>
+
+          <!-- Color -->
+          <mat-form-field appearance="outline">
+            <mat-label>Color</mat-label>
+            <mat-select formControlName="color">
+              <mat-option *ngFor="let color of colorOptions" [value]="color">
+                <span [style.color]="color">⬤</span> {{ color }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix>palette</mat-icon>
+          </mat-form-field>
+
+          <!-- Hora inicio -->
+          <mat-form-field appearance="outline">
+            <mat-label>Hora inicio</mat-label>
+            <input matInput type="time" formControlName="startTime">
+            <mat-icon matPrefix>access_time</mat-icon>
+            <mat-error *ngIf="shiftForm.get('startTime')?.hasError('required')">
+              Hora inicio requerida
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Hora fin -->
+          <mat-form-field appearance="outline">
+            <mat-label>Hora fin</mat-label>
+            <input matInput type="time" formControlName="endTime">
+            <mat-icon matPrefix>access_time</mat-icon>
+            <mat-hint>Puede ser menor que inicio si cruza medianoche</mat-hint>
+            <mat-error *ngIf="shiftForm.get('endTime')?.hasError('required')">
+              Hora fin requerida
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Zona horaria -->
+          <mat-form-field appearance="outline">
+            <mat-label>Zona horaria</mat-label>
+            <mat-select formControlName="timezone">
+              <mat-option value="America/Santiago">America/Santiago (Chile)</mat-option>
+              <mat-option value="America/Argentina/Buenos_Aires">America/Argentina/Buenos_Aires</mat-option>
+              <mat-option value="America/New_York">America/New_York</mat-option>
+              <mat-option value="America/Los_Angeles">America/Los_Angeles</mat-option>
+              <mat-option value="Europe/Madrid">Europe/Madrid</mat-option>
+              <mat-option value="UTC">UTC</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>public</mat-icon>
+          </mat-form-field>
+
+          <!-- Usuario asignado -->
+          <mat-form-field appearance="outline">
+            <mat-label>Usuario asignado (opcional)</mat-label>
+            <mat-select formControlName="assignedUserId">
+              <mat-option [value]="null">Sin asignar</mat-option>
+              <mat-option *ngFor="let user of users" [value]="user._id">
+                {{ user.fullName }} ({{ user.email }})
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-hint>Deja en blanco si no quieres asignar a nadie</mat-hint>
+          </mat-form-field>
+
+          <!-- Orden -->
+          <mat-form-field appearance="outline">
+            <mat-label>Orden</mat-label>
+            <input matInput type="number" formControlName="order" min="0">
+            <mat-icon matPrefix>sort</mat-icon>
+            <mat-hint>Para ordenar en la lista</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Descripción (ancho completo) -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Descripción</mat-label>
+          <textarea matInput formControlName="description" rows="3" placeholder="Descripción opcional del turno"></textarea>
+          <mat-icon matPrefix>description</mat-icon>
+        </mat-form-field>
+
+        <!-- Estado -->
+        <mat-checkbox formControlName="active">
+          Turno activo
+        </mat-checkbox>
+
+        <!-- Acciones -->
+        <div class="form-actions">
+          <button mat-raised-button type="button" (click)="cancelForm()">
+            Cancelar
+          </button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="shiftForm.invalid">
+            <mat-icon>save</mat-icon>
+            {{ editingShift ? 'Actualizar' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tabla de turnos -->
+  <mat-card *ngIf="!showForm" class="table-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>list</mat-icon>
+        Turnos Configurados
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <div *ngIf="!loading && shifts.length === 0" class="empty-state">
+        <mat-icon>schedule</mat-icon>
+        <p>No hay turnos configurados</p>
+        <button mat-raised-button color="primary" (click)="addShift()">
+          <mat-icon>add</mat-icon>
+          Crear primer turno
+        </button>
+      </div>
+
+      <table mat-table [dataSource]="shifts" *ngIf="!loading && shifts.length > 0" class="shifts-table">
+        <!-- Orden -->
+        <ng-container matColumnDef="order">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let shift">{{ shift.order }}</td>
+        </ng-container>
+
+        <!-- Nombre -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let shift">
+            <div class="shift-name">
+              <span [style.color]="shift.color" class="color-indicator">⬤</span>
+              <strong>{{ shift.name }}</strong>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Código -->
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
+          <td mat-cell *matCellDef="let shift">
+            <code>{{ shift.code }}</code>
+          </td>
+        </ng-container>
+
+        <!-- Tipo -->
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let shift">
+            <mat-chip [class]="getTypeBadgeClass(shift.type)">
+              {{ getTypeLabel(shift.type) }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Horario -->
+        <ng-container matColumnDef="timeRange">
+          <th mat-header-cell *matHeaderCellDef>Horario</th>
+          <td mat-cell *matCellDef="let shift">
+            {{ formatTimeRange(shift) }}
+          </td>
+        </ng-container>
+
+        <!-- Usuario asignado -->
+        <ng-container matColumnDef="assignedUser">
+          <th mat-header-cell *matHeaderCellDef>Asignado a</th>
+          <td mat-cell *matCellDef="let shift">
+            <span *ngIf="shift.assignedUserId" class="user-assigned">
+              <mat-icon>person</mat-icon>
+              {{ getUserName(shift) }}
+            </span>
+            <span *ngIf="!shift.assignedUserId" class="user-unassigned">
+              Sin asignar
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Estado -->
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let shift">
+            <mat-chip [class]="shift.active ? 'badge-active' : 'badge-inactive'">
+              {{ shift.active ? 'Activo' : 'Inactivo' }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let shift">
+            <button mat-icon-button color="primary" (click)="editShift(shift)" matTooltip="Editar">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteShift(shift)" matTooltip="Eliminar">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- Sección GLOBAL: Reenvío de Información (siempre visible) -->
+      <div *ngIf="!showForm" class="global-email-section">
+        <mat-divider></mat-divider>
+
+        <div class="global-email-header">
+          <h3>📧 Reenvío de Información (General)</h3>
+          <p class="section-description">
+            Configura el envío automático de reportes para todos los turnos
+          </p>
+        </div>
+
+        <button mat-raised-button 
+                color="primary" 
+                (click)="toggleGlobalEmailConfig()"
+                class="toggle-config-btn">
+          <mat-icon>{{ showGlobalEmailConfig ? 'expand_less' : 'expand_more' }}</mat-icon>
+          {{ showGlobalEmailConfig ? 'Ocultar configuración' : 'Configurar reenvío' }}
+        </button>
+
+        <!-- Formulario GLOBAL cuando está expandido -->
+        <div *ngIf="showGlobalEmailConfig" class="global-config-form">
+          <form [formGroup]="globalEmailForm">
+            
+            <!-- Habilitar reenvío -->
+            <mat-checkbox formControlName="enabled" class="section-toggle">
+              <strong>Habilitar envío automático de reporte al finalizar turno</strong>
+            </mat-checkbox>
+
+            <!-- Opciones cuando está habilitado -->
+            <div class="report-options" *ngIf="globalEmailForm.get('enabled')?.value">
+              
+              <!-- Qué incluir -->
+              <div class="include-options">
+                <h4>Contenido del reporte:</h4>
+                <mat-checkbox formControlName="includeChecklist">
+                  📋 Incluir checklist de entrada y salida
+                </mat-checkbox>
+                <mat-checkbox formControlName="includeEntries">
+                  📝 Incluir entradas de bitácora del turno
+                </mat-checkbox>
+              </div>
+
+              <!-- Asunto del correo -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Asunto del correo</mat-label>
+                <input matInput formControlName="subjectTemplate" 
+                       placeholder="Reporte SOC [fecha] [turno]">
+                <mat-icon matPrefix>subject</mat-icon>
+                <mat-hint>Variables disponibles: [fecha], [turno], [hora]</mat-hint>
+              </mat-form-field>
+
+              <!-- Destinatarios (chips) -->
+              <div class="recipients-field">
+                <label class="recipients-label">Destinatarios</label>
+                <mat-chip-set class="email-chips">
+                  <mat-chip *ngFor="let email of recipients.value"
+                            [removable]="true"
+                            (removed)="removeEmail(email)">
+                    {{ email }}
+                    <button matChipRemove>
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip>
+                </mat-chip-set>
+                
+                <div class="email-input-row">
+                  <mat-form-field appearance="outline" class="email-input">
+                    <mat-label>Agregar email</mat-label>
+                    <input matInput 
+                           type="email" 
+                           [(ngModel)]="emailInput"
+                           [ngModelOptions]="{standalone: true}"
+                           (keydown)="onEmailKeydown($event)"
+                           placeholder="ejemplo@dominio.com">
+                    <mat-icon matPrefix>email</mat-icon>
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          type="button"
+                          color="accent"
+                          (click)="addEmail($event)"
+                          [disabled]="!emailInput.trim()">
+                    <mat-icon>add</mat-icon>
+                    Agregar
+                  </button>
+                </div>
+
+                <mat-hint class="recipients-hint">
+                  <mat-icon>info</mat-icon>
+                  El reporte se enviará automáticamente a estos correos al finalizar cada turno
+                </mat-hint>
+              </div>
+
+            </div>
+
+            <!-- Acciones -->
+            <div class="form-actions">
+              <button mat-raised-button type="button" (click)="toggleGlobalEmailConfig()">
+                Cancelar
+              </button>
+              <button mat-raised-button color="primary" type="button" (click)="saveGlobalEmailConfig()">
+                <mat-icon>save</mat-icon>
+                Guardar Configuración
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+</div>

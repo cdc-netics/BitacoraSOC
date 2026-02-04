@@ -6,7 +6,235 @@
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
+| 🔴 B-CRÍTICO-001 | ⚠️ BLOQUEANTE | Bugs CRÍTICO | Emails no llegan cuando se registra cierre checklist | **MAXIMA PRIORIDAD**: Backend estaba leyendo config SMTP de modelo separado SmtpConfig pero la UI Settings guarda en AppConfig.smtpConfig. SMTP **SÍ está configurado en UI** (Office 365: despinoza@netics.cl, estado: Conectado). PROBLEMA: email.js buscaba en colección SmtpConfig (no usada) en lugar de AppConfig.smtpConfig (donde se guarda). CORREGIDO: email.js ahora lee de AppConfig.smtpConfig. ESTADO: Código corregido + backend restarteado. PENDIENTE: Validación manual - registrar cierre checklist y confirmar que email llega a despinoza@netics.cl. IMPACTO: Sin fix, emails no llegan aunque SMTP esté configurado. |
 | B5 | Pendiente | Bugs CRÍTICO | Acceso a rutas sin autenticación | Vulnerabilidad: posible acceso y modificación sin login |
+
+---
+
+## 🔴 BUG CRÍTICO DETALLE: Emails no llegan (B-CRÍTICO-001)
+
+### Síntoma
+Usuario: "ningun correo llego ahora y antes si llegaban"
+- Cierre checklist se registra exitosamente en BD
+- Email NO llega a la bandeja (despinoza@netics.cl)
+- No hay error en frontend, parece exitoso
+- Backend logs muestran: `❌ ERROR: SMTP configuration missing: Please configure email settings in Settings > Configuración SMTP`
+- **PERO: Usuario confirmó desde el inicio: "la config existe en Settings, está conectada, dice 'Conectado'"**
+  - El usuario tenía razón todo el tiempo
+  - El problema NO era falta de config
+  - El problema era que el backend LEÍA config del lugar equivocado
+
+### Root Cause Identificado
+**Mismatch de fuentes de configuración SMTP:**
+
+⚠️ **NOTA IMPORTANTE DE DIAGNÓSTICO:**
+El usuario reportó correctamente desde el inicio: "la config SMTP está en Settings, dice 'Conectado'". El error de diagnóstico fue asumir que la config faltaba en base de datos. La realidad:
+- ✅ Config SMTP SÍ existe en AppConfig.smtpConfig
+- ✅ El status en UI SÍ muestra "Conectado"
+- ❌ Backend buscaba en lugar equivocado (modelo SmtpConfig)
+- **Conclusión:** El usuario tenía razón, el código estaba roto
+
+1. **Frontend Settings** (UI): Guarda config SMTP en `AppConfig.smtpConfig` 
+   ```javascript
+   // backend/src/routes/config.js línea 277
+   const config = await AppConfig.findOne().select('emailReportConfig smtpConfig').lean();
+   // Retorna: { smtpConfig: { host, port, secure, user, pass, from } }
+   ```
+
+2. **Backend email.js** (antes del fix): Intentaba leer de `SmtpConfig` (colección separada)
+   ```javascript
+   // backend/src/utils/email.js línea 28 (VIEJO - ROTO)
+   const smtpConfig = await SmtpConfig.findOne().lean();
+   // Retornaba null porque esa colección NO existe / NO se usa
+   ```
+
+3. **Resultado**: 
+   - `getSMTPConfig()` retorna `null` a pesar de que config EXISTE
+   - `sendEmail()` falla con error "SMTP configuration missing"
+   - Email NO se envía
+   - **Pero el checklist SÍ se registra** (email es asincrónico, no bloquea)
+
+### Timeline del Bug
+1. **Fase 1:** User configuró SMTP en UI Settings (Office 365: despinoza@netics.cl)
+   - Guardó en `AppConfig.smtpConfig` ✅
+   - Emails funcionaban cuando se activó sendChecklistEmail() en POST checklist
+
+2. **Fase 2:** Se cambió arquitectura de emails
+   - Se agregó `sendShiftReport()` para enviar UN email al cierre (no múltiples)
+   - Se leyó código viejo que buscaba en modelo `SmtpConfig` ❌
+   - Se comentó `sendChecklistEmail()` para no duplicar emails
+
+3. **Fase 3:** Email automation se rompió
+   - Código nuevo buscaba en `SmtpConfig` (no existe)
+   - Config real está en `AppConfig.smtpConfig`
+   - Resultado: "no hay config" → no envía → email no llega
+   - Bug no fue evidente porque:
+     - Frontend muestra "ok" en checklist
+     - Email falla en backend (asincrónico)
+     - Usuario solo se da cuenta después de esperar al email
+
+### Diagnóstico Realizado
+```bash
+# Backend logs muestran claramente:
+[2026-02-04 00:50:36.259 -0300] WARN: Error reading SMTP config from DB:
+[2026-02-04 00:50:36.260 -0300] WARN: No SMTP configuration found in DB or environment
+[2026-02-04 00:50:36.260 -0300] ERROR: SMTP configuration missing: Please configure email settings...
+```
+
+**Investigación:**
+- Config SMTP guardada en `AppConfig.smtpConfig` ✅ (verificado en UI)
+- Model `SmtpConfig` existe pero NO se usa ❌
+- Routes en `config.js` usan `AppConfig.smtpConfig` ✅
+- Routes en `smtp.js` usan `SmtpConfig` (legacy, no usado) ❌
+
+### Fix Aplicado
+**Cambio en `backend/src/utils/email.js` línea 1-50:**
+
+```diff
+- const SmtpConfig = require('../models/SmtpConfig');
++ const AppConfig = require('../models/AppConfig');
+
+  async function getSMTPConfig() {
+    try {
+-     const smtpConfig = await SmtpConfig.findOne().lean();
++     const appConfig = await AppConfig.findOne().select('smtpConfig').lean();
++     const smtpConfig = appConfig?.smtpConfig;
+      
+      if (smtpConfig) {
++       logger.info('📧 SMTP config found in AppConfig', { user: smtpConfig.user });
+        const config = {
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure === true,
+-         user: smtpConfig.username,
+-         pass: decrypt(smtpConfig.password),
+-         from: smtpConfig.senderEmail
++         user: smtpConfig.user,
++         pass: smtpConfig.pass,
++         from: smtpConfig.from || smtpConfig.user
+        };
+```
+
+**Cambios:**
+1. ✅ Cambiar import: `SmtpConfig` → `AppConfig`
+2. ✅ Cambiar query: `SmtpConfig.findOne()` → `AppConfig.findOne().select('smtpConfig')`
+3. ✅ Acceder campo correcto: `appConfig.smtpConfig`
+4. ✅ Usar nombres de campo correctos: `user`/`pass` (no `username`/`password`)
+5. ✅ NO desencriptar (config en AppConfig está en texto plano desde UI)
+6. ✅ Agregar logging con emoji 📧 para debugear
+
+### ✅ Actualizaciones posteriores (formato + contenido del correo)
+**Problemas reportados:**
+- Correo con letras blancas/fondo blanco (Outlook).
+- Checklist mostraba "No completado" aunque estaba completado.
+- Entradas incluían TODO el día y salían "Sin descripción".
+- Se truncaba el texto de entradas largas.
+
+**Cambios aplicados (2026-02-04):**
+1. ✅ `backend/src/utils/shift-report.js` usa **services + createdAt** reales de ShiftCheck.
+2. ✅ Entradas filtradas **solo entre inicio y cierre** (no todo el día).
+3. ✅ Contenido de entradas ahora usa `entry.content` completo (sin truncado).
+4. ✅ HTML del correo convertido a **tablas + estilos inline** (mejor soporte Outlook).
+5. ✅ Forzado de color negro absoluto + `mso-*` + `-webkit-text-fill-color`.
+6. ✅ Se agrega **versión text/plain completa** como fallback.
+7. ✅ Badge OK/ERROR con fondo verde/rojo (no solo texto).
+8. ✅ Contenedor más ancho (max-width: 1100px).
+
+**Resultado validado:** En Outlook ya se ve correctamente el texto (no blanco).
+
+### Validación del Fix
+**Requisitos para validar:**
+1. ✅ **SMTP configurado en UI Settings** - VERIFICADO
+   - **URL:** http://localhost:4200/main/settings → pestaña "📧 Reenvío de Información"
+   - **Estado en UI:** "✅ Conectado"
+   - **Provider:** Office 365
+   - **Host:** smtp.office365.com
+   - **Port:** 587
+   - **User:** despinoza@netics.cl
+   - **Pass:** (guardado y encriptado en BD)
+   - **From:** despinoza@netics.cl
+   - **Verificación:** Usuario confirmó "está ahi mierda y sale conectado" → Config EXISTE en BD ✅
+   - **Ubicación en BD:** `db.appconfigs.findOne()` → campo `smtpConfig` contiene:
+     ```json
+     {
+       "host": "smtp.office365.com",
+       "port": 587,
+       "secure": false,
+       "user": "despinoza@netics.cl",
+       "pass": "(valor encriptado)",
+       "from": "despinoza@netics.cl"
+     }
+     ```
+
+2. Backend debe encontrar config:
+   ```bash
+   docker logs bitacora-backend --tail 50 | grep "📧"
+   # Buscar: "📧 SMTP config found in AppConfig"
+   # Buscar: "📧 Sending mail with SMTP"
+   ```
+
+3. Cierre checklist debe enviar email:
+   - UI: http://localhost:4200/main/shifts
+   - Click en turno → Checklist → Registrar "cierre"
+   - Esperar 3-5 segundos
+   - Logs deben mostrar: "✅ EMAIL SENT SUCCESSFULLY"
+
+4. Email debe llegar a bandeja:
+   - despinoza@netics.cl debe recibir email
+   - Asunto: "Reporte SOC [fecha] [turno]"
+   - Body: Checklist inicio + cierre + entradas
+
+### Testing Post-Fix
+```bash
+# 1. Restart backend
+docker-compose restart backend
+
+# 2. Esperar 5 segundos
+sleep 5
+
+# 3. Ver logs de startup
+docker logs bitacora-backend --tail 20
+
+# 4. IR a UI y registrar cierre checklist
+
+# 5. Ver logs nuevamente
+docker logs bitacora-backend --tail 100 | Select-String "📧|✅|❌|email"
+```
+
+**Marcadores esperados:**
+- `📧 Reading SMTP config FROM DATABASE (AppConfig.smtpConfig)...`
+- `📧 SMTP config found in AppConfig`
+- `📧 SMTP config LOADED FROM DB`
+- `📧 [sendEmail] Starting email send process`
+- `✅ EMAIL SENT SUCCESSFULLY` ← ÉXITO
+
+**Si NO aparecen estos marcadores:**
+- Config SMTP no guardada en UI Settings
+- O guardar config está fallando
+- Revisar `backend/src/routes/config.js` PUT endpoint
+
+### Archivos Modificados
+- ✅ `backend/src/utils/email.js` - Cambiar fuente de config
+- ✅ `ISSUES.md` - Documentar bug y fix (este documento)
+- ⏳ Pendiente: Validación manual en vivo
+
+### Impacto
+- **Antes del fix**: Emails NO llegan → Feature crítica rota
+- **Después del fix**: Emails deben llegar → Feature restaurada
+- **Si falla la validación**: Significa que hay otro problema (ej: SMTP config no guardada correctamente en UI)
+
+### Lecciones Aprendidas
+1. **Consistencia de fuentes**: Backend debe leer de mismo lugar que frontend escribe
+2. **Falta de tests**: Sin tests, este bug hubiera sido detectado automáticamente
+3. **Logging insuficiente**: Agregar emoji markers para fácil identificación en prod
+4. **Cambios asincronicos**: Errores en tasks background no alertan al usuario
+5. **Migración de modelos**: Cuando se cambian modelos, actualizar TODOS los lugares que los usan
+
+### Seguimiento
+- [ ] Usuario valida que emails llegan post-fix
+- [ ] Agregar tests automatizados para email sending
+- [ ] Documentar en SETUP.md el flujo de configuración SMTP
+- [ ] Agregar health check endpoint que valide SMTP está configurado
 | B6 | Pendiente | Bugs | Dark Mode: contraste y legibilidad | Textos/botones invisibles, inputs blancos con letra blanca |
 | B7 | ✅ Resuelto | Bugs | No se podían editar entradas | Implementado diálogo de edición en my-entries component |
 | M7 | Pendiente | Mejoras | Tema Cyberpunk/Neon | Investigar implementación sin los problemas del dark mode |

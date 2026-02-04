@@ -81,6 +81,11 @@ const routes: Routes = [
       { 
         path: 'escalation', 
         loadChildren: () => import('../escalation/escalation.module').then(m => m.EscalationModule)
+      },
+      {
+        path: 'work-shifts',
+        loadComponent: () => import('../work-shifts/work-shifts-admin/work-shifts-admin.component').then(m => m.WorkShiftsAdminComponent),
+        canActivate: [AdminGuard]
       }
     ]
   }

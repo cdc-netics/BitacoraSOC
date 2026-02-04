@@ -1,0 +1,234 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { WorkShiftService } from '../../../services/work-shift.service';
+import { WorkShift, CurrentShiftResponse } from '../../../models/work-shift.model';
+
+/**
+ * Componente para mostrar el turno actual
+ * Visible para todos los usuarios (admin, user, guest)
+ */
+@Component({
+  selector: 'app-current-shift',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatIconModule,
+    MatChipsModule,
+    MatProgressSpinnerModule
+  ],
+  template: `
+    <mat-card class="current-shift-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>schedule</mat-icon>
+          Turno Actual
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="loading" class="loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="!loading && currentShift" class="shift-info">
+          <div class="shift-header">
+            <h2 [style.color]="currentShift.color || '#1976d2'">
+              {{ currentShift.name }}
+            </h2>
+            <mat-chip [class]="getTypeBadgeClass(currentShift.type)">
+              {{ getTypeLabel(currentShift.type) }}
+            </mat-chip>
+          </div>
+
+          <div class="shift-details">
+            <div class="detail-item">
+              <mat-icon>access_time</mat-icon>
+              <span>{{ formatTimeRange(currentShift) }}</span>
+            </div>
+
+            <div class="detail-item" *ngIf="currentShift.assignedUserId">
+              <mat-icon>person</mat-icon>
+              <span>{{ currentShift.assignedUserName || 'Usuario asignado' }}</span>
+            </div>
+
+            <div class="detail-item" *ngIf="!currentShift.assignedUserId">
+              <mat-icon>person_off</mat-icon>
+              <span class="unassigned">Sin usuario asignado</span>
+            </div>
+
+            <div class="detail-item" *ngIf="currentShift.description">
+              <mat-icon>info</mat-icon>
+              <span>{{ currentShift.description }}</span>
+            </div>
+          </div>
+
+          <div class="current-time">
+            <mat-icon>watch_later</mat-icon>
+            Hora actual: <strong>{{ currentTime }}</strong>
+          </div>
+        </div>
+
+        <div *ngIf="!loading && !currentShift" class="no-shift">
+          <mat-icon>info</mat-icon>
+          <p>{{ errorMessage || 'No hay turnos configurados' }}</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  `,
+  styles: [`
+    .current-shift-card {
+      max-width: 600px;
+      margin: 20px auto;
+
+      mat-card-header {
+        mat-card-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 18px;
+        }
+      }
+    }
+
+    .loading {
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .shift-info {
+      padding: 16px 0;
+
+      .shift-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+
+        h2 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 500;
+        }
+      }
+
+      .shift-details {
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 0;
+          border-bottom: 1px solid #eee;
+
+          mat-icon {
+            color: #666;
+          }
+
+          span {
+            font-size: 15px;
+          }
+
+          .unassigned {
+            color: #999;
+            font-style: italic;
+          }
+        }
+      }
+
+      .current-time {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 24px;
+        padding: 16px;
+        background-color: #f5f5f5;
+        border-radius: 8px;
+        font-size: 15px;
+
+        mat-icon {
+          color: #1976d2;
+        }
+      }
+    }
+
+    .no-shift {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+
+      mat-icon {
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        opacity: 0.3;
+        margin-bottom: 16px;
+      }
+
+      p {
+        font-size: 16px;
+      }
+    }
+
+    mat-chip {
+      &.badge-regular {
+        background-color: #4caf50 !important;
+        color: white !important;
+      }
+
+      &.badge-emergency {
+        background-color: #f44336 !important;
+        color: white !important;
+      }
+    }
+  `]
+})
+export class CurrentShiftComponent implements OnInit {
+  loading = true;
+  currentShift: WorkShift | null = null;
+  currentTime = '';
+  errorMessage = '';
+
+  constructor(private workShiftService: WorkShiftService) {}
+
+  ngOnInit(): void {
+    this.loadCurrentShift();
+    
+    // Actualizar cada minuto
+    setInterval(() => {
+      this.loadCurrentShift();
+    }, 60000);
+  }
+
+  loadCurrentShift(): void {
+    this.loading = true;
+    this.workShiftService.getCurrentShift().subscribe({
+      next: (response: CurrentShiftResponse) => {
+        this.currentShift = response.shift;
+        this.currentTime = response.currentTime;
+        this.errorMessage = response.message || '';
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading current shift:', error);
+        this.errorMessage = 'Error al cargar turno actual';
+        this.loading = false;
+      }
+    });
+  }
+
+  getTypeLabel(type: string): string {
+    return type === 'regular' ? 'Regular' : 'Emergencia';
+  }
+
+  getTypeBadgeClass(type: string): string {
+    return type === 'regular' ? 'badge-regular' : 'badge-emergency';
+  }
+
+  formatTimeRange(shift: WorkShift): string {
+    return this.workShiftService.formatTimeRange(shift.startTime, shift.endTime);
+  }
+}

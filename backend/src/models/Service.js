@@ -28,7 +28,6 @@ const serviceSchema = new mongoose.Schema({
 // Índice compuesto: nombre único por cliente
 serviceSchema.index({ clientId: 1, name: 1 }, { unique: true });
 serviceSchema.index({ active: 1 });
-serviceSchema.index({ code: 1 }, { unique: true, sparse: true });
 
 // Generar code si no viene (slug del nombre + cliente)
 serviceSchema.pre('save', function(next) {

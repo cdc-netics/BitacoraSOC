@@ -9,12 +9,12 @@
  * Parámetros SOC:
  *   - guestModeEnabled: Permitir creación de invitados (true/false)
  *   - guestMaxDurationDays: Duración de cuenta guest (1-30 días)
- *   - shiftCheckCooldownHours: Tiempo mínimo entre checks (1-24 horas)
+ *   - shiftCheckCooldownHours: Tiempo mínimo entre checks (minutos)
  *   - logoUrl/logoType: Personalización de logo (URL o upload)
  * 
  * Uso:
  *   - Al crear guest: calcular expiresAt = now + guestMaxDurationDays
- *   - Al registrar check: validar cooldown con shiftCheckCooldownHours
+ *   - Al registrar check: validar cooldown con shiftCheckCooldownHours (minutos)
  *   - Frontend: mostrar/ocultar botón crear guest según guestModeEnabled
  * 
  * Singleton pattern: GET siempre retorna el único registro (crea si no existe)
@@ -34,12 +34,12 @@ const appConfigSchema = new mongoose.Schema({
     min: 1,
     max: 30
   },
-  // Cooldown checklist
+  // Cooldown checklist (minutos)
   shiftCheckCooldownHours: {
     type: Number,
-    default: 4,
+    default: 240,
     min: 1,
-    max: 24
+    max: 1440
   },
   // Alertas de checklist (B4-7)
   checklistAlertEnabled: {
@@ -69,6 +69,57 @@ const appConfigSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'CatalogLogSource',
     default: null
+  },
+  // Configuración global de reenvío de reportes por email
+  emailReportConfig: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    recipients: [{
+      type: String,
+      trim: true,
+      lowercase: true
+    }],
+    includeChecklist: {
+      type: Boolean,
+      default: true
+    },
+    includeEntries: {
+      type: Boolean,
+      default: true
+    },
+    subjectTemplate: {
+      type: String,
+      default: 'Reporte SOC [fecha] [turno]'
+    }
+  },
+  // Configuración SMTP para envío de emails
+  smtpConfig: {
+    host: {
+      type: String,
+      default: 'smtp.gmail.com'
+    },
+    port: {
+      type: Number,
+      default: 587
+    },
+    secure: {
+      type: Boolean,
+      default: false
+    },
+    user: {
+      type: String,
+      default: ''
+    },
+    pass: {
+      type: String,
+      default: ''
+    },
+    from: {
+      type: String,
+      default: ''
+    }
   },
   // Última actualización
   lastUpdatedBy: {

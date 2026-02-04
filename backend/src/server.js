@@ -132,6 +132,7 @@ app.use('/api/backup', require('./routes/backup'));
 app.use('/api/catalog', require('./routes/catalog'));
 app.use('/api/admin/catalog', require('./routes/admin-catalog')); // CRUD admin
 app.use('/api/escalation', require('./routes/escalation')); // Módulo de escalaciones
+app.use('/api/work-shifts', require('./routes/work-shifts')); // Turnos de trabajo
 app.use('/api/audit-logs', require('./routes/audit-logs')); // Logs de auditoría
 
 // Health check (ANTES del fallback SPA)
@@ -197,7 +198,11 @@ const server = app.listen(PORT, HOST, () => {
 ╚════════════════════════════════════════╝
   `);
 
+  // Iniciar schedulers
   startChecklistAlertScheduler();
+  
+  const { startScheduler: startShiftReportScheduler } = require('./utils/shift-scheduler');
+  startShiftReportScheduler();
 });
 
 // Manejo de errores de escucha y apagado ordenado

@@ -23,7 +23,6 @@ const clientSchema = new mongoose.Schema({
 
 // Índices
 clientSchema.index({ active: 1 });
-clientSchema.index({ code: 1 }, { unique: true, sparse: true });
 
 // Generar code si no viene (slug del nombre)
 clientSchema.pre('save', function(next) {

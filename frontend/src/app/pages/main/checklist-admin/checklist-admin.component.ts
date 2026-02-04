@@ -42,7 +42,7 @@ export class ChecklistAdminComponent implements OnInit {
     });
 
     this.configForm = this.fb.group({
-      checklistCooldownHours: [24, [Validators.required, Validators.min(1)]]
+      checklistCooldownHours: [240, [Validators.required, Validators.min(1)]] // minutos (default 4 horas)
     });
   }
 

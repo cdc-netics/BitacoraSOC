@@ -19,6 +19,7 @@ const SmtpConfig = require('../models/SmtpConfig');
 const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const { encrypt, decrypt } = require('../utils/encryption');
+const { invalidateCache } = require('../utils/email');
 
 const smtpTestLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -173,6 +174,7 @@ router.post('/',
       }
 
       await config.save();
+      invalidateCache();
 
       const configObj = config.toObject();
       delete configObj.password;
@@ -234,6 +236,7 @@ router.post('/test',
           stored.lastTestDate = new Date();
           stored.lastTestSuccess = true;
           await stored.save();
+          invalidateCache();
         }
       }
 
@@ -255,6 +258,7 @@ router.post('/test',
           stored.lastTestDate = new Date();
           stored.lastTestSuccess = false;
           await stored.save();
+          invalidateCache();
         }
       }
 

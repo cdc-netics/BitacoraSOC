@@ -9,13 +9,42 @@ const ShiftCheck = require('../models/ShiftCheck');
 const ShiftClosure = require('../models/ShiftClosure');
 const Entry = require('../models/Entry');
 const AppConfig = require('../models/AppConfig');
+const WorkShift = require('../models/WorkShift');
 const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const captureMetadata = require('../middleware/metadata');
 const { audit } = require('../utils/audit');
 const { logger } = require('../utils/logger');
+const { sendShiftReport } = require('../utils/shift-report');
 
 const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
+
+const isTimeInRange = (time, start, end) => {
+  if (start < end) {
+    return time >= start && time < end;
+  }
+  return time >= start || time < end;
+};
+
+const getCurrentShift = async (date = new Date()) => {
+  const currentTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  const shifts = await WorkShift.find({ active: true }).sort({ order: 1, startTime: 1 });
+  if (!shifts.length) return null;
+
+  let currentShift = null;
+  for (const shift of shifts) {
+    if (isTimeInRange(currentTime, shift.startTime, shift.endTime)) {
+      currentShift = shift;
+      break;
+    }
+  }
+
+  if (!currentShift) {
+    currentShift = shifts.find(s => s.type === 'emergency') || null;
+  }
+
+  return currentShift;
+};
 
 const ensureObjectId = (value) => (
   mongoose.Types.ObjectId.isValid(value) ? value : new mongoose.Types.ObjectId()
@@ -475,13 +504,13 @@ router.post('/check',
       }
 
       const config = await AppConfig.findOne();
-      const cooldownHours = config?.shiftCheckCooldownHours || 4;
+      const cooldownMinutes = config?.shiftCheckCooldownHours || 240;
 
       if (lastCheck) {
-        const hoursSinceLastCheck = (Date.now() - lastCheck.createdAt.getTime()) / (1000 * 60 * 60);
+        const minutesSinceLastCheck = (Date.now() - lastCheck.createdAt.getTime()) / (1000 * 60);
         const sameDay = isSameDay(lastCheck.createdAt, new Date());
-        if (sameDay && hoursSinceLastCheck < cooldownHours) {
-          const remainingHours = (cooldownHours - hoursSinceLastCheck).toFixed(1);
+        if (sameDay && minutesSinceLastCheck < cooldownMinutes) {
+          const remainingMinutes = Math.ceil(cooldownMinutes - minutesSinceLastCheck);
 
           await audit(req, {
             event: 'shiftcheck.block.cooldown',
@@ -489,14 +518,14 @@ router.post('/check',
             result: { success: false, reason: 'Cooldown not met' },
             metadata: {
               type,
-              cooldownHours,
-              hoursSinceLastCheck: hoursSinceLastCheck.toFixed(2),
-              remainingHours,
+              cooldownMinutes,
+              minutesSinceLastCheck: minutesSinceLastCheck.toFixed(2),
+              remainingMinutes,
               sameDay
             }
           });
 
-          return res.status(400).json({ message: `Debes esperar ${cooldownHours} horas entre checks. Tiempo restante: ${remainingHours}h` });
+          return res.status(400).json({ message: `Debes esperar ${cooldownMinutes} minutos entre checks. Tiempo restante: ${remainingMinutes} min` });
         }
       }
 
@@ -545,19 +574,35 @@ router.post('/check',
         }
       });
 
-      try {
-        const { sendChecklistEmail } = require('./smtp');
-        const SmtpConfig = require('../models/SmtpConfig');
-        const smtpConfig = await SmtpConfig.findOne({ isActive: true });
+      // DESACTIVADO: No enviar email individual por checklist con rojos
+      // Solo se envía el reporte completo (inicio + cierre + entradas) al hacer cierre de turno
+      // try {
+      //   const { sendChecklistEmail } = require('./smtp');
+      //   const SmtpConfig = require('../models/SmtpConfig');
+      //   const smtpConfig = await SmtpConfig.findOne({ isActive: true });
+      //
+      //   if (smtpConfig) {
+      //     const shouldSend = !smtpConfig.sendOnlyIfRed || hasRedServices;
+      //     if (shouldSend) {
+      //       await sendChecklistEmail(check, normalizedServices);
+      //     }
+      //   }
+      // } catch (emailError) {
+      //   logger.error({ err: emailError, requestId: req.requestId, checkId: check._id }, 'Error sending checklist email');
+      // }
 
-        if (smtpConfig) {
-          const shouldSend = !smtpConfig.sendOnlyIfRed || hasRedServices;
-          if (shouldSend) {
-            await sendChecklistEmail(check, normalizedServices);
+      // Enviar reporte de turno al registrar cierre
+      if (type === 'cierre') {
+        try {
+          const currentShift = await getCurrentShift(new Date());
+          if (currentShift) {
+            await sendShiftReport(currentShift._id, new Date());
+          } else {
+            logger.warn({ requestId: req.requestId }, 'No se encontró turno actual para enviar reporte');
           }
+        } catch (reportError) {
+          logger.error({ err: reportError, requestId: req.requestId, checkId: check._id }, 'Error sending shift report');
         }
-      } catch (emailError) {
-        logger.error({ err: emailError, requestId: req.requestId, checkId: check._id }, 'Error sending checklist email');
       }
 
       res.status(201).json({ message: 'Checklist registrado exitosamente', check });

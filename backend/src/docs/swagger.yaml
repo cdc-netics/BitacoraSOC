@@ -460,7 +460,7 @@ paths:
         
         **Reglas:**
         - No se permiten dos acciones iguales consecutivas
-        - Debe respetar el cooldown configurable (default 4 horas)
+        - Debe respetar el cooldown configurable (default 240 minutos)
         - Todos los servicios en rojo DEBEN tener observación
       security:
         - bearerAuth: []
@@ -781,7 +781,7 @@ paths:
                 shiftCheckCooldownHours:
                   type: integer
                   minimum: 1
-                  maximum: 24
+                  maximum: 1440
                 logoUrl:
                   type: string
       responses:

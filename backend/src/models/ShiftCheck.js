@@ -8,7 +8,7 @@
  * 
  * Reglas SOC críticas:
  *   1. Tipo alternado: NO permitir inicio->inicio o cierre->cierre consecutivos
- *   2. Cooldown: Bloquear checks si no han pasado N horas desde último check
+ *   2. Cooldown: Bloquear checks si no han pasado N minutos desde último check
  *   3. Todos los servicios: Frontend envía TODOS, backend valida completitud
  *   4. Rojos con observación: Servicios en rojo REQUIEREN texto explicativo
  *   5. hasRedServices: Marca checks con problemas (para filtros/alertas)
