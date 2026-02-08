@@ -23,6 +23,26 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Favicon actual -->
+    <mat-card class="logo-card">
+      <mat-card-header>
+        <mat-card-title>Favicon Actual</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="logo-preview favicon-preview">
+          <img *ngIf="currentFavicon" [src]="getAssetUrl(currentFavicon)" alt="Favicon actual">
+          <div *ngIf="!currentFavicon" class="no-logo">
+            <mat-icon>tab</mat-icon>
+            <p>Sin favicon configurado</p>
+          </div>
+        </div>
+        <button mat-stroked-button color="warn" (click)="removeFavicon()" *ngIf="currentFavicon" [disabled]="isLoading">
+          <mat-icon>delete</mat-icon>
+          Eliminar Favicon
+        </button>
+      </mat-card-content>
+    </mat-card>
+
     <!-- Subir archivo -->
     <mat-card class="logo-card">
       <mat-card-header>
@@ -66,6 +86,45 @@
         <button mat-raised-button color="accent" (click)="saveLogo()" [disabled]="!logoUrl || isLoading">
           <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
           <span *ngIf="!isLoading">Guardar URL</span>
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Favicon -->
+    <mat-card class="logo-card">
+      <mat-card-header>
+        <mat-card-title>Favicon (PNG/ICO)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <input type="file"
+               #faviconInput
+               (change)="onFaviconFileSelected($event)"
+               accept="image/png,image/x-icon,.ico"
+               style="display: none">
+
+        <div class="upload-zone favicon-preview" (click)="faviconInput.click()">
+          <img *ngIf="faviconPreviewUrl" [src]="faviconPreviewUrl" alt="Preview favicon">
+          <div *ngIf="!faviconPreviewUrl" class="upload-placeholder">
+            <mat-icon>insert_photo</mat-icon>
+            <p>Click para seleccionar favicon</p>
+            <small>PNG o ICO (máx 256KB, ideal 32x32)</small>
+          </div>
+        </div>
+
+        <button mat-raised-button color="primary" (click)="uploadFavicon()" [disabled]="!faviconPreviewUrl || isLoading">
+          <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+          <span *ngIf="!isLoading">Subir Favicon</span>
+        </button>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>URL del Favicon</mat-label>
+          <input matInput [(ngModel)]="faviconUrl" placeholder="https://ejemplo.com/favicon.ico">
+          <mat-hint>Usa una imagen pequeña y cuadrada (32x32 o 64x64)</mat-hint>
+        </mat-form-field>
+
+        <button mat-raised-button color="accent" (click)="saveFavicon()" [disabled]="!faviconUrl || isLoading">
+          <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+          <span *ngIf="!isLoading">Guardar URL Favicon</span>
         </button>
       </mat-card-content>
     </mat-card>

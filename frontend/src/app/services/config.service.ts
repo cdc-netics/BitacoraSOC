@@ -52,4 +52,8 @@ export class ConfigService {
   getLogo(): Observable<{ logoUrl: string }> {
     return this.http.get<{ logoUrl: string }>(`${this.API_URL}/logo`);
   }
+
+  getFavicon(): Observable<{ faviconUrl: string }> {
+    return this.http.get<{ faviconUrl: string }>(`${this.API_URL}/favicon`);
+  }
 }

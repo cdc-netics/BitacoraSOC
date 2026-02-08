@@ -29,9 +29,12 @@ export class LogoComponent implements OnInit {
   private configService = inject(ConfigService);
 
   currentLogo: string = '';
+  currentFavicon: string = '';
   logoUrl: string = '';
+  faviconUrl: string = '';
   isLoading = false;
   previewUrl: string = '';
+  faviconPreviewUrl: string = '';
   private backendBaseUrl = environment.backendBaseUrl;
 
   // LogSource
@@ -47,6 +50,7 @@ export class LogoComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCurrentLogo();
+    this.loadCurrentFavicon();
     this.loadLogSources();
     this.loadBrandingConfig();
   }
@@ -123,6 +127,18 @@ export class LogoComponent implements OnInit {
     });
   }
 
+  loadCurrentFavicon(): void {
+    this.http.get<any>(`${environment.apiUrl}/config/favicon`).subscribe({
+      next: (response) => {
+        this.currentFavicon = response.faviconUrl || '';
+        this.faviconUrl = this.currentFavicon;
+      },
+      error: () => {
+        this.currentFavicon = '';
+      }
+    });
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
@@ -169,6 +185,53 @@ export class LogoComponent implements OnInit {
     });
   }
 
+  onFaviconFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+    const allowedMimeTypes = ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon'];
+    if (!allowedMimeTypes.includes(file.type)) {
+      this.snackBar.open('Solo se permiten favicons PNG o ICO', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    if (file.size > 256 * 1024) {
+      this.snackBar.open('El favicon es muy grande (máx 256KB)', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.faviconPreviewUrl = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  uploadFavicon(): void {
+    if (!this.faviconPreviewUrl) {
+      this.snackBar.open('Selecciona un favicon primero', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.isLoading = true;
+    this.http.post<any>(`${environment.apiUrl}/config/favicon`, {
+      faviconData: this.faviconPreviewUrl
+    }).subscribe({
+      next: (response) => {
+        this.currentFavicon = response.faviconUrl;
+        this.faviconUrl = this.currentFavicon;
+        this.faviconPreviewUrl = '';
+        this.isLoading = false;
+        this.snackBar.open('Favicon actualizado', 'Cerrar', { duration: 3000 });
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackBar.open(err.error?.message || 'Error subiendo favicon', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
   saveLogo(): void {
     if (!this.logoUrl) {
       this.snackBar.open('Ingresa una URL', 'Cerrar', { duration: 3000 });
@@ -191,6 +254,28 @@ export class LogoComponent implements OnInit {
     });
   }
 
+  saveFavicon(): void {
+    if (!this.faviconUrl) {
+      this.snackBar.open('Ingresa una URL', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.isLoading = true;
+    this.http.post<any>(`${environment.apiUrl}/config/favicon`, {
+      faviconUrl: this.faviconUrl
+    }).subscribe({
+      next: (response) => {
+        this.currentFavicon = response.faviconUrl;
+        this.isLoading = false;
+        this.snackBar.open('Favicon actualizado', 'Cerrar', { duration: 3000 });
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackBar.open(err.error?.message || 'Error guardando favicon', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
   removeLogo(): void {
     if (!confirm('¿Eliminar el logo actual?')) return;
 
@@ -206,6 +291,25 @@ export class LogoComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.snackBar.open(err.error?.message || 'Error eliminando logo', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  removeFavicon(): void {
+    if (!confirm('¿Eliminar el favicon actual?')) return;
+
+    this.isLoading = true;
+    this.http.delete(`${environment.apiUrl}/config/favicon`).subscribe({
+      next: () => {
+        this.currentFavicon = '';
+        this.faviconUrl = '';
+        this.faviconPreviewUrl = '';
+        this.isLoading = false;
+        this.snackBar.open('Favicon eliminado', 'Cerrar', { duration: 3000 });
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackBar.open(err.error?.message || 'Error eliminando favicon', 'Cerrar', { duration: 3000 });
       }
     });
   }

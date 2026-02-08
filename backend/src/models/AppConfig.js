@@ -11,6 +11,7 @@
  *   - guestMaxDurationDays: Duración de cuenta guest (1-30 días)
  *   - shiftCheckCooldownHours: Tiempo mínimo entre checks (minutos)
  *   - logoUrl/logoType: Personalización de logo (URL o upload)
+ *   - faviconUrl/faviconType: Ícono de pestaña independiente del logo
  * 
  * Uso:
  *   - Al crear guest: calcular expiresAt = now + guestMaxDurationDays
@@ -60,6 +61,16 @@ const appConfigSchema = new mongoose.Schema({
     default: ''
   },
   logoType: {
+    type: String,
+    enum: ['url', 'upload', 'external'],
+    default: 'url'
+  },
+  // Favicon
+  faviconUrl: {
+    type: String,
+    default: ''
+  },
+  faviconType: {
     type: String,
     enum: ['url', 'upload', 'external'],
     default: 'url'

@@ -204,6 +204,42 @@ Para detalles técnicos completos, consulta:
 - **[SCREENSHOTS.md](docs/SCREENSHOTS.md)**: Capturas de pantalla del sistema
 - **[backend/scripts/README.md](backend/scripts/README.md)**: Importación masiva de datos
 
+## Plantillas de correo (dónde están y cómo modificarlas)
+
+El sistema usa más de una plantilla HTML, según el tipo de correo:
+
+### 1) Reporte de cierre de turno (resumen con checklist + entradas)
+- **Archivo:** `backend/src/utils/shift-report.js`
+- **Función HTML:** `generateReportHTML(...)`
+- **Función texto plano:** `generateReportText(...)`
+- **Asunto del correo:** se arma con `replaceSubjectVariables(...)` usando `[fecha]`, `[turno]`, `[hora]`
+- **Envío:** `sendShiftReport(...)` llama al servicio central `sendEmail(...)`
+
+### 2) Correos SMTP de checklist y alertas (flujo legacy/directo)
+- **Archivo:** `backend/src/routes/smtp.js`
+- **Checklist enviado al guardar:** helper `sendChecklistEmail(...)`
+- **Alerta por checklist no realizado:** helper `sendChecklistAlertEmail(...)`
+- **Correo de prueba SMTP:** función `verifyAndTest(...)`
+
+### 3) Servicio central de envío SMTP
+- **Archivo:** `backend/src/utils/email.js`
+- **Función principal:** `sendEmail({ to, subject, text, html, from })`
+- **Qué hace:** lee configuración SMTP desde BD (`SmtpConfig` / fallback `AppConfig`), crea transporter y envía.
+
+### Cómo modificar una plantilla (pasos recomendados)
+1. Identifica primero qué correo quieres cambiar (reporte de turno vs checklist/alerta).
+2. Edita el bloque HTML en el archivo correspondiente.
+3. Si cambias estilos, prioriza estilos inline (`style="..."`) para compatibilidad en clientes de correo.
+4. Mantén también versión `text` cuando exista (en reportes, `generateReportText`).
+5. Prueba en entorno local:
+   - Configura SMTP en `Settings > Configuración SMTP`.
+   - Ejecuta un envío real de prueba desde el flujo afectado.
+   - Verifica visualización en cliente claro y oscuro (web y móvil).
+
+### Recomendación técnica de mantenimiento
+- Extraer HTML a un módulo único de templates (por ejemplo `backend/src/utils/email-templates/`) para evitar duplicidad entre `shift-report.js` y `smtp.js`.
+- Centralizar todos los envíos en `sendEmail(...)` para logging/auditoría homogénea.
+
 ## Capturas de pantalla
 
 ![Vista Principal](docs/images/screenshots/01-main-nueva-entrada.png)

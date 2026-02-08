@@ -89,22 +89,26 @@ const buildServiceRows = (checklistEntry, checklistExit) => {
   return rows;
 };
 
-  const renderStatusCell = (service) => {
-    if (!service) {
-      return '<span style="color:#000000 !important;">No registrado</span>';
-    }
+const renderStatusCell = (service) => {
+  if (!service) {
+    return '<span style="color:#000000 !important;font-size:12px;">No registrado</span>';
+  }
 
-    const isOk = service.status === 'verde';
-    const label = isOk ? 'OK' : 'ERROR';
-    const color = isOk ? '#0b7a2a' : '#c62828';
-    const observation = service.observation ? escapeHtml(service.observation) : '-';
+  const isOk = service.status === 'verde';
+  const label = isOk ? 'OK' : 'ERROR';
+  const labelWithText = isOk ? 'OK (Verde)' : 'ERROR (Rojo)';
+  const color = isOk ? '#1b5e20' : '#b71c1c';
+  const observation = service.observation ? escapeHtml(service.observation) : '-';
 
-    return `
-    <div>
-      <span style="display:inline-block;padding:3px 8px;border-radius:4px;background-color:${color} !important;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important;font-weight:700;font-size:12px;letter-spacing:0.3px;">
-        ${label}
-      </span>
-    </div>
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border-spacing:0;">
+      <tr>
+        <td bgcolor="${color}" style="background-color:${color};padding:4px 10px;border-radius:4px;border:1px solid ${color};">
+          <span style="color:#ffffff !important;-webkit-text-fill-color:#ffffff !important;font-weight:700;font-size:12px;letter-spacing:0.3px;">${label}</span>
+        </td>
+      </tr>
+    </table>
+    <div style="margin-top:4px;color:#000000 !important;-webkit-text-fill-color:#000000 !important;font-size:11px;font-weight:600;">${labelWithText}</div>
     <div style="margin-top:4px;color:#000000 !important;-webkit-text-fill-color:#000000 !important;font-size:12px;">${observation}</div>
   `;
 };

@@ -50,6 +50,16 @@
   }
 }
 
+.favicon-preview {
+  height: 120px;
+
+  img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+  }
+}
+
 .upload-zone {
   cursor: pointer;
   transition: border-color 0.3s;

@@ -25,12 +25,24 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     // Cargar y actualizar favicon dinámicamente
     if (isPlatformBrowser(this.platformId)) {
-      this.configService.getLogo().subscribe({
+      this.configService.getFavicon().subscribe({
         next: (response) => {
-          if (response.logoUrl) {
-            const fullUrl = this.getAssetUrl(response.logoUrl);
-            this.updateFavicon(fullUrl);
+          if (response.faviconUrl) {
+            this.updateFavicon(this.getAssetUrl(response.faviconUrl));
+            return;
           }
+
+          // Backward compatibility: si no hay favicon, usar logo (comportamiento previo)
+          this.configService.getLogo().subscribe({
+            next: (logoResponse) => {
+              if (logoResponse.logoUrl) {
+                this.updateFavicon(this.getAssetUrl(logoResponse.logoUrl));
+              }
+            },
+            error: () => {
+              // Si hay error, mantener el favicon por defecto
+            }
+          });
         },
         error: () => {
           // Si hay error, mantener el favicon por defecto
@@ -49,7 +61,7 @@ export class AppComponent implements OnInit {
 
   private updateFavicon(iconUrl: string): void {
     const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
-    link.type = 'image/x-icon';
+    link.type = iconUrl.endsWith('.png') ? 'image/png' : 'image/x-icon';
     link.rel = 'icon';
     link.href = iconUrl;
     document.getElementsByTagName('head')[0].appendChild(link);

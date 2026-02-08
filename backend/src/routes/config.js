@@ -10,7 +10,7 @@ const validate = require('../middleware/validate');
 const { invalidateCache } = require('../utils/email');
 
 // Configurar multer para logo
-const storage = multer.diskStorage({
+const logoStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../../uploads/logos');
     try {
@@ -26,8 +26,8 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage,
+const uploadLogo = multer({
+  storage: logoStorage,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|svg\+xml/;
@@ -40,6 +40,48 @@ const upload = multer({
     cb(new Error('Solo se permiten imágenes (jpg, png, svg)'));
   }
 });
+
+// Configurar multer para favicon
+const faviconStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/favicons');
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    } catch (error) {
+      cb(error);
+    }
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `favicon-${Date.now()}${ext || '.ico'}`);
+  }
+});
+
+const uploadFavicon = multer({
+  storage: faviconStorage,
+  limits: { fileSize: 256 * 1024 }, // 256KB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /png|x-icon|vnd\.microsoft\.icon/;
+    const allowedExt = /\.(png|ico)$/i;
+    const mimeType = allowedTypes.test(file.mimetype);
+    const extname = allowedExt.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimeType && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Solo se permiten favicons PNG o ICO (máx 256KB)'));
+  }
+});
+
+const parseBase64Image = (dataUrl) => {
+  const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!matches) return null;
+  return {
+    mimeSubtype: matches[1].toLowerCase(),
+    base64Data: matches[2]
+  };
+};
 
 // GET /api/config - Obtener configuración
 router.get('/', authenticate, async (req, res) => {
@@ -74,6 +116,7 @@ router.put('/',
     body('checklistAlertEnabled').optional().isBoolean(),
     body('checklistAlertTime').optional().matches(/^\d{2}:\d{2}$/).withMessage('Formato de hora inválido (HH:mm)'),
     body('logoUrl').optional().trim(),
+    body('faviconUrl').optional().trim(),
     body('defaultLogSourceId').optional({ checkFalsy: true }).isMongoId().withMessage('ID de LogSource inválido'),
     body('emailReportConfig.enabled').optional().isBoolean(),
     body('emailReportConfig.recipients').optional().isArray(),
@@ -134,6 +177,22 @@ router.get('/logo', async (req, res) => {
   }
 });
 
+// GET /api/config/favicon - Obtener favicon actual (PÚBLICO)
+router.get('/favicon', async (_req, res) => {
+  try {
+    const config = await AppConfig.findOne();
+
+    if (!config || !config.faviconUrl) {
+      return res.json({ faviconUrl: '' });
+    }
+
+    res.json({ faviconUrl: config.faviconUrl });
+  } catch (error) {
+    console.error('Error al obtener favicon:', error);
+    res.status(500).json({ message: 'Error al obtener favicon' });
+  }
+});
+
 // POST /api/config/logo - Subir logo (admin)
 router.post('/logo',
   authenticate,
@@ -144,7 +203,7 @@ router.post('/logo',
     
     if (contentType.includes('multipart/form-data')) {
       // Manejar subida de archivo
-      upload.single('logo')(req, res, async (err) => {
+      uploadLogo.single('logo')(req, res, async (err) => {
         if (err) {
           console.error('Error en multer:', err);
           return res.status(400).json({ message: err.message || 'Error al procesar archivo' });
@@ -192,13 +251,13 @@ router.post('/logo',
 
         if (logoData) {
           // Guardar imagen base64 como archivo
-          const matches = logoData.match(/^data:image\/(\w+);base64,(.+)$/);
-          if (!matches) {
+          const parsed = parseBase64Image(logoData);
+          if (!parsed) {
             return res.status(400).json({ message: 'Formato de imagen base64 inválido' });
           }
 
-          const ext = matches[1];
-          const base64Data = matches[2];
+          const ext = parsed.mimeSubtype.split('+')[0].replace('jpeg', 'jpg');
+          const base64Data = parsed.base64Data;
           const buffer = Buffer.from(base64Data, 'base64');
 
           // Validar tamaño (2MB máx)
@@ -267,6 +326,141 @@ router.delete('/logo',
     } catch (error) {
       console.error('Error al eliminar logo:', error);
       res.status(500).json({ message: 'Error al eliminar logo' });
+    }
+  }
+);
+
+// POST /api/config/favicon - Subir favicon (admin)
+router.post('/favicon',
+  authenticate,
+  authorize('admin'),
+  async (req, res) => {
+    const contentType = req.headers['content-type'] || '';
+
+    if (contentType.includes('multipart/form-data')) {
+      uploadFavicon.single('favicon')(req, res, async (err) => {
+        if (err) {
+          console.error('Error en multer favicon:', err);
+          return res.status(400).json({ message: err.message || 'Error al procesar favicon' });
+        }
+
+        try {
+          if (!req.file) {
+            return res.status(400).json({ message: 'No se proporcionó archivo favicon' });
+          }
+
+          const faviconUrl = `/uploads/favicons/${req.file.filename}`;
+
+          let config = await AppConfig.findOne();
+          if (!config) {
+            config = new AppConfig();
+          }
+
+          config.faviconUrl = faviconUrl;
+          config.faviconType = 'upload';
+          config.lastUpdatedBy = req.user._id;
+          await config.save();
+
+          return res.json({
+            message: 'Favicon actualizado',
+            faviconUrl
+          });
+        } catch (error) {
+          console.error('Error al subir favicon:', error);
+          return res.status(500).json({ message: 'Error al subir favicon' });
+        }
+      });
+    } else {
+      try {
+        const { faviconData, faviconUrl } = req.body;
+
+        if (!faviconData && !faviconUrl) {
+          return res.status(400).json({ message: 'Debe proporcionar faviconData (base64) o faviconUrl' });
+        }
+
+        let config = await AppConfig.findOne();
+        if (!config) {
+          config = new AppConfig();
+        }
+
+        if (faviconData) {
+          const parsed = parseBase64Image(faviconData);
+          if (!parsed) {
+            return res.status(400).json({ message: 'Formato de favicon base64 inválido' });
+          }
+
+          const isPng = parsed.mimeSubtype === 'png';
+          const isIco = parsed.mimeSubtype === 'x-icon' || parsed.mimeSubtype === 'vnd.microsoft.icon';
+
+          if (!isPng && !isIco) {
+            return res.status(400).json({ message: 'Solo se permiten favicon PNG o ICO' });
+          }
+
+          const buffer = Buffer.from(parsed.base64Data, 'base64');
+          if (buffer.length > 256 * 1024) {
+            return res.status(400).json({ message: 'El favicon es muy grande (máx 256KB)' });
+          }
+
+          const uploadDir = path.join(__dirname, '../../uploads/favicons');
+          await fs.mkdir(uploadDir, { recursive: true });
+
+          const ext = isPng ? 'png' : 'ico';
+          const filename = `favicon-${Date.now()}.${ext}`;
+          const filepath = path.join(uploadDir, filename);
+          await fs.writeFile(filepath, buffer);
+
+          config.faviconUrl = `/uploads/favicons/${filename}`;
+          config.faviconType = 'upload';
+        } else if (faviconUrl) {
+          config.faviconUrl = faviconUrl;
+          config.faviconType = 'external';
+        }
+
+        config.lastUpdatedBy = req.user._id;
+        await config.save();
+
+        return res.json({
+          message: 'Favicon actualizado',
+          faviconUrl: config.faviconUrl
+        });
+      } catch (error) {
+        console.error('Error al guardar favicon:', error);
+        return res.status(500).json({ message: 'Error al guardar favicon' });
+      }
+    }
+  }
+);
+
+// DELETE /api/config/favicon - Eliminar favicon (admin)
+router.delete('/favicon',
+  authenticate,
+  authorize('admin'),
+  async (req, res) => {
+    try {
+      const config = await AppConfig.findOne();
+
+      if (!config || !config.faviconUrl) {
+        return res.json({ message: 'No hay favicon configurado' });
+      }
+
+      if (config.faviconType === 'upload' && config.faviconUrl.startsWith('/uploads/')) {
+        const filepath = path.join(__dirname, '../..', config.faviconUrl);
+        try {
+          await fs.unlink(filepath);
+        } catch (err) {
+          console.warn('No se pudo eliminar favicon:', err.message);
+        }
+      }
+
+      config.faviconUrl = '';
+      config.faviconType = undefined;
+      config.lastUpdatedBy = req.user._id;
+      await config.save();
+
+      return res.json({ message: 'Favicon eliminado' });
+    } catch (error) {
+      console.error('Error al eliminar favicon:', error);
+      return res.status(500).json({ message: 'Error al eliminar favicon' });
     }
   }
 );

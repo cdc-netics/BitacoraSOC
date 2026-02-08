@@ -7,7 +7,9 @@ export interface AppConfig {
   checklistAlertTime?: string;
   lastChecklistAlertDate?: Date;
   logoUrl?: string;
-  logoType?: 'url' | 'upload';
+  logoType?: 'url' | 'upload' | 'external';
+  faviconUrl?: string;
+  faviconType?: 'url' | 'upload' | 'external';
   defaultLogSourceId?: string | { _id: string; name: string; enabled: boolean };
   emailReportConfig?: EmailReportConfig;
   smtpConfig?: SmtpConfig;
@@ -40,6 +42,7 @@ export interface UpdateConfigRequest {
   checklistAlertEnabled?: boolean;
   checklistAlertTime?: string;
   logoUrl?: string;
+  faviconUrl?: string;
   defaultLogSourceId?: string | null;
   emailReportConfig?: EmailReportConfig;
   smtpConfig?: SmtpConfig;

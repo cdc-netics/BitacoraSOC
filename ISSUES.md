@@ -17,10 +17,10 @@
 | SEC-HIGH-007 | Pendiente | Seguridad ALTA | Riesgo de robo de JWT por cadena XSS | Sin CSP efectiva + JWT en `localStorage` + uso de `innerHTML` dinámico. |
 | SEC-HIGH-008 | Pendiente | Seguridad ALTA | Posible Path Traversal en backups | Uso de `path.join` con input no sanitizado en download/delete/restore de backups. |
 | B9 | Pendiente | Mejoras | Checklists distintos por tipo de check y por turno | El módulo de turnos ya existe: al crear/editar turno (ej. noche) debe permitir asignar fácil checklist de `inicio` y `cierre` en la misma pantalla y también poder asignar distinto checklist  en el  turno (entrada/salida). |
-| B10 | Pendiente | Mejoras | Branding: favicon configurable | Falta configurar favicon independiente del logo. El logo puede ser grande y no verse bien en pestaña del navegador. |
 | B11 | Pendiente | Mejoras | Auditoría incompleta de correos y acciones de usuarios/admin | En Logs de Auditoría no aparece claramente envío de correos (estado + destinatarios) ni cambios de administradores ni acciones relevantes de usuario normal (ej. generar reporte). |
 | B12 | Pendiente | Mejoras | Huevo de pascua en login por combinaciones específicas | Si ingresan combinaciones definidas (ej. `admin/admin`, `1234/1234`, etc.), activar pantalla negra + imagen. Triggers deben configurarse en BD para no hardcodear. |
 | B13 | Pendiente | Mejoras | Huevo de pascua en entradas por hashtag `#bender` | Si en entrada aparece `#Bender` o `#bender`, mostrar overlay fullscreen con imagen de Bender. |
+| B14 | Pendiente | Bugs | Envío automático de correo de turno fuera de contexto (vacío/duplicado) | En no laborales y a las 00:00 o a la hora que se  configuro  como termino de turno se envían correos vacíos. Debe enviarse solo al registrar checklist de cierre real. |
 
 ---
 
@@ -29,6 +29,8 @@
 | ID | Seccion | Tarea | Notas |
 | --- | --- | --- | --- |
 | B-CRÍTICO-001 | Bugs CRÍTICO | Emails no llegan cuando se registra cierre checklist | Corregido y marcado como listo. |
+| B10 | Mejoras | Branding: favicon configurable | Implementado: favicon separado del logo, con endpoints dedicados y administración en Branding. |
+| B15 | Bugs | Compatibilidad visual de correo HTML (modo oscuro vs claro) | Implementado: badges de estado reforzados con color + texto explícito para clientes claros/oscuros. |
 | P1 | Actualizacion Angular 20 | Plan general de actualizacion | Actualización completa Angular 17→20 |
 | F4-3 | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
 | F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Rama `feature/angular-20-upgrade` creada |
@@ -131,7 +133,9 @@ Mejora operativa alta. Permite control más fino por contexto de turno y reduce 
 
 ---
 
-## 🟠 B10 - Branding: favicon configurable
+## ✅ B10 - Branding: favicon configurable
+
+**Estado:** Listo
 
 **Descripción:**
 Actualmente se puede configurar logo, pero falta la configuración de favicon.
@@ -248,6 +252,67 @@ Si el usuario escribe `#Bender` o `#bender` en el campo de entrada, mostrar imag
 
 **Impacto esperado:**
 Mejora lúdica sin afectar flujo principal.
+
+---
+
+## 🔴 B14 - Correo automático de turno fuera de contexto (vacío/duplicado)
+
+**Descripción:**
+Hoy el sistema ya envía correo al hacer checklist de cierre, pero además se están disparando correos automáticos fuera de contexto:
+1. Días no laborales: llega correo vacío.
+2. En días laborales: llega correo correcto al cierre y luego otro vacío a las `00:00`.
+
+**Comportamiento esperado:**
+1. Enviar correo solo cuando exista checklist de cierre válido.
+2. No enviar correos vacíos ni duplicados por scheduler nocturno.
+3. Si no hubo actividad/checklist de cierre, no enviar correo.
+
+**Cómo se podría implementar:**
+1. Definir una sola fuente de disparo:
+   - O bien solo evento `POST /api/checklist/check` con `type=cierre`.
+   - O scheduler, pero con guardas estrictas (no ambos al mismo tiempo).
+2. Guardas anti-vacío antes de enviar:
+   - Validar que exista `checklist cierre` del turno.
+   - Validar que el payload tenga contenido útil (checklist/entradas/resumen).
+   - Si está vacío, abortar envío y registrar `audit event` de `skip`.
+3. Guardas anti-duplicado:
+   - Persistir `lastReportSentAt` + `shiftId` + `periodKey` (ej. `YYYY-MM-DD-turno`).
+   - Si ya fue enviado para ese periodo, no reenviar.
+4. Regla de no laboral:
+   - Si no hay turno activo o no corresponde envío por calendario/config, no enviar.
+5. Auditoría:
+   - Registrar `report.send.success`, `report.send.skipped`, `report.send.failed` con motivo.
+
+**Impacto esperado:**
+Elimina ruido de correos vacíos/duplicados y deja el envío alineado al cierre real del turno.
+
+---
+
+## ✅ B15 - Compatibilidad visual de correo HTML (dark/light)
+
+**Estado:** Listo
+
+**Descripción:**
+El correo de cierre se está enviando, pero su renderizado no es consistente entre clientes:
+1. En móvil con modo oscuro, los estados (verde/rojo) se ven bien.
+2. En PC/cliente claro, esos colores/contornos no se distinguen correctamente.
+
+**Comportamiento esperado:**
+1. Los estados `OK` y `ERROR` deben verse claramente en dark y light.
+2. El correo debe mantener contraste mínimo legible en Outlook, Gmail web y móvil.
+
+**Cómo se podría implementar:**
+1. Forzar estilos inline robustos por celda/estado:
+   - fondo + color de texto + borde + peso de fuente (no depender solo de color).
+2. Agregar indicadores redundantes:
+   - texto `OK/ERROR`, íconos o etiquetas además del color.
+3. Evitar estilos ambiguos que clientes reescriben en dark mode automático.
+4. Probar matriz mínima de clientes:
+   - Gmail Web (claro/oscuro), Outlook Desktop/Web, móvil iOS/Android.
+5. Crear plantilla base de email con bloques de compatibilidad (tables + inline + fallback).
+
+**Impacto esperado:**
+Mejora de legibilidad del correo y reducción de errores de interpretación del estado del turno.
 
 ---
 
