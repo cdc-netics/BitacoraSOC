@@ -6,6 +6,8 @@ Sistema completo de registro y gestión de actividades para Security Operations 
 **Despliegue:** Docker Compose (Frontend + Backend + MongoDB)  
 **Producción:** Listo para deploy con Docker
 
+> Aviso: Los valores de ejemplo son placeholders. Reemplazarlos por credenciales reales desde `.env` antes de usar en producción.
+
 ---
 
 ## Quick Start

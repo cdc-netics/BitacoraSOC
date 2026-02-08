@@ -2,6 +2,8 @@
 
 Guía detallada para instalar y configurar el sistema desde cero.
 
+> Aviso: Los valores de ejemplo son placeholders. Reemplazarlos por credenciales reales desde `.env` antes de usar en producción.
+
 ---
 
 ## Requisitos

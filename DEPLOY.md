@@ -1,6 +1,7 @@
 # Bitacora SOC - Docker Deploy Guide
 
 > Nota: Los comandos usan `docker compose`. Si tu instalacion usa `docker-compose`, reemplaza el comando.
+> Aviso: Los valores de ejemplo son placeholders. Reemplazarlos por credenciales reales desde `.env` antes de usar en producción.
 
 ## Requisitos
 - Docker Desktop / Docker Engine
@@ -12,12 +13,12 @@
 cd /ruta/del/proyecto
 
 # 2. Variables de entorno
-cp .env.docker.example .env
+cp .env.example .env
 nano .env  # Cambia TODAS las credenciales y secrets
 
 # 3. Generar secrets (ejemplos)
 echo "JWT_SECRET=$(openssl rand -base64 32)"
-echo "ENCRYPTION_KEY=$(openssl rand -hex 16)"
+echo "ENCRYPTION_KEY=$(openssl rand -hex 32)"
 
 # 4. Levantar servicios
 docker compose up -d --build
@@ -142,8 +143,8 @@ APP_VERSION=dev
 
 # Admin inicial
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=Admin123!
-ADMIN_EMAIL=admin@bitacora.local
+ADMIN_PASSWORD=CHANGE_ME
+ADMIN_EMAIL=admin@example.com
 ```
 
 ## Health checks (importante)
@@ -232,3 +233,43 @@ docker compose up -d
 ## Soporte rapido
 - Logs: `docker compose logs -f`
 - Estado: `docker compose ps`
+
+---
+
+## LogSource por defecto (AppConfig)
+
+El sistema usa `defaultLogSourceId` en `AppConfig` para asignar LogSource cuando una entrada no especifica cliente.
+
+### Pasos recomendados
+1. Crear el LogSource en Admin Catalogos.
+2. Ir a Configuracion (Admin) y seleccionar el LogSource por defecto.
+3. Verificar creando una entrada sin cliente (debe asignar el valor configurado).
+
+### Migracion de entradas existentes (opcional)
+
+Si quieres actualizar entradas antiguas sin LogSource, puedes ejecutar una actualizacion directa en MongoDB:
+
+```bash
+docker exec bitacora-mongodb mongosh \
+  --username admin \
+  --password YOUR_MONGO_PASSWORD \
+  --authenticationDatabase admin \
+  --eval '
+    db = db.getSiblingDB("bitacora_soc");
+    const def = db.appconfigs.findOne({});
+    if (!def || !def.defaultLogSourceId) {
+      print("❌ No hay defaultLogSourceId configurado");
+      quit(1);
+    }
+    const source = db.catalog_log_sources.findOne({ _id: def.defaultLogSourceId });
+    if (!source) {
+      print("❌ LogSource no existe");
+      quit(1);
+    }
+    const res = db.entries.updateMany(
+      { clientId: null },
+      { $set: { clientId: source._id, clientName: source.name } }
+    );
+    print(`✅ ${res.modifiedCount} entradas actualizadas`);
+  '
+```

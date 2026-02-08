@@ -2,6 +2,8 @@
 
 Guía para consumir la API REST del sistema.
 
+> Aviso: Todos los valores de ejemplo son placeholders. Reemplazarlos por credenciales reales desde `.env` antes de usar en producción.
+
 ---
 
 ## Acceso a Swagger UI
