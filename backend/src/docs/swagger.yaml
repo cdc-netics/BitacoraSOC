@@ -127,7 +127,7 @@ paths:
       tags:
         - Autenticación
       summary: Iniciar sesión
-      description: Autentica un usuario y devuelve un token JWT
+      description: Autentica un usuario y devuelve un token JWT. Reemplace CHANGE_ME por credenciales reales (ver .env).
       requestBody:
         required: true
         content:
@@ -143,7 +143,7 @@ paths:
                   example: admin
                 password:
                   type: string
-                  example: admin123
+                  example: CHANGE_ME
       responses:
         '200':
           description: Login exitoso

@@ -13,6 +13,10 @@ Guía de operación diaria para analistas y administradores del Security Operati
 - Reportes y KPIs
 - Configuración log forwarding (SIEM)
 
+### Auditor
+- Lectura de logs de auditoría
+- Consulta de actividad (sin cambios de configuración)
+
 ### User (Analista)
 - Registrar entradas operativas/incidentes
 - Checklist de turno (inicio/cierre)
@@ -22,7 +26,6 @@ Guía de operación diaria para analistas y administradores del Security Operati
 ### Guest (Temporal)
 - Registrar entradas (marcadas como guest)
 - Ver todas las entradas
-- **NO** puede hacer checklist
 - Expira automáticamente (default 2 días)
 
 ---
@@ -73,6 +76,7 @@ Guía de operación diaria para analistas y administradores del Security Operati
 3. Clasificación:
    - **Entrada operativa:** Monitoreo, alertas normales, revisiones
    - **Incidente:** Evento de seguridad, brecha, ataque
+   - **Ofensa:** Registro asociado a ofensas/casos
 4. Contenido:
    - Descripción detallada
    - Usa `#hashtags` para tags automáticos
@@ -106,6 +110,8 @@ Guía de operación diaria para analistas y administradores del Security Operati
    - Pendientes para próximo turno
 
 3. **Logout**
+
+**Nota:** El cierre de turno puede disparar el reporte por correo si el turno tiene `emailReportConfig.enabled`.
 
 ---
 

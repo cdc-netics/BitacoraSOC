@@ -81,14 +81,19 @@ NODE_ENV=development
 HOST=0.0.0.0                          # Escucha todas las interfaces
 PORT=3000
 
+# Frontend (para links de reset password)
+HOST_DOMAIN=tu-dominio-o-ip
+FRONTEND_PORT=4200
+
 # MongoDB
 MONGODB_URI=mongodb://localhost:27017/bitacora_soc
 
 # JWT
 JWT_SECRET=CAMBIAR_EN_PRODUCCION      # Ver sección 2.3
-JWT_EXPIRES_IN=24h
+# Nota: la expiración se define en backend (4h admin/user, 2h guest)
 
 # CORS (IPs frontend permitidas)
+# En producción usa allowlist; en desarrollo permite cualquier origen
 ALLOWED_ORIGINS=http://192.168.100.50:4200,http://localhost:4200
 
 # Rate Limiting
@@ -99,7 +104,7 @@ RATE_LIMIT_MAX_REQUESTS=100           # 100 requests/15min
 TZ=America/Santiago
 
 # Encryption (passwords SMTP)
-ENCRYPTION_KEY=GENERAR_CON_OPENSSL    # Ver sección 2.3
+ENCRYPTION_KEY=GENERAR_CON_OPENSSL    # 64 caracteres hex (32 bytes)
 
 # Logging
 LOG_LEVEL=info                        # info | debug | warn | error
@@ -197,9 +202,9 @@ use bitacora_soc
 
 db.users.insertOne({
   username: "admin",
-  email: "admin@bitacora.com",
-  // Password: "admin123" hasheado con bcrypt (10 rounds)
-  password: "$2a$10$rQzXOEw.0zF8KN8L5XL5eD4L5XL5XL5XL5XL5XL5XL5XL5XL5XL5XL",
+  email: "admin@example.com",
+  // Password: "CHANGE_ME" hasheado con bcrypt
+  password: "<bcrypt_hash>",
   fullName: "Administrador",
   role: "admin",
   isActive: true,
@@ -231,15 +236,15 @@ async function seed() {
   
   const admin = new User({
     username: 'admin',
-    email: 'admin@bitacora.com',
-    password: 'admin123',  // Se hashea automáticamente
+    email: 'admin@example.com',
+    password: 'CHANGE_ME',  // Se hashea automáticamente
     fullName: 'Administrador',
     role: 'admin',
     isActive: true
   });
   
   await admin.save();
-  console.log('✅ Admin creado: admin / admin123');
+  console.log('✅ Admin creado: admin / CHANGE_ME');
   process.exit(0);
 }
 
@@ -313,7 +318,7 @@ npm start
 ### 6.1 Login
 
 1. Ir a `http://192.168.100.50:4200`
-2. Login: `admin` / `admin123`
+2. Login: `admin` / `CHANGE_ME`
 3. **Cambiar password inmediatamente** (Mi Perfil → Cambiar contraseña)
 
 ### 6.2 Configuración General

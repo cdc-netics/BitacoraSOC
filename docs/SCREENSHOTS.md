@@ -2,6 +2,8 @@
 
 Documentación visual de las principales funcionalidades del sistema.
 
+> Nota: Las capturas son referenciales y pueden variar respecto a la versión actual.
+
 ## 📑 Índice de Capturas
 
 1. [Pantalla Principal - Nueva Entrada](#-pantalla-principal---nueva-entrada)

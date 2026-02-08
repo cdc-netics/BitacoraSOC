@@ -208,7 +208,7 @@ GET /api/escalation/view/64a1b2c3d4e5f6a7b8c9d0e2
       "currentUser": {
         "id": "...",
         "name": "Juan Pérez",
-        "email": "juan.perez@synet.cl"
+        "email": "juan.perez@example.com"
       },
       "shiftPeriod": {
         "start": "2026-01-03T11:00:00Z",
@@ -222,7 +222,7 @@ GET /api/escalation/view/64a1b2c3d4e5f6a7b8c9d0e2
       "currentUser": {
         "id": "...",
         "name": "María González (Reemplazo)",
-        "email": "maria.gonzalez@synet.cl"
+        "email": "maria.gonzalez@example.com"
       },
       "shiftPeriod": {
         "start": "2026-01-05T00:00:00Z",

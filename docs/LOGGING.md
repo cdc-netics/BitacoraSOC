@@ -142,6 +142,16 @@ await audit(req, {
 | `admin.backup` | `.create` / `.restore` | info | Backups |
 | `admin.logging` | `.view` / `.update` / `.test` | info | Config de forwarding |
 
+### API de auditoría (admin/auditor)
+
+```
+GET /api/audit-logs
+GET /api/audit-logs/events
+GET /api/audit-logs/stats
+```
+
+**Roles:** `admin` y `auditor`.
+
 ---
 
 ## 3. Log Forwarding (SIEM)
@@ -436,7 +446,7 @@ curl -X PUT http://localhost:3000/api/logging/config \
 # Terminal 4: Trigger audit event
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"CHANGE_ME"}'
 
 # Ver en Terminal 2: JSON llegando a netcat
 ```

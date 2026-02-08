@@ -25,7 +25,7 @@ GET /api/catalog/operation-types?search={q}&enabled=true&limit=20
 - ✅ Solo registros `enabled=true`
 - ✅ Ordenamiento por relevancia (textScore)
 
-### Frontend (Angular 17 + Material)
+### Frontend (Angular 20 + Material)
 
 #### Componente Reutilizable:
 **EntityAutocompleteComponent** - `<app-entity-autocomplete>`
@@ -118,14 +118,14 @@ export class MyComponent {
 
 ### Ejemplo Completo
 
-Ver: `frontend/src/app/pages/main/email-builder/`
+Ver: `frontend/src/app/pages/main/report-generator/`
 
 Componente demo con 3 autocompletes integrados:
 - Evento → autocompleta "Motivo"
 - Log Source → selección simple
 - Operation Type → autocompleta "Info Adicional"
 
-**Ruta**: `/main/email-builder`
+**Ruta**: `/main/report-generator`
 
 ## 🔧 API Reference
 
@@ -225,7 +225,7 @@ No se borran registros, solo se marcan como `enabled: false`
 1. Iniciar backend: `cd backend && npm start`
 2. Iniciar frontend: `cd frontend && npm start`
 3. Login en `/login`
-4. Navegar a `/main/email-builder`
+4. Navegar a `/main/report-generator`
 5. Probar los 3 autocompletes
 
 ### Test de Performance:
@@ -313,10 +313,10 @@ frontend/src/app/components/
   └── shared-components.module.ts
 
 frontend/src/app/pages/main/
-  ├── email-builder/ (ejemplo completo)
-  │   ├── email-builder.component.ts
-  │   ├── email-builder.component.html
-  │   └── email-builder.component.scss
+  ├── report-generator/ (ejemplo completo)
+  │   ├── report-generator.component.ts
+  │   ├── report-generator.component.html
+  │   └── report-generator.component.scss
   └── main.module.ts (modificado)
 ```
 
@@ -335,4 +335,4 @@ Para issues o dudas:
 1. Revisar esta documentación
 2. Verificar logs de backend (consola)
 3. Verificar logs de frontend (DevTools)
-4. Revisar código de ejemplo en `email-builder.component.ts`
+4. Revisar código de ejemplo en `report-generator.component.ts`

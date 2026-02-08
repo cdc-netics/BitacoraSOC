@@ -36,8 +36,11 @@ curl -X POST http://192.168.100.50:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
-    "password": "admin123"
+    "password": "CHANGE_ME"
   }'
+
+> Nota: `username` acepta nombre de usuario o email.
+> Nota: `CHANGE_ME` es un placeholder. Usa tu valor real desde `.env` (`ADMIN_PASSWORD`).
 ```
 
 **Respuesta:**
@@ -47,7 +50,7 @@ curl -X POST http://192.168.100.50:3000/api/auth/login \
   "user": {
     "_id": "675e12345...",
     "username": "admin",
-    "email": "admin@bitacora.com",
+    "email": "admin@example.com",
     "fullName": "Administrador",
     "role": "admin",
     "theme": "dark",
@@ -57,7 +60,7 @@ curl -X POST http://192.168.100.50:3000/api/auth/login \
 ```
 
 **Duración:**
-- Admin/User: 24h
+- Admin/User: 4h
 - Guest: 2h
 
 ### Clock Skew Tolerance
@@ -74,6 +77,8 @@ El servidor acepta tokens con diferencia de ±60 segundos (previene errores por 
 |--------|----------|-------------|------|
 | POST | `/api/auth/login` | Login | No |
 | POST | `/api/auth/refresh` | Renovar token | No |
+| POST | `/api/auth/forgot-password` | Solicitar reseteo | No |
+| POST | `/api/auth/reset-password` | Resetear contraseña | No |
 
 ### Usuarios
 
@@ -133,6 +138,9 @@ El servidor acepta tokens con diferencia de ±60 segundos (previene errores por 
 |--------|----------|-------------|-----|
 | GET | `/api/reports/overview?days=30` | KPIs generales | Admin |
 | GET | `/api/reports/export-entries?startDate=...&endDate=...` | Export CSV | Admin |
+| GET | `/api/reports/tags-trend?days=30&tags=a,b` | Tendencia de tags | Admin/User |
+| GET | `/api/reports/heatmap?days=30` | Mapa de calor día/hora | Admin/User |
+| GET | `/api/reports/entries-by-logsource?days=30` | Entradas por Log Source | Admin/User |
 
 ### Configuración
 
@@ -141,14 +149,20 @@ El servidor acepta tokens con diferencia de ±60 segundos (previene errores por 
 | GET | `/api/config` | Config general | Todos |
 | PUT | `/api/config` | Actualizar config | Admin |
 | POST | `/api/config/logo` | Subir logo | Admin |
+| GET | `/api/config/logo` | Obtener logo (público) | No |
+| GET | `/api/config/favicon` | Obtener favicon (público) | No |
+| POST | `/api/config/favicon` | Subir favicon | Admin |
 
 ### Backup
 
 | Método | Endpoint | Descripción | Rol |
 |--------|----------|-------------|-----|
-| GET | `/api/backup/mongo` | Crear backup | Admin |
-| GET | `/api/backup/list` | Listar backups | Admin |
+| GET | `/api/backup/history` | Historial de backups | Admin |
+| POST | `/api/backup/create` | Crear backup JSON | Admin |
 | POST | `/api/backup/restore` | Restaurar backup | Admin |
+| GET | `/api/backup/export/:type` | Exportar CSV | Admin |
+| POST | `/api/backup/import` | Importar CSV/JSON | Admin |
+| DELETE | `/api/backup/:id` | Eliminar backup | Admin |
 
 ### Logging (SIEM)
 
@@ -157,6 +171,48 @@ El servidor acepta tokens con diferencia de ±60 segundos (previene errores por 
 | GET | `/api/logging/config` | Config forwarding | Admin |
 | PUT | `/api/logging/config` | Actualizar config | Admin |
 | POST | `/api/logging/test` | Probar conexión SIEM | Admin |
+
+### Audit Logs
+
+| Método | Endpoint | Descripción | Rol |
+|--------|----------|-------------|-----|
+| GET | `/api/audit-logs` | Listar logs de auditoría | Admin/Auditor |
+| GET | `/api/audit-logs/events` | Eventos disponibles | Admin/Auditor |
+| GET | `/api/audit-logs/stats` | Estadísticas de auditoría | Admin/Auditor |
+
+### Turnos de Trabajo
+
+| Método | Endpoint | Descripción | Rol |
+|--------|----------|-------------|-----|
+| GET | `/api/work-shifts` | Listar turnos | Todos |
+| GET | `/api/work-shifts/current` | Turno actual | Todos |
+| POST | `/api/work-shifts` | Crear turno | Admin |
+| PUT | `/api/work-shifts/:id` | Actualizar turno | Admin |
+| DELETE | `/api/work-shifts/:id` | Eliminar turno | Admin |
+| PUT | `/api/work-shifts/reorder` | Reordenar | Admin |
+| POST | `/api/work-shifts/:id/send-report` | Enviar reporte | Admin |
+
+### Escalación
+
+| Método | Endpoint | Descripción | Rol |
+|--------|----------|-------------|-----|
+| GET | `/api/escalation/view/:serviceId` | Vista escalación por servicio | Todos |
+| GET | `/api/escalation/clients` | Clientes activos | Todos |
+| GET | `/api/escalation/services` | Servicios (por cliente) | Todos |
+| GET | `/api/escalation/contacts` | Contactos públicos | Todos |
+| GET | `/api/escalation/internal-shifts` | Turnos internos actuales | Todos |
+| GET | `/api/escalation/raci` | Matriz RACI por cliente/servicio | Todos |
+
+**Admin CRUD:**
+- `/api/escalation/admin/clients`
+- `/api/escalation/admin/services`
+- `/api/escalation/admin/contacts`
+- `/api/escalation/admin/raci`
+- `/api/escalation/admin/rules`
+- `/api/escalation/admin/cycles`
+- `/api/escalation/admin/assignments`
+- `/api/escalation/admin/overrides`
+- `/api/escalation/admin/external-people`
 
 ---
 

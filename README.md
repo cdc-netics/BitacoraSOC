@@ -12,7 +12,7 @@ Sistema completo de registro y gestión de actividades para Security Operations 
 
 ```bash
 # Con Docker (recomendado para producción)
-cp .env.docker.example .env  # Configurar variables
+cp .env.example .env          # Configurar variables
 docker-compose up -d          # Levantar servicios
 docker-compose exec backend npm run seed  # Crear admin
 
@@ -28,13 +28,14 @@ cd frontend && npm install && npm start
 ## Funcionalidades principales
 
 ### Gestión de usuarios
-- **3 roles:** Admin, User, Guest
-- **Admin:** CRUD completo de usuarios, edición de perfil, activar/desactivar cuentas
-- **User:** Registro de entradas, checklists, ver reportes
-- **Guest:** Solo lectura (entradas y escalaciones)
+- **4 roles:** Admin, User, Auditor, Guest
+- **Admin:** CRUD completo de usuarios, configuración, backups y SIEM
+- **User:** Registro de entradas, checklists y reportes
+- **Auditor:** Lectura de auditoría y trazabilidad
+- **Guest:** Acceso limitado, entradas marcadas como invitado
 
 ### Bitácora de entradas
-- Registro de incidentes, mantenimientos y eventos generales
+- Registro de incidentes, ofensas y eventos operativos
 - Autocompletado inteligente con catálogos personalizables
 - Tags y búsqueda por fecha
 - Filtros por tipo, fuente de logs y operación
@@ -56,15 +57,15 @@ cd frontend && npm install && npm start
 ### Reportes
 - Vista general con estadísticas
 - Exportación CSV de entradas y checklists
-- Gráficos de actividad
-- Accesible para admin y user
+- Gráficos de actividad (tendencias, heatmap, tags, log sources)
+- Accesible para usuarios autenticados
 
 ### Administración (Admin)
 - **Catálogos:** Eventos, fuentes de logs, tipos de operación
 - **Plantillas de Checklist:** Editor visual con preview
 - **Configuración SMTP:** Email para notificaciones
 - **Backup/Restore:** Exportar e importar datos
-- **Logo personalizado:** Branding del sistema
+- **Branding:** Logo y favicon
 - **Tags:** Etiquetas personalizadas
 
 ### Notas
@@ -106,7 +107,7 @@ BitacoraSOC/
 |   |   `-- utils/        # Logger, audit, encryption
 |   |-- server.js         # Entry point
 |   `-- package.json
-|-- frontend/             # Angular 17 SPA
+|-- frontend/             # Angular 20 SPA
 |   |-- src/app/
 |   |   |-- pages/        # Componentes principales
 |   |   |-- services/     # HTTP services
@@ -137,12 +138,12 @@ cp .env.docker.example .env
 # 3. Editar .env y cambiar:
 #    - MONGO_ROOT_PASSWORD (contraseña MongoDB)
 #    - JWT_SECRET (32+ caracteres aleatorios)
-#    - ENCRYPTION_KEY (exactamente 32 caracteres)
+#    - ENCRYPTION_KEY (64 caracteres hex = 32 bytes)
 #    - FRONTEND_PORT (puerto público, default: 80)
 
 # 4. Generar secrets seguros (Linux/Mac)
 openssl rand -base64 32  # Para JWT_SECRET
-openssl rand -hex 16     # Para ENCRYPTION_KEY
+openssl rand -hex 32     # Para ENCRYPTION_KEY
 
 # 5. Construir y levantar servicios
 docker-compose up -d
@@ -198,6 +199,10 @@ Para detalles técnicos completos, consulta:
 
 - **[SETUP.md](docs/SETUP.md)**: Instalación y configuración avanzada
 - **[API.md](docs/API.md)**: Referencia completa de endpoints
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Mapas conceptuales y flujos
+- **[WORK-SHIFTS.md](docs/WORK-SHIFTS.md)**: Turnos y reportes por correo
+- **[BACKUP.md](docs/BACKUP.md)**: Backups JSON, export e import
+- **[SECURITY.md](docs/SECURITY.md)**: Seguridad, hardening y checklist
 - **[CATALOGS.md](docs/CATALOGS.md)**: Sistema de catálogos y autocompletado
 - **[ESCALATION.md](docs/ESCALATION.md)**: Módulo de escalaciones
 - **[SECURITY.md](docs/SECURITY.md)**: Seguridad y autenticación

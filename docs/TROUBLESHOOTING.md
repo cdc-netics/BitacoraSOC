@@ -757,7 +757,7 @@ openssl s_client -connect siem.example.com:5140 -showcerts
 ```bash
 cd backend
 node src/scripts/seed.js
-# Crea admin/admin123
+# Crea admin/CHANGE_ME
 ```
 
 **Solución 2 (MongoDB manual):**
@@ -766,9 +766,9 @@ mongosh
 > use bitacora_soc
 > db.users.insertOne({
   username: "admin",
-  password: "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36wQz0uOj9qW1aGwXcYbYoG",
+  password: "<bcrypt_hash>",
   fullName: "Administrador",
-  email: "admin@bitacora.com",
+  email: "admin@example.com",
   role: "admin",
   theme: "dark",
   isActive: true,
@@ -778,7 +778,7 @@ mongosh
 
 **Credenciales por defecto:**
 - Username: `admin`
-- Password: `admin123`
+- Password: `CHANGE_ME`
 
 **⚠️ Cambiar contraseña inmediatamente:**
 ```bash
@@ -800,13 +800,13 @@ curl -X PUT http://192.168.100.50:3000/api/users/me \
 }
 ```
 
-**Causa:** Token JWT pasó de 24h (admin/user) o 2h (guest)
+**Causa:** Token JWT pasó de 4h (admin/user) o 2h (guest)
 
 **Solución:** Re-login
 ```bash
 curl -X POST http://192.168.100.50:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"CHANGE_ME"}'
 ```
 
 ---

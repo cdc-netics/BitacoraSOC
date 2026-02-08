@@ -15,7 +15,7 @@ Sistema de gestión de **turnos de trabajo** con horarios personalizados, difere
 ✅ **Detección automática** del turno actual según hora
 ✅ **Soporte para cruces de medianoche** (ej: 22:00 - 06:00)
 ✅ **Gestión completa** (crear, editar, eliminar, reordenar)
-✅ **Notificaciones por correo** configurables por turno
+✅ **Reportes por correo** configurables por turno
 
 ---
 
@@ -33,13 +33,18 @@ Sistema de gestión de **turnos de trabajo** con horarios personalizados, difere
   startTime: String,         // "09:00" (HH:MM)
   endTime: String,           // "18:00" (HH:MM)
   timezone: String,          // "America/Santiago"
-  assignedUserId: ObjectId,  // Usuario asignado (opcional)
+  assignedUserId: ObjectId,      // Usuario asignado (opcional)
   checklistTemplateId: ObjectId, // Checklist asociado (opcional)
-  enableEmailNotifications: Boolean,
-  notificationEmails: [String],
+  emailReportConfig: {
+    enabled: Boolean,
+    includeChecklist: Boolean,
+    includeEntries: Boolean,
+    recipients: [String],
+    subjectTemplate: String
+  },
   order: Number,
   active: Boolean,
-  color: String              // Color hex para UI
+  color: String                  // Color hex para UI
 }
 ```
 
@@ -53,6 +58,7 @@ POST   /api/work-shifts              - Crear turno (admin)
 PUT    /api/work-shifts/:id          - Actualizar turno (admin)
 DELETE /api/work-shifts/:id          - Eliminar turno (admin)
 PUT    /api/work-shifts/reorder      - Reordenar turnos (admin)
+POST   /api/work-shifts/:id/send-report - Enviar reporte manual (admin)
 ```
 
 ### Frontend
@@ -154,6 +160,57 @@ Respuesta:
   "timezone": "America/Santiago"
 }
 ```
+
+---
+
+---
+
+## 📧 Reporte de Turno por Correo (Email Reports)
+
+### Descripción
+Envía un reporte HTML al finalizar el turno con checklist de inicio/cierre y entradas del periodo.
+
+### Configuración (por turno)
+
+```typescript
+emailReportConfig: {
+  enabled: boolean,
+  includeChecklist: boolean,
+  includeEntries: boolean,
+  recipients: string[],
+  subjectTemplate: string // Variables: [fecha], [turno], [hora]
+}
+```
+
+### Variables del asunto
+
+| Variable   | Descripción | Ejemplo |
+|------------|-------------|---------|
+| `[fecha]`  | Fecha del turno | 03/02/2026 |
+| `[turno]`  | Nombre del turno | Turno Mañana |
+| `[hora]`   | Hora fin del turno | 18:00 |
+
+### Envío automático (scheduler)
+- Se ejecuta **cada minuto**.
+- Condiciones:
+  - `type: regular`
+  - `active: true`
+  - `emailReportConfig.enabled: true`
+  - `hora actual == endTime` del turno
+
+### Envío manual (admin)
+
+```http
+POST /api/work-shifts/:id/send-report
+Authorization: Bearer {admin-token}
+Content-Type: application/json
+
+{ "date": "2026-02-03T12:00:00Z" }
+```
+
+### Criterio de datos incluidos
+- Checklist de entrada/salida: último `inicio` y `cierre` dentro del rango del turno.
+- Entradas: entre el `inicio` y el `cierre` (si no existen, usa el rango horario del turno).
 
 ---
 

@@ -9,15 +9,16 @@ Decisiones de seguridad, hardening y checklist pre-producción.
 ### Autenticación y Autorización
 
 **JWT Tokens:**
-- Duración: 24h (admin/user), 2h (guest)
+- Duración: 4h (admin/user), 2h (guest)
 - Algoritmo: HS256
 - Secret: `JWT_SECRET` en `.env` (generado con `openssl rand -base64 32`)
 - Clock skew tolerance: ±60 segundos
 
 **RBAC (Role-Based Access Control):**
 - Admin: Acceso completo
-- User: CRUD entradas propias, checklist, notas personales
-- Guest: Solo lectura (entradas + reportes), sin checklist
+- User: Operación diaria (entradas, checklist, notas personales)
+- Auditor: Lectura de auditoría y trazabilidad
+- Guest: Acceso limitado; entradas marcadas como invitado
 
 **Validación de Roles:**
 - Middleware: `authMiddleware` + `roleMiddleware`
@@ -27,7 +28,7 @@ Decisiones de seguridad, hardening y checklist pre-producción.
 
 **Passwords de Usuarios:**
 - Algoritmo: bcrypt
-- Rounds: 10
+- Rounds: 8
 - No se loguean nunca
 
 **Passwords SMTP:**
@@ -49,9 +50,9 @@ openssl rand -hex 32
 ### CORS (Cross-Origin Resource Sharing)
 
 **Configuración:**
-- Allowlist explícita (NO wildcard `*`)
-- Variable: `ALLOWED_ORIGINS` en `.env`
-- Formato: Separado por comas, sin espacios
+- En desarrollo, CORS permite cualquier origen
+- En producción, usa allowlist en `ALLOWED_ORIGINS`
+- Si `ALLOWED_ORIGINS` contiene `*`, permite todos (no recomendado)
 
 **Ejemplo:**
 ```env
@@ -67,7 +68,7 @@ ALLOWED_ORIGINS=http://192.168.100.50:4200,http://192.168.1.100:4200
 
 **Rechazo:**
 - Orígenes no listados reciben 403 Forbidden
-- Localhost bloqueado en producción (agregar manualmente si es necesario)
+- Localhost debe agregarse manualmente si se requiere en producción
 
 ---
 
@@ -76,14 +77,14 @@ ALLOWED_ORIGINS=http://192.168.100.50:4200,http://192.168.1.100:4200
 ### Límites Diferenciados
 
 **Login (prevención brute-force):**
-- Límite: 5 intentos
+- Límite: 5 intentos (producción)
 - Ventana: 15 minutos
-- Endpoint: `POST /api/auth/login`
+- Nota: `loginLimiter` existe pero debe montarse explícitamente en la ruta de login
 
 **API General:**
 - Límite: 100 requests
 - Ventana: 15 minutos
-- Endpoints: `/api/**` (excepto login y SMTP)
+- Endpoints: `/api/**` (solo en producción)
 
 **SMTP Test (prevención abuso):**
 - Límite: 3 intentos
@@ -138,7 +139,7 @@ X-RateLimit-Reset: 1702814400
 **Ejemplo:**
 ```javascript
 // Request original
-{ "username": "admin", "password": "admin123" }
+{ "username": "admin", "password": "CHANGE_ME" }
 
 // Log generado
 { "username": "admin", "password": "[REDACTED]" }
@@ -157,17 +158,8 @@ grep -i "password.*:" backend/logs/*.log
 ### Headers de Seguridad
 
 **Content Security Policy (CSP):**
-```javascript
-helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
-    fontSrc: ["'self'", "fonts.gstatic.com"],
-    imgSrc: ["'self'", "data:"]
-  }
-})
-```
+- En backend, CSP esta deshabilitado (`contentSecurityPolicy: false`).
+- Se recomienda aplicar CSP en el reverse proxy (Nginx) para Angular y APIs.
 
 **HTTP Strict Transport Security (HSTS):**
 - Fuerza HTTPS
