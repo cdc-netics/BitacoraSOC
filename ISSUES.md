@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD013 MD007 MD030 MD031 MD034 MD036 MD050 -->
+<!-- markdownlint-disable MD013 MD007 MD030 MD031 MD034 MD036 MD050 MD032 -->
 # Plan de Trabajo: Bitácora SOC
 
 ## Tablas de Control
@@ -7,7 +7,6 @@
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
-| B5 | Pendiente | Bugs CRÍTICO | Acceso a rutas sin autenticación | Vulnerabilidad: posible acceso y modificación sin login |
 | SEC-CRIT-001 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Exposición de credenciales SMTP en `/api/config` | `GET /api/config` devuelve `smtpConfig.pass` a cualquier usuario autenticado. Riesgo de exfiltración de correo corporativo. |
 | SEC-CRIT-002 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Recuperación de contraseña vulnerable | Host header poisoning + URL `http` + fuga de `resetToken` en desarrollo. Riesgo de toma de cuenta. |
 | SEC-CRIT-003 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Refresh indefinido de JWT expirados | `/auth/refresh` usa `ignoreExpiration: true`. Token robado puede persistir indefinidamente. |
@@ -16,11 +15,20 @@
 | SEC-HIGH-006 | Pendiente | Seguridad ALTA | Credenciales por defecto débiles en bootstrap/scripts | `Admin123!` y `bitacora123` en fallbacks/scripts. Facilita compromiso inicial. |
 | SEC-HIGH-007 | Pendiente | Seguridad ALTA | Riesgo de robo de JWT por cadena XSS | Sin CSP efectiva + JWT en `localStorage` + uso de `innerHTML` dinámico. |
 | SEC-HIGH-008 | Pendiente | Seguridad ALTA | Posible Path Traversal en backups | Uso de `path.join` con input no sanitizado en download/delete/restore de backups. |
+| SEC-STD-009 | Pendiente | Seguridad/Compliance | Alineación OWASP ASVS L2 + Secure Coding + Angular/Node | Revisar backend/frontend, endurecer controles y asegurar auditoría de acciones sensibles. |
+| B5 | Pendiente | Bugs CRÍTICO | Acceso a rutas sin autenticación | Vulnerabilidad: posible acceso y modificación sin login |
+| B6 | Pendiente | UI/UX | Dark mode: contraste y legibilidad deficientes | Problemas de contraste en inputs/botones/tablas; requiere ajuste WCAG y revisión completa de estilos tema oscuro. |
+| B8 | Pendiente | Mejoras | Edición masiva/individual de entradas (Admin) | Habilitar reclasificación controlada por admin sin alterar campos inmutables, con auditoría de before/after. |
 | B9 | Pendiente | Mejoras | Checklists distintos por tipo de check y por turno | El módulo de turnos ya existe: al crear/editar turno (ej. noche) debe permitir asignar fácil checklist de `inicio` y `cierre` en la misma pantalla y también poder asignar distinto checklist  en el  turno (entrada/salida). |
 | B11 | Pendiente | Mejoras | Auditoría incompleta de correos y acciones de usuarios/admin | En Logs de Auditoría no aparece claramente envío de correos (estado + destinatarios) ni cambios de administradores ni acciones relevantes de usuario normal (ej. generar reporte). |
 | B12 | Pendiente | Mejoras | Huevo de pascua en login por combinaciones específicas | Si ingresan combinaciones definidas (ej. `admin/admin`, `1234/1234`, etc.), activar pantalla negra + imagen. Triggers deben configurarse en BD para no hardcodear. |
 | B13 | Pendiente | Mejoras | Huevo de pascua en entradas por hashtag `#bender` | Si en entrada aparece `#Bender` o `#bender`, mostrar overlay fullscreen con imagen de Bender. |
 | B14 | Pendiente | Bugs | Envío automático de correo de turno fuera de contexto (vacío/duplicado) | En no laborales y a las 00:00 o a la hora que se  configuro  como termino de turno se envían correos vacíos. Debe enviarse solo al registrar checklist de cierre real. |
+| B16 | Pendiente | Seguridad/Arquitectura | Auditoría automática avanzada (usuario + dispositivo + red + VPN) | Diseñar e implementar trazabilidad inmutable con fingerprint de dispositivo, metadata de red, detección de cambio de IP en sesión y notificación en tiempo real. |
+| B17 | Pendiente | Seguridad/Integraciones | Envío de eventos de auditoría a SIEM/SOAR/NDR (Syslog/API) | Exportar todos los eventos de auditoría a destinos externos (Elastic, Wazuh, QRadar, XSOAR, Fortinet, etc.) por UDP/TCP/TLS con puertos `514`, `6514` o puerto personalizado. |
+| B18 | Pendiente | Integraciones | Integración API genérica / Webhooks / SIEM | Framework de conectores salientes con reintentos/cola, formatos JSON/RFC3164/RFC5424/CEF/LEEF y soporte Syslog/API. |
+| B19 | Pendiente | Integraciones | Envío automático a GLPI al cierre de turno | Automatizar creación de ticket al cierre con resumen de entradas y estado de checklist, sin bloquear operación si falla integración. |
+| B20 | Pendiente | UI/UX | Tema Cyberpunk/Neon | Nuevo tema visual opcional, cuidando contraste y sin repetir problemas del dark mode actual. |
 
 ---
 
@@ -195,6 +203,243 @@ El módulo `Logs de Auditoría` no está registrando suficiente trazabilidad ope
 
 **Impacto esperado:**
 Mayor trazabilidad operativa y capacidad de investigación/auditoría ante incidentes y cambios en producción.
+
+---
+
+## Recomendación de Reparación (alineada con tabla general)
+
+1. `SEC-CRIT-001`: Bloquear exposición de secretos en APIs de configuración y rotar credenciales SMTP comprometidas.
+2. `SEC-CRIT-002`: Endurecer forgot/reset password (host fijo seguro, HTTPS obligatorio, sin fuga de token).
+3. `SEC-CRIT-003`: Corregir refresh JWT para respetar expiración y agregar revocación/rotación.
+4. `SEC-CRIT-004`: Asegurar RBAC por endpoint y testear matriz de permisos por rol.
+5. `SEC-CRIT-005`: Activar controles anti brute-force y rate-limits efectivos en login/auth.
+6. `SEC-HIGH-006`: Eliminar credenciales por defecto y forzar bootstrap seguro.
+7. `SEC-HIGH-007`: Mitigar XSS y mover estrategia de token a almacenamiento/flujo más seguro.
+8. `SEC-HIGH-008`: Sanitizar paths y bloquear traversal en backup/restore/download/delete.
+9. `SEC-STD-009`: Alinear con ASVS L2 + Secure Coding + Angular/Node y cerrar brechas de seguridad.
+10. `B5`: Auditar cobertura de `authenticate`/`authorize` en todas las rutas críticas.
+11. `B6`: Refactor de variables y componentes dark mode con contraste WCAG AA.
+12. `B8`: Implementar edición admin controlada con lista blanca de campos y auditoría before/after.
+13. `B9`: Soportar checklist por turno y tipo (`inicio`/`cierre`) con migración compatible.
+14. `B11`: Completar trazabilidad de correo, acciones admin y acciones relevantes de usuario.
+15. `B12`: Implementar reglas de trigger en BD para huevo de pascua de login (sin hardcode).
+16. `B13`: Implementar trigger hashtag en entradas con overlay configurable y cooldown opcional.
+17. `B14`: Evitar envíos vacíos/duplicados fuera de contexto y acoplar envío real al cierre válido.
+18. `B16`: Implementar auditoría avanzada con fingerprint, sessionId y detección de cambio de IP.
+19. `B17`: Exportar auditoría completa a SIEM/SOAR/NDR por Syslog/API con cola y reintentos.
+20. `B18`: Desplegar módulo de integraciones genéricas con plantillas, auth flexible y test/historial.
+21. `B19`: Automatizar GLPI al cierre de turno con payload trazable y tolerancia a fallos.
+22. `B20`: Crear tema Cyberpunk/Neon opcional garantizando legibilidad y consistencia visual.
+
+---
+
+## 🟠 SEC-STD-009 - Alineación OWASP ASVS L2 + Secure Coding + Angular/Node
+
+**Objetivo:**
+Alinear el desarrollo con OWASP ASVS Nivel 2, OWASP Secure Coding Practices, Angular Security Guide y OWASP Node.js Security Cheat Sheet, cumpliendo estas reglas:
+
+1. Nunca confiar solo en validación del cliente.
+2. Autorización server-side estricta.
+3. Mínimo privilegio y deny-by-default.
+4. Prevención de XSS, inyección y fuga de datos.
+5. Auditoría en acciones relevantes de seguridad.
+
+**Tareas pendientes (agregar a backlog):**
+
+1. **Mapa de endpoints y autorización**
+  - Inventario de rutas backend y su rol requerido (matriz RBAC).
+  - Bloqueo por defecto: todo endpoint requiere `authenticate` + `authorize` salvo lista blanca documentada.
+2. **Validación server-side consistente**
+  - Centralizar esquemas (Joi/Zod/validator) y usar `validate` en todas las rutas de escritura.
+  - Sanitizar parámetros de ruta, query y body (strings, arrays, ids) con listas blancas.
+3. **XSS y HTML seguro (Angular)**
+  - Revisar `innerHTML`, `bypassSecurityTrust*` y cualquier sanitización manual.
+  - Reemplazar por binding seguro + `DomSanitizer` solo donde sea imprescindible.
+4. **CSP y headers de seguridad**
+  - Definir CSP estricta y headers (HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy).
+  - Alinear `nginx.conf`/proxy y backend para evitar CSP rota en prod.
+5. **Autenticación y sesión**
+  - Verificar expiración de JWT, refresh seguro y revocación.
+  - Mover tokens fuera de `localStorage` si aplica (httpOnly cookie o estrategia equivalente).
+6. **Auditoría de acciones sensibles**
+  - Registrar create/update/delete y cambios de configuración.
+  - Incluir `userId`, `roles`, `request_id`, `status`, `before/after` sin secretos.
+7. **Protección contra inyección**
+  - Revisar queries y filtros en Mongo/Mongoose con listas blancas.
+  - Bloquear operadores peligrosos y normalizar entradas.
+8. **Secreto y configuración segura**
+  - Eliminar credenciales por defecto y rotarlas.
+  - Validar variables de entorno obligatorias en arranque.
+9. **Rate limiting y anti brute-force**
+  - Asegurar `loginLimiter` activo en prod y uso en `/auth/login`.
+  - Perfiles de rate limit por ruta crítica.
+10. **Logs seguros y privacidad**
+   - Redactar PII, tokens y secretos en logs.
+   - Establecer políticas de retención y acceso.
+11. **Pruebas de seguridad mínimas**
+   - Tests de autorización por rol.
+   - Tests de validación server-side y CSP presente.
+
+**Cómo lo implementaría (explicación):**
+
+1. Partiría con un inventario de rutas backend y generaría una matriz RBAC clara (rol -> permisos). Esto define el deny-by-default real.
+2. Centralizaría validaciones con un middleware único por esquema y lo aplicaría en todas las rutas de escritura, más sanitización de rutas/query.
+3. En frontend, buscaría cualquier uso de `innerHTML` y sanitizadores manuales. Solo dejaría `DomSanitizer` cuando sea inevitable y documentado.
+4. Definiría una CSP estricta compatible con Angular, sumando headers de seguridad en el proxy/reverse y en el backend.
+5. Revisaría el flujo de sesión: expiración, refresh, revocación y almacén de tokens, priorizando cookies httpOnly seguras.
+6. Consolidaría auditoría de acciones críticas con un helper común que registre actor, recurso, resultado y metadatos sin secretos.
+7. Cerraría vectores de inyección filtrando operadores Mongo peligrosos y normalizando entradas.
+8. Dejaría un checklist de verificación ASVS L2 por módulo y pruebas mínimas que validen autorización y validación server-side.
+
+---
+
+## 🔴 B16 - Auditoría automática avanzada (usuario + dispositivo + red + VPN)
+
+**Descripción:**
+Implementar un módulo de auditoría automática, orientado a producción, para trazabilidad completa de sesiones y acciones críticas en entorno web Angular + backend, incluyendo escenarios con VPN.
+
+**Objetivo:**
+Tener evidencia técnica consistente de:
+1. Quién ejecutó la acción (identidad y roles).
+2. Desde qué dispositivo lógico (fingerprint estable).
+3. Desde qué red/IP/ASN (considerando variabilidad por VPN).
+4. Si hubo cambios de IP durante la misma sesión activa.
+
+**Restricciones obligatorias:**
+1. Sin agentes instalados ni extensiones.
+2. Respetar límites del navegador:
+   - no hostname real del PC,
+   - no MAC,
+   - no usuario de SO/dominio,
+   - no IP pública confiable desde frontend.
+3. Auditoría write-only e inmutable.
+4. Datos sensibles enmascarados o hasheados.
+
+**Captura automática frontend (Angular):**
+1. SO/plataforma y arquitectura aproximada (`navigator.platform`, `userAgentData` cuando exista).
+2. Navegador y versión.
+3. Resolución y `devicePixelRatio`.
+4. `hardwareConcurrency` (CPU cores aproximado).
+5. `deviceMemory` (RAM estimada, cuando aplique).
+6. Idioma.
+7. Timezone.
+8. Tipo de conexión aproximada (`navigator.connection` si está disponible).
+9. User-Agent completo.
+
+**Fingerprint de dispositivo (frontend):**
+1. Construir payload canónico con: `os`, `browser`, `screen`, `cpu_cores`, `memory_gb`, `timezone`, `language`.
+2. Generar `device_fingerprint` con SHA-256.
+3. Enviar en login y acciones críticas.
+4. No usar fingerprint como autenticación; usarlo como señal de riesgo y correlación.
+
+**Backend (middleware de auditoría):**
+1. Extraer identidad desde JWT: `userId`, `roles`, `tenant`.
+2. Resolver IP real (`X-Forwarded-For` + `remoteAddress`), cuidando proxies confiables.
+3. Enriquecer red: ASN/proveedor y flags (`is_vpn`, `is_datacenter`, `is_proxy`) con servicio IP intelligence.
+4. Asignar `session_id` y `request_id`.
+5. Medir latencia por request.
+6. Persistir log de forma append-only (sin update/delete de eventos).
+
+**Detección de cambio de IP en sesión:**
+1. Comparar IP actual vs última IP del mismo `session_id`.
+2. Si cambia y `device_fingerprint` se mantiene: crear evento `IP_CHANGED_DURING_SESSION`.
+3. Guardar evento en auditoría con `risk_level`.
+4. Notificar al frontend en tiempo real (WebSocket/SSE): "Se detectó un cambio de red durante tu sesión. La actividad está siendo auditada."
+
+**Reglas de VPN:**
+1. VPN no invalida identidad del dispositivo.
+2. Fingerprint es identificador principal de continuidad.
+3. IP es señal secundaria/variable en VPN corporativa.
+4. Acciones críticas desde VPN elevan riesgo (`medium/high` según política).
+
+**Esquema mínimo de auditoría (propuesto):**
+1. `timestamp_utc`, `event_type`, `user_id`, `roles`, `tenant_id`.
+2. `session_id`, `request_id`.
+3. `device_fingerprint`, `device_metadata` (`os`, `browser`, `screen`, `cpu_cores`, `memory_gb`, `timezone`, `language`).
+4. `network_metadata` (`ip`, `asn`, `is_vpn`, `is_datacenter`, `ip_changed_during_session`).
+5. `action`, `resource`, `object_id`, `status`, `risk_level`.
+
+**Eventos de seguridad iniciales:**
+1. `LOGIN_FROM_NEW_DEVICE`
+2. `LOGIN_WITH_VPN`
+3. `IP_CHANGED_DURING_SESSION`
+4. `CRITICAL_ACTION_FROM_NEW_DEVICE`
+5. `CRITICAL_ACTION_WITH_VPN`
+
+**Plan de implementación recomendado (iterativo):**
+1. Angular: `FingerprintService` + interceptor para adjuntar metadata/fingerprint.
+2. Backend: middleware de auditoría + generador de `request_id/session_id`.
+3. Persistencia: colección `AuditEvent` append-only con índices por `timestamp`, `user_id`, `session_id`, `event_type`.
+4. Detección IP change y score de riesgo en middleware.
+5. Canal tiempo real (WebSocket/SSE) para alertas de sesión.
+6. Dashboard de auditoría con filtros por evento/riesgo/usuario/sesión.
+
+**Advertencias técnicas (realistas):**
+1. El fingerprint en web nunca es 100% único ni inmutable; usarlo como probabilidad, no certeza.
+2. `navigator.connection` y `deviceMemory` no están disponibles en todos los navegadores.
+3. `X-Forwarded-For` requiere configurar correctamente `trust proxy` y cadena de reverse proxies.
+4. El nivel de detección VPN depende de proveedor externo y puede tener falsos positivos/negativos.
+
+**Impacto esperado:**
+Salto de madurez en seguridad operativa y capacidad forense, con trazabilidad consistente incluso en entornos corporativos con VPN.
+
+---
+
+## 🔴 B17 - Envío de eventos de auditoría a SIEM/SOAR/NDR (Syslog/API)
+
+**Descripción:**
+Se requiere exportar todos los eventos de auditoría relevantes del sistema hacia plataformas externas de seguridad (SIEM/SOAR/NDR), con soporte de transporte estándar para entornos corporativos.
+
+**Objetivo:**
+Enviar en tiempo casi real los eventos de auditoría (incluyendo B11/B16) a destinos como Elastic, Wazuh, QRadar, XSOAR, Fortinet u otros, sin acoplar la operación a un proveedor específico.
+
+**Requisitos funcionales mínimos:**
+1. Origen de eventos: `AuditLog` completo (auth, admin, user, mail, checklist, seguridad).
+2. Transportes:
+   - Syslog UDP (default `514`)
+   - Syslog TCP (default `514`)
+   - Syslog TLS (default `6514`)
+   - HTTP/HTTPS webhook/API (opcional para SOAR)
+3. Puerto configurable por conector (no fijo), incluyendo `514`, `6514` o cualquier otro.
+4. Formato configurable por destino:
+   - JSON estructurado (recomendado para Elastic/Wazuh modernos)
+   - RFC3164 / RFC5424 (Syslog)
+   - CEF / LEEF (si el SIEM lo exige)
+5. Modo no bloqueante:
+   - Si el destino falla, la app no se detiene.
+   - Reintentos con backoff + cola persistente.
+
+**Cómo se implementa sobre el código actual:**
+1. Reusar y extender `backend/src/utils/logForwarder.js` como dispatcher unificado de salidas.
+2. Crear configuración admin por destino (`IntegrationConfig` o `LogForwardConfig`) con:
+   - `transport`, `host`, `port`, `tls`, `format`, `enabled`, `timeoutMs`, `retryPolicy`.
+3. En `backend/src/utils/audit.js`, después de persistir `AuditLog`, publicar evento a cola de salida.
+4. Worker/cola (`OutboundJob`) procesa y entrega a SIEM externo; registrar resultado en `IntegrationDelivery`.
+5. En caso de error: marcar `failed`, guardar causa, reintentar según política.
+
+**Cobertura de auditoría a exportar (alineado con B11/B16):**
+1. Login success/fail + new device + VPN.
+2. Cambio de IP durante sesión (`IP_CHANGED_DURING_SESSION`).
+3. Acciones admin (create/update/delete/config).
+4. Acciones críticas de usuario (reportes, checklist cierre, backups, restore, etc.).
+5. Eventos de correo (`mail.send.success` / `mail.send.fail`) con metadata segura.
+
+**Seguridad y cumplimiento:**
+1. No exportar secretos (passwords, tokens, credenciales SMTP, JWT).
+2. Enmascarar datos sensibles cuando aplique (PII parcial, hash de campos críticos).
+3. Para Syslog TLS (`6514`): validar certificado del colector y permitir CA custom.
+4. Incluir `request_id`, `session_id`, `event_type`, `risk_level`, `tenant_id` para correlación.
+
+**Compatibilidad objetivo:**
+1. Elastic / OpenSearch.
+2. Wazuh.
+3. IBM QRadar.
+4. Palo Alto Cortex XSOAR (vía webhook/API).
+5. Fortinet/FortiSIEM.
+6. Otros colectores Syslog estándar.
+
+**Impacto esperado:**
+Centralización real de telemetría de seguridad y auditoría, habilitando correlación en SOC con herramientas externas sin depender de una sola plataforma.
 
 ---
 
@@ -1533,7 +1778,7 @@ backend:
 - Si se borra el checklist del día, se puede crear nuevamente para ese mismo día.
 - ✅ Implementado: botón de borrar en historial solo para admin + endpoint `/api/checklist/check/:id` + cooldown solo aplica mismo día.
 
-#### **B2l** **Integracion API generica / Webhooks (GLPI y otros)**
+#### **B18** **Integracion API generica / Webhooks (GLPI y otros)**
 
 - **Objetivo:** Permitir integrar la Bitacora con servicios externos via API para enviar entradas, checklists o resumenes automaticos.
 - **Requisitos clave:**
@@ -1541,25 +1786,30 @@ backend:
     - Autenticacion flexible: API Key, Bearer, Basic, OAuth2 (client credentials).
     - Plantillas de payload con variables (ej: `{{date}}`, `{{entries}}`, `{{checklist}}`, `{{shift}}`) y soporte JSON / form-data.
     - Reintentos + cola si el servicio externo falla (no bloquear la app).
+    - **Modo SIEM/Syslog:** salida de eventos de auditoría con `UDP/TCP/TLS`, puertos `514`/`6514` o puerto personalizado.
+    - **Formato de salida configurable:** JSON, RFC3164, RFC5424, CEF, LEEF.
 - **UI/Admin:**
     - Nueva seccion "Integraciones" (similar a SMTP) para crear/editar/testear conectores.
     - Boton "Probar envio" y vista de historial de envios (ok/fail).
+    - Selector de tipo de destino: `Webhook/API` o `Syslog/SIEM`.
 - **Backend (sugerido):**
     - Nuevo modelo `IntegrationConfig` (y opcional `IntegrationDelivery`/`OutboundJob` para cola/reintentos).
     - Rutas nuevas `/api/integrations` (CRUD + `/test` + `/deliveries`).
     - Util `integrationDispatcher` para enviar requests (reusar patron de `backend/src/utils/logForwarder.js`).
     - Cifrar secretos como en `backend/src/routes/smtp.js` (`utils/encryption`).
+    - Reusar `AuditLog` como fuente principal para SIEM y enviar de forma no bloqueante.
 - **Ejemplo GLPI:**
     - Conector predefinido para crear ticket desde entradas del dia.
     - Titulo personalizable (ej: `Ticket CSC {{date}}`).
     - Cuerpo con resumen + listado de entradas (formato HTML o texto).
+- **Compatibilidad esperada SIEM/SOAR/NDR:** Elastic, Wazuh, QRadar, XSOAR, Fortinet y cualquier colector Syslog estándar.
 - **Archivos relevantes para implementar:** `backend/src/routes/entries.js`, `backend/src/routes/checklist.js`, `backend/src/utils/logForwarder.js`, `backend/src/routes/smtp.js`.
 
-#### **B2o** **Envío automático de entradas a GLPI al cierre de turno (depende de B2l)**
+#### **B19** **Envío automático de entradas a GLPI al cierre de turno (depende de B18)**
 
 - **Objetivo:** Configurar una integración específica con GLPI para que, al hacer cierre de turno, se envíen automáticamente todas las entradas del día como un ticket.
 - **Flujo propuesto:**
-    1. Admin configura conector GLPI en "Integraciones" (URL, API token, etc.) - reutiliza B2l.
+    1. Admin configura conector GLPI en "Integraciones" (URL, API token, etc.) - reutiliza B18.
     2. Al registrar `POST /api/checklist/check` con `type = cierre`, verificar si existe conector GLPI activo.
     3. Si sí, obtener todas las entradas del día para el usuario (`createdAt >= 00:00:00 && createdAt <= 23:59:59`).
     4. Construir payload con formato de ticket (título personalizable, descripción, tags, incidentes).
@@ -1573,10 +1823,10 @@ backend:
     - En "Integraciones", opción para marcar conector como "auto-enviar al cierre de turno"
     - Checkbox: "Incluir detalles de entradas en ticket"
     - Vista de historial: últimos envíos a GLPI (fecha, resultado, ticket ID si aplica)
-- **Backend (basado en B2l):**
-    - Usar modelo `IntegrationConfig` de B2l con campo adicional `autoOnShiftClose: boolean`
+- **Backend (basado en B18):**
+    - Usar modelo `IntegrationConfig` de B18 con campo adicional `autoOnShiftClose: boolean`
     - En `backend/src/routes/checklist.js`, al procesar cierre: buscar `IntegrationConfig` con `autoOnShiftClose=true`
-    - Construir payload y llamar a `integrationDispatcher` (de B2l)
+    - Construir payload y llamar a `integrationDispatcher` (de B18)
     - Guardar resultado en tabla `ShiftClosureLog` (o similar)
 - **Validación:**
     - Si GLPI no responde, registrar error pero permitir que el cierre de turno se complete normalmente (no bloquear)
@@ -1585,7 +1835,7 @@ backend:
 
 **Implementación técnica propuesta:**
 
-**1. Modelo: IntegrationConfig.js (de B2l, extendido para B2o)**
+**1. Modelo: IntegrationConfig.js (de B18, extendido para B19)**
 ```javascript
 const integrationConfigSchema = new mongoose.Schema({
   name: String, // 'GLPI', 'Zendesk', etc.
@@ -1668,7 +1918,7 @@ ${glpiConfig.includeEntryDetails ? entries.map(e =>
         }
       };
 
-      // Llamar a integrationDispatcher (de B2l)
+      // Llamar a integrationDispatcher (de B18)
       const { sendViaIntegration } = require('../utils/integrationDispatcher');
       const result = await sendViaIntegration(glpiConfig, glpiPayload);
 
@@ -1717,7 +1967,7 @@ const integrationDeliverySchema = new mongoose.Schema({
 integrationDeliverySchema.index({ integrationConfigId: 1, createdAt: -1 });
 ```
 
-**4. Ruta /api/integrations (de B2l)**
+**4. Ruta /api/integrations (de B18)**
 ```javascript
 // GET /api/integrations - Listar integraciones (admin)
 router.get('/integrations', authenticate, authorize('admin'), async (req, res) => {
@@ -1755,7 +2005,7 @@ router.get('/integrations/deliveries', authenticate, authorize('admin'), async (
 });
 ```
 
-**5. Utilidad: integrationDispatcher.js (de B2l)**
+**5. Utilidad: integrationDispatcher.js (de B18)**
 ```javascript
 const nodemailer = require('nodemailer');
 const axios = require('axios');
@@ -1837,7 +2087,7 @@ module.exports = { sendViaIntegration };
     - Rango de fechas, filtros por cliente/tag/usuario/estado.
 - **Opciones de entrega:**
     1. **API de reportes/metricas** (JSON): `GET /api/metrics/*` con endpoints agregados y paginacion.
-    2. **Exportacion programada** (CSV/JSON) a almacenamiento o endpoint externo (reutilizar B2l integraciones).
+    2. **Exportacion programada** (CSV/JSON) a almacenamiento o endpoint externo (reutilizar B18 integraciones).
     3. **Conector directo BI**: vista "read-only" con token dedicado y permisos de solo lectura.
 - **Seguridad:**
     - Campos anonimizados o sin texto libre (contenido de entradas fuera).
@@ -2067,7 +2317,7 @@ Los tokens JWT tienen una duración de **24 horas**, lo cual es muy largo. Para 
 
 ## 🟢 MEJORAS - UX/INTERFACE
 
-### M7 - Agregar tema Cyberpunk/Neon
+### B20 - Agregar tema Cyberpunk/Neon
 
 **Descripción:**
 Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos de brillo, y estética futurista. Similar a interfaces hacker en películas.
