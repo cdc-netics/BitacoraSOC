@@ -1,256 +1,34 @@
+<!-- markdownlint-disable MD013 MD007 MD030 MD031 MD034 MD036 MD050 -->
 # Plan de Trabajo: Bitácora SOC
 
-## Estado general (tabla de control)
+## Tablas de Control
 
-### ⏳ En Progreso / Pendiente
+### ⏳ Pendientes
 
 | ID | Estado | Seccion | Tarea | Notas |
 | --- | --- | --- | --- | --- |
-| 🔴 B-CRÍTICO-001 | ⚠️ BLOQUEANTE | Bugs CRÍTICO | Emails no llegan cuando se registra cierre checklist | **MAXIMA PRIORIDAD**: Backend estaba leyendo config SMTP de modelo separado SmtpConfig pero la UI Settings guarda en AppConfig.smtpConfig. SMTP **SÍ está configurado en UI** (Office 365: despinoza@netics.cl, estado: Conectado). PROBLEMA: email.js buscaba en colección SmtpConfig (no usada) en lugar de AppConfig.smtpConfig (donde se guarda). CORREGIDO: email.js ahora lee de AppConfig.smtpConfig. ESTADO: Código corregido + backend restarteado. PENDIENTE: Validación manual - registrar cierre checklist y confirmar que email llega a despinoza@netics.cl. IMPACTO: Sin fix, emails no llegan aunque SMTP esté configurado. |
 | B5 | Pendiente | Bugs CRÍTICO | Acceso a rutas sin autenticación | Vulnerabilidad: posible acceso y modificación sin login |
+| SEC-CRIT-001 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Exposición de credenciales SMTP en `/api/config` | `GET /api/config` devuelve `smtpConfig.pass` a cualquier usuario autenticado. Riesgo de exfiltración de correo corporativo. |
+| SEC-CRIT-002 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Recuperación de contraseña vulnerable | Host header poisoning + URL `http` + fuga de `resetToken` en desarrollo. Riesgo de toma de cuenta. |
+| SEC-CRIT-003 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Refresh indefinido de JWT expirados | `/auth/refresh` usa `ignoreExpiration: true`. Token robado puede persistir indefinidamente. |
+| SEC-CRIT-004 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | RBAC incompleto para rol `guest` | Guests pueden ejecutar endpoints de escritura (`entries`, `checklist`). Rompe política de solo lectura. |
+| SEC-CRIT-005 | ⚠️ BLOQUEANTE | Seguridad CRÍTICA | Anti brute-force desactivado en despliegue actual | `NODE_ENV=development` + rate-limit deshabilitado + `loginLimiter` sin aplicar en `/auth/login`. |
+| SEC-HIGH-006 | Pendiente | Seguridad ALTA | Credenciales por defecto débiles en bootstrap/scripts | `Admin123!` y `bitacora123` en fallbacks/scripts. Facilita compromiso inicial. |
+| SEC-HIGH-007 | Pendiente | Seguridad ALTA | Riesgo de robo de JWT por cadena XSS | Sin CSP efectiva + JWT en `localStorage` + uso de `innerHTML` dinámico. |
+| SEC-HIGH-008 | Pendiente | Seguridad ALTA | Posible Path Traversal en backups | Uso de `path.join` con input no sanitizado en download/delete/restore de backups. |
+| B9 | Pendiente | Mejoras | Checklists distintos por tipo de check y por turno | El módulo de turnos ya existe: al crear/editar turno (ej. noche) debe permitir asignar fácil checklist de `inicio` y `cierre` en la misma pantalla y también poder asignar distinto checklist  en el  turno (entrada/salida). |
+| B10 | Pendiente | Mejoras | Branding: favicon configurable | Falta configurar favicon independiente del logo. El logo puede ser grande y no verse bien en pestaña del navegador. |
+| B11 | Pendiente | Mejoras | Auditoría incompleta de correos y acciones de usuarios/admin | En Logs de Auditoría no aparece claramente envío de correos (estado + destinatarios) ni cambios de administradores ni acciones relevantes de usuario normal (ej. generar reporte). |
+| B12 | Pendiente | Mejoras | Huevo de pascua en login por combinaciones específicas | Si ingresan combinaciones definidas (ej. `admin/admin`, `1234/1234`, etc.), activar pantalla negra + imagen. Triggers deben configurarse en BD para no hardcodear. |
+| B13 | Pendiente | Mejoras | Huevo de pascua en entradas por hashtag `#bender` | Si en entrada aparece `#Bender` o `#bender`, mostrar overlay fullscreen con imagen de Bender. |
 
 ---
 
-## 🔴 BUG CRÍTICO DETALLE: Emails no llegan (B-CRÍTICO-001)
-
-### Síntoma
-Usuario: "ningun correo llego ahora y antes si llegaban"
-- Cierre checklist se registra exitosamente en BD
-- Email NO llega a la bandeja (despinoza@netics.cl)
-- No hay error en frontend, parece exitoso
-- Backend logs muestran: `❌ ERROR: SMTP configuration missing: Please configure email settings in Settings > Configuración SMTP`
-- **PERO: Usuario confirmó desde el inicio: "la config existe en Settings, está conectada, dice 'Conectado'"**
-  - El usuario tenía razón todo el tiempo
-  - El problema NO era falta de config
-  - El problema era que el backend LEÍA config del lugar equivocado
-
-### Root Cause Identificado
-**Mismatch de fuentes de configuración SMTP:**
-
-⚠️ **NOTA IMPORTANTE DE DIAGNÓSTICO:**
-El usuario reportó correctamente desde el inicio: "la config SMTP está en Settings, dice 'Conectado'". El error de diagnóstico fue asumir que la config faltaba en base de datos. La realidad:
-- ✅ Config SMTP SÍ existe en AppConfig.smtpConfig
-- ✅ El status en UI SÍ muestra "Conectado"
-- ❌ Backend buscaba en lugar equivocado (modelo SmtpConfig)
-- **Conclusión:** El usuario tenía razón, el código estaba roto
-
-1. **Frontend Settings** (UI): Guarda config SMTP en `AppConfig.smtpConfig` 
-   ```javascript
-   // backend/src/routes/config.js línea 277
-   const config = await AppConfig.findOne().select('emailReportConfig smtpConfig').lean();
-   // Retorna: { smtpConfig: { host, port, secure, user, pass, from } }
-   ```
-
-2. **Backend email.js** (antes del fix): Intentaba leer de `SmtpConfig` (colección separada)
-   ```javascript
-   // backend/src/utils/email.js línea 28 (VIEJO - ROTO)
-   const smtpConfig = await SmtpConfig.findOne().lean();
-   // Retornaba null porque esa colección NO existe / NO se usa
-   ```
-
-3. **Resultado**: 
-   - `getSMTPConfig()` retorna `null` a pesar de que config EXISTE
-   - `sendEmail()` falla con error "SMTP configuration missing"
-   - Email NO se envía
-   - **Pero el checklist SÍ se registra** (email es asincrónico, no bloquea)
-
-### Timeline del Bug
-1. **Fase 1:** User configuró SMTP en UI Settings (Office 365: despinoza@netics.cl)
-   - Guardó en `AppConfig.smtpConfig` ✅
-   - Emails funcionaban cuando se activó sendChecklistEmail() en POST checklist
-
-2. **Fase 2:** Se cambió arquitectura de emails
-   - Se agregó `sendShiftReport()` para enviar UN email al cierre (no múltiples)
-   - Se leyó código viejo que buscaba en modelo `SmtpConfig` ❌
-   - Se comentó `sendChecklistEmail()` para no duplicar emails
-
-3. **Fase 3:** Email automation se rompió
-   - Código nuevo buscaba en `SmtpConfig` (no existe)
-   - Config real está en `AppConfig.smtpConfig`
-   - Resultado: "no hay config" → no envía → email no llega
-   - Bug no fue evidente porque:
-     - Frontend muestra "ok" en checklist
-     - Email falla en backend (asincrónico)
-     - Usuario solo se da cuenta después de esperar al email
-
-### Diagnóstico Realizado
-```bash
-# Backend logs muestran claramente:
-[2026-02-04 00:50:36.259 -0300] WARN: Error reading SMTP config from DB:
-[2026-02-04 00:50:36.260 -0300] WARN: No SMTP configuration found in DB or environment
-[2026-02-04 00:50:36.260 -0300] ERROR: SMTP configuration missing: Please configure email settings...
-```
-
-**Investigación:**
-- Config SMTP guardada en `AppConfig.smtpConfig` ✅ (verificado en UI)
-- Model `SmtpConfig` existe pero NO se usa ❌
-- Routes en `config.js` usan `AppConfig.smtpConfig` ✅
-- Routes en `smtp.js` usan `SmtpConfig` (legacy, no usado) ❌
-
-### Fix Aplicado
-**Cambio en `backend/src/utils/email.js` línea 1-50:**
-
-```diff
-- const SmtpConfig = require('../models/SmtpConfig');
-+ const AppConfig = require('../models/AppConfig');
-
-  async function getSMTPConfig() {
-    try {
--     const smtpConfig = await SmtpConfig.findOne().lean();
-+     const appConfig = await AppConfig.findOne().select('smtpConfig').lean();
-+     const smtpConfig = appConfig?.smtpConfig;
-      
-      if (smtpConfig) {
-+       logger.info('📧 SMTP config found in AppConfig', { user: smtpConfig.user });
-        const config = {
-          host: smtpConfig.host,
-          port: smtpConfig.port,
-          secure: smtpConfig.secure === true,
--         user: smtpConfig.username,
--         pass: decrypt(smtpConfig.password),
--         from: smtpConfig.senderEmail
-+         user: smtpConfig.user,
-+         pass: smtpConfig.pass,
-+         from: smtpConfig.from || smtpConfig.user
-        };
-```
-
-**Cambios:**
-1. ✅ Cambiar import: `SmtpConfig` → `AppConfig`
-2. ✅ Cambiar query: `SmtpConfig.findOne()` → `AppConfig.findOne().select('smtpConfig')`
-3. ✅ Acceder campo correcto: `appConfig.smtpConfig`
-4. ✅ Usar nombres de campo correctos: `user`/`pass` (no `username`/`password`)
-5. ✅ NO desencriptar (config en AppConfig está en texto plano desde UI)
-6. ✅ Agregar logging con emoji 📧 para debugear
-
-### ✅ Actualizaciones posteriores (formato + contenido del correo)
-**Problemas reportados:**
-- Correo con letras blancas/fondo blanco (Outlook).
-- Checklist mostraba "No completado" aunque estaba completado.
-- Entradas incluían TODO el día y salían "Sin descripción".
-- Se truncaba el texto de entradas largas.
-
-**Cambios aplicados (2026-02-04):**
-1. ✅ `backend/src/utils/shift-report.js` usa **services + createdAt** reales de ShiftCheck.
-2. ✅ Entradas filtradas **solo entre inicio y cierre** (no todo el día).
-3. ✅ Contenido de entradas ahora usa `entry.content` completo (sin truncado).
-4. ✅ HTML del correo convertido a **tablas + estilos inline** (mejor soporte Outlook).
-5. ✅ Forzado de color negro absoluto + `mso-*` + `-webkit-text-fill-color`.
-6. ✅ Se agrega **versión text/plain completa** como fallback.
-7. ✅ Badge OK/ERROR con fondo verde/rojo (no solo texto).
-8. ✅ Contenedor más ancho (max-width: 1100px).
-
-**Resultado validado:** En Outlook ya se ve correctamente el texto (no blanco).
-
-### Validación del Fix
-**Requisitos para validar:**
-1. ✅ **SMTP configurado en UI Settings** - VERIFICADO
-   - **URL:** http://localhost:4200/main/settings → pestaña "📧 Reenvío de Información"
-   - **Estado en UI:** "✅ Conectado"
-   - **Provider:** Office 365
-   - **Host:** smtp.office365.com
-   - **Port:** 587
-   - **User:** despinoza@netics.cl
-   - **Pass:** (guardado y encriptado en BD)
-   - **From:** despinoza@netics.cl
-   - **Verificación:** Usuario confirmó "está ahi mierda y sale conectado" → Config EXISTE en BD ✅
-   - **Ubicación en BD:** `db.appconfigs.findOne()` → campo `smtpConfig` contiene:
-     ```json
-     {
-       "host": "smtp.office365.com",
-       "port": 587,
-       "secure": false,
-       "user": "despinoza@netics.cl",
-       "pass": "(valor encriptado)",
-       "from": "despinoza@netics.cl"
-     }
-     ```
-
-2. Backend debe encontrar config:
-   ```bash
-   docker logs bitacora-backend --tail 50 | grep "📧"
-   # Buscar: "📧 SMTP config found in AppConfig"
-   # Buscar: "📧 Sending mail with SMTP"
-   ```
-
-3. Cierre checklist debe enviar email:
-   - UI: http://localhost:4200/main/shifts
-   - Click en turno → Checklist → Registrar "cierre"
-   - Esperar 3-5 segundos
-   - Logs deben mostrar: "✅ EMAIL SENT SUCCESSFULLY"
-
-4. Email debe llegar a bandeja:
-   - despinoza@netics.cl debe recibir email
-   - Asunto: "Reporte SOC [fecha] [turno]"
-   - Body: Checklist inicio + cierre + entradas
-
-### Testing Post-Fix
-```bash
-# 1. Restart backend
-docker-compose restart backend
-
-# 2. Esperar 5 segundos
-sleep 5
-
-# 3. Ver logs de startup
-docker logs bitacora-backend --tail 20
-
-# 4. IR a UI y registrar cierre checklist
-
-# 5. Ver logs nuevamente
-docker logs bitacora-backend --tail 100 | Select-String "📧|✅|❌|email"
-```
-
-**Marcadores esperados:**
-- `📧 Reading SMTP config FROM DATABASE (AppConfig.smtpConfig)...`
-- `📧 SMTP config found in AppConfig`
-- `📧 SMTP config LOADED FROM DB`
-- `📧 [sendEmail] Starting email send process`
-- `✅ EMAIL SENT SUCCESSFULLY` ← ÉXITO
-
-**Si NO aparecen estos marcadores:**
-- Config SMTP no guardada en UI Settings
-- O guardar config está fallando
-- Revisar `backend/src/routes/config.js` PUT endpoint
-
-### Archivos Modificados
-- ✅ `backend/src/utils/email.js` - Cambiar fuente de config
-- ✅ `ISSUES.md` - Documentar bug y fix (este documento)
-- ⏳ Pendiente: Validación manual en vivo
-
-### Impacto
-- **Antes del fix**: Emails NO llegan → Feature crítica rota
-- **Después del fix**: Emails deben llegar → Feature restaurada
-- **Si falla la validación**: Significa que hay otro problema (ej: SMTP config no guardada correctamente en UI)
-
-### Lecciones Aprendidas
-1. **Consistencia de fuentes**: Backend debe leer de mismo lugar que frontend escribe
-2. **Falta de tests**: Sin tests, este bug hubiera sido detectado automáticamente
-3. **Logging insuficiente**: Agregar emoji markers para fácil identificación en prod
-4. **Cambios asincronicos**: Errores en tasks background no alertan al usuario
-5. **Migración de modelos**: Cuando se cambian modelos, actualizar TODOS los lugares que los usan
-
-### Seguimiento
-- [ ] Usuario valida que emails llegan post-fix
-- [ ] Agregar tests automatizados para email sending
-- [ ] Documentar en SETUP.md el flujo de configuración SMTP
-- [ ] Agregar health check endpoint que valide SMTP está configurado
-| B6 | Pendiente | Bugs | Dark Mode: contraste y legibilidad | Textos/botones invisibles, inputs blancos con letra blanca |
-| B7 | ✅ Resuelto | Bugs | No se podían editar entradas | Implementado diálogo de edición en my-entries component |
-| M7 | Pendiente | Mejoras | Tema Cyberpunk/Neon | Investigar implementación sin los problemas del dark mode |
-| B1c | Pendiente | Bugs | Version no se muestra en sidebar | Placeholder __APP_VERSION__ no reemplazado en build |
-| B2p | Pendiente | Mejoras | Config TLS/SSL en backend (admin) | Permitir cargar certificados sin reconstruir imagen |
-| B2l | Pendiente | Mejoras | Integracion API generica (webhooks/conectores) para enviar datos a servicios externos | Ej: GLPI, payload y auth configurables |
-| B2o | Pendiente | Mejoras | Envio automatico de entradas a GLPI al cierre de turno | Depende de B2l; toma entradas del día y crea ticket |
-| B2n | Pendiente | Mejoras | Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.) | Uso, entradas, tags, checklists, incidentes |
-| B4-7 | Pendiente | Observaciones | Aviso analistas de checklist | Depende de B3a (etiquetas de cargo) |
-| C1-1 | Pendiente | Revisiones de seguridad y auditoria | Analisis de seguridad general |  |
-| D1-1 | Pendiente | Complementos | Modulo de complementos (plugins) |  |
-
-### ✅ Completado
+### ✅ Listas
 
 | ID | Seccion | Tarea | Notas |
 | --- | --- | --- | --- |
+| B-CRÍTICO-001 | Bugs CRÍTICO | Emails no llegan cuando se registra cierre checklist | Corregido y marcado como listo. |
 | P1 | Actualizacion Angular 20 | Plan general de actualizacion | Actualización completa Angular 17→20 |
 | F4-3 | Fase 4 (Post-actualizacion) | Merge rama | Listo para merge |
 | F0-1 | Fase 0 (Preparacion) | Crear rama aislada | Rama `feature/angular-20-upgrade` creada |
@@ -279,18 +57,18 @@ docker logs bitacora-backend --tail 100 | Select-String "📧|✅|❌|email"
 | B2b | Mejoras | Visualizador de logs de auditoria | Backend: 3 endpoints (logs, events, stats). Frontend: componente con filtros, paginación, badges por tipo entrada |
 | B2c | Mejoras | Purgar datos segura | Botón en Backup con confirmación de frase + endpoint admin |
 | B2g | Mejoras | Recuperacion de contrasena | Endpoints forgot/reset + componentes Angular + email HTML + rutas |
-| B2g-smtp | Mejoras | SMTP destinatarios opcionales | Recipients optional + SSL auto-detect + ENCRYPTION_KEY 64 chars | 
+| B2g-smtp | Mejoras | SMTP destinatarios opcionales | Recipients optional + SSL auto-detect + ENCRYPTION_KEY 64 chars |
 | B2d | Mejoras | Gestion de tags: ver entradas por tag | Contador ahora navega a /main/all-entries?tag=... |
 | B2e | Mejoras | Mis entradas / Ver todas: contenido completo | Dialogo listo en "Ver todas" y agregado en "Mis entradas" |
 | B2g | Mejoras | Recuperacion de contrasena | Backend: forgot-password + reset-password endpoints con token SHA256. Frontend: 2 componentes (forgot/reset) + routes |
 | B2h | Mejoras | Reorganizacion pagina configuracion | Cooldown movido a Checklist Admin + texto SMTP clarificado |
 | B2i | Mejoras | Selector de cliente en Nueva Entrada + filtro/columna en busqueda | Cliente/LogSource como campo estructurado en entries, filtro + columna en results |
-| B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Borrado admin en historial + UI oculta para no-admin + cooldown solo mismo día | 
+| B2k | Mejoras | Checklist: borrado admin + ocultar iconos + rehacer checklist diario | Borrado admin en historial + UI oculta para no-admin + cooldown solo mismo día |
 | B2m | Mejoras | Estado de turno + cierre automatico: enviar checklist + entradas via integracion | Modelo ShiftClosure + endpoints POST/GET, resumen de turno con entradas/incidentes |
 | B3a | Arquitectura | Etiquetas de cargo + rol auditor | Rol 'auditor' en User model, cargoLabel para cada usuario, ShiftRole flexible |
 | B4-1 | Observaciones | Eliminar backup.js.bak | Archivo eliminado |
 | B4-2 | Observaciones | Validacion de variables de entorno | Validación al inicio del server |
-| B4-3 | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption | 
+| B4-3 | Observaciones | Pruebas automatizadas backend | Jest config + test base encryption |
 | B4-4 | Observaciones | Consistencia en nombres (kebab-case) | Alcance acotado: backend/src/middleware (rate-limiter, request-id) + shims camelCase por compatibilidad |
 | B4-5 | Observaciones | Error tipografico "escalamiento" lateral | Commit d3112bd: Corregido en ambos menús |
 | B4-6 | Observaciones | Login, poder entrar con correo como con nombre de usuario | Backend: $or query, Frontend: label actualizado |
@@ -302,7 +80,615 @@ docker logs bitacora-backend --tail 100 | Select-String "📧|✅|❌|email"
 | B2f | Mejoras | Reportes: graficos | NGX-Charts: line chart (tendencia), pie chart (tipos), bar charts (usuarios/tags/servicios/log-sources), multi-line (comparación tags), heatmap (día vs hora). Backend: endpoints /tags-trend, /entries-by-logsource y /heatmap |
 | C5 | Cambios | Token de recuperación: reducir a 5 min | Reducido de 1h a 5 minutos en auth.js. Email y frontend actualizados con aviso temporal |
 | C6 | Cambios | Sesión JWT reducida a 4h | JWT reducido de 24h a 4h para admin/user, guest mantiene 2h. Aviso en login sobre duración |
-| B8 | ⏳ Pendiente | Mejoras | Edición masiva/individual de entradas (admin) | Backend implementado. Frontend: botón "Guardar Cambios" en dialog no responde al clickear. Revisar formulario submit handler |
+
+---
+
+## 🟠 B9 - Checklists distintos por tipo y por turno
+
+**Descripción:**
+Se requiere que el checklist pueda cambiar según:
+
+1. Tipo de check: `inicio` vs `cierre`.
+2. Turno activo: por ejemplo día vs noche.
+
+Ejemplo esperado:
+
+1. En turno día, checklist de inicio A y checklist de cierre B.
+2. En turno noche, checklist de inicio C y checklist de cierre D.
+
+**Análisis de situación actual (código):**
+
+1. `backend/src/routes/checklist.js` usa `getActiveChecklistSnapshot()` y toma una plantilla activa global para todos los casos.
+2. El endpoint `POST /api/checklist/check` valida `type` (`inicio`/`cierre`), pero no selecciona plantilla por tipo.
+3. `backend/src/models/WorkShift.js` ya tiene `checklistTemplateId`, pero es una sola referencia por turno, no separada por `inicio` y `cierre`.
+
+**Cómo se podría implementar:**
+
+1. Extender modelo de turnos en `backend/src/models/WorkShift.js` con:
+   - `checklistTemplateStartId`
+   - `checklistTemplateEndId`
+
+   Mantener `checklistTemplateId` solo para backward compatibility y migración.
+
+2. Ajustar `POST /api/checklist/check` en `backend/src/routes/checklist.js`:
+   - Detectar turno actual (ya existe `getCurrentShift()`).
+   - Si `type === 'inicio'`, cargar `checklistTemplateStartId`.
+   - Si `type === 'cierre'`, cargar `checklistTemplateEndId`.
+   - Fallback controlado: si no existe plantilla específica, usar la global activa.
+3. Actualizar CRUD de turnos en `backend/src/routes/work-shifts.js` para permitir guardar ambas plantillas.
+4. Frontend admin de turnos:
+   - En pantalla de turnos, agregar dos selectores de plantilla: Inicio y Cierre.
+   - Mostrar claramente qué combinación aplica por turno.
+5. Migración de datos:
+   - Para turnos existentes, copiar `checklistTemplateId` hacia ambos campos nuevos.
+   - Evitar corte operativo.
+6. Auditoría y trazabilidad:
+   - Guardar en `ShiftCheck` el template realmente usado (`checklistId`, `checklistName` ya existen).
+   - Agregar test de integración para validar selección correcta por turno + tipo.
+
+**Impacto esperado:**
+Mejora operativa alta. Permite control más fino por contexto de turno y reduce errores de checklist no pertinente.
+
+---
+
+## 🟠 B10 - Branding: favicon configurable
+
+**Descripción:**
+Actualmente se puede configurar logo, pero falta la configuración de favicon.
+
+**Problema observado:**
+El logo no siempre sirve como ícono de pestaña porque puede ser grande o no tener proporción/legibilidad para favicon.
+
+**Cómo se podría implementar:**
+
+1. Backend:
+   - Agregar campo `faviconUrl` en `AppConfig`.
+   - Reutilizar flujo de upload con endpoint dedicado para favicon (validar tipo y tamaño).
+2. Frontend (Branding):
+   - Agregar bloque de carga de favicon en la misma pantalla de branding.
+   - Mostrar preview y recomendaciones (`.ico` o `.png` cuadrado 32x32/64x64).
+3. Frontend runtime:
+   - Actualizar dinámicamente `<link rel=\"icon\">` con `faviconUrl`.
+   - Fallback al favicon por defecto si no existe configuración.
+4. Validaciones:
+   - Máximo tamaño sugerido: 256KB.
+   - Tipos permitidos: `image/x-icon`, `image/png`.
+   - Mantener logo y favicon como elementos separados.
+
+**Impacto esperado:**
+Mejor branding y mejor visibilidad del sistema en pestañas/favoritos del navegador.
+
+---
+
+## 🟠 B11 - Auditoría incompleta de correos y acciones de usuarios/admin
+
+**Descripción:**
+El módulo `Logs de Auditoría` no está registrando suficiente trazabilidad operativa.
+
+**Problemas reportados:**
+
+1. No se ve claramente si un correo fue enviado o falló.
+2. No se ven destinatarios de los correos enviados.
+3. No quedan trazadas de forma consistente las acciones de administradores (crear/editar/eliminar/configurar).
+4. Tampoco se ven acciones relevantes de usuarios normales (por ejemplo, generar reportes).
+
+**Cómo se podría implementar:**
+
+1. Correo / SMTP:
+   - Registrar eventos `mail.send.success` y `mail.send.fail`.
+   - Guardar metadata mínima: `to` (enmascarado parcial si aplica), `subject`, `template`, `status`, `error`.
+2. Acciones administrativas:
+   - Estandarizar auditoría en endpoints admin (`create/update/delete/config changes`).
+   - Guardar `actor`, `target`, `action`, `before/after` (solo campos no sensibles).
+3. Acciones de usuario normal:
+   - Auditar acciones de alto valor: generar/exportar reportes, operaciones críticas de checklist/entradas.
+4. UI de Logs:
+   - Filtro por tipo de evento (`mail`, `admin`, `user`).
+   - Columna de resultado (`success/fail`) y detalles de contexto.
+5. Seguridad de auditoría:
+   - Nunca guardar secretos (password, tokens, credenciales SMTP).
+   - Retención configurable y paginación estable.
+
+**Impacto esperado:**
+Mayor trazabilidad operativa y capacidad de investigación/auditoría ante incidentes y cambios en producción.
+
+---
+
+## 🟠 B12 - Huevo de pascua en login por combinaciones específicas
+
+**Descripción:**
+Si alguien intenta login con combinaciones concretas, debe dispararse un efecto visual (pantalla negra + imagen).
+
+**Combinaciones solicitadas:**
+
+1. `admin/admin`
+2. `1234/1234`
+3. `admin/1234`
+4. `1234/admin`
+5. `password/password`
+6. `admin/password`
+7. `root/root`
+8. `superuser/superuser`
+
+**Cómo se podría implementar:**
+
+1. Definir colección en BD (ej. `EasterEggRule`) con:
+   - `scope` (`login`, `entry`)
+   - `triggerType` (`credentials`, `hashtag`)
+   - `pattern` / `username` / `password`
+   - `payload` (`blackout`, `imageUrl`, `durationMs`)
+   - `enabled`
+2. Backend login:
+   - Antes de responder error de credenciales, consultar reglas activas de `scope=login`.
+   - Si coincide, devolver flag controlada (`easterEgg: {...}`).
+3. Frontend login:
+   - Si respuesta trae `easterEgg`, aplicar clase fullscreen negra y renderizar imagen.
+   - Resetear estado al cerrar o reintentar.
+4. No hardcodear reglas en frontend ni backend:
+   - Todo configurable desde BD.
+
+**Impacto esperado:**
+Feature lúdica configurable sin exposición evidente en código fuente.
+
+---
+
+## 🟠 B13 - Huevo de pascua en entradas por hashtag `#bender`
+
+**Descripción:**
+Si el usuario escribe `#Bender` o `#bender` en el campo de entrada, mostrar imagen fullscreen de Bender.
+
+**Cómo se podría implementar:**
+
+1. Reusar el sistema de reglas de `B12` con `scope=entry` y `triggerType=hashtag`.
+2. Detectar hashtag en frontend (o backend + respuesta enriquecida) sin romper guardado normal.
+3. Activar overlay visual fullscreen con imagen/animación configurable.
+4. Opcional:
+   - limitar frecuencia con cooldown,
+   - permitir desactivar por configuración.
+
+**Impacto esperado:**
+Mejora lúdica sin afectar flujo principal.
+
+---
+
+## 🔐 AUDITORÍA DE SEGURIDAD (2026-02-07)
+
+### 🔴 SEC-CRIT-001 - Exposición de credenciales SMTP a cualquier usuario autenticado + secreto en texto plano
+
+**Severidad:** CRÍTICA
+**Evidencia técnica:**
+
+- `backend/src/routes/config.js:45` permite `GET /api/config` con solo `authenticate` (sin `authorize('admin')`).
+- `backend/src/routes/config.js:59` responde el objeto `config` completo.
+- `backend/src/models/AppConfig.js:98` define `smtpConfig`.
+- `backend/src/models/AppConfig.js:115` almacena `smtpConfig.pass` sin cifrado.
+
+**Impacto:**
+
+- Cualquier usuario autenticado (incluido `guest`) puede leer credenciales SMTP.
+- Exfiltración de cuenta de correo corporativa y pivote a otros sistemas.
+
+**Cómo lo arreglaría:**
+
+1. Mover secretos SMTP fuera de `AppConfig` y usar solo `SmtpConfig` cifrado.
+2. Cambiar `GET /api/config` a respuesta sanitizada para no-admin (sin secretos).
+3. Crear `GET /api/config/admin` exclusivo para admin con datos sensibles mínimos.
+4. Migrar secretos existentes y rotar inmediatamente contraseña SMTP comprometida.
+
+---
+
+### 🔴 SEC-CRIT-002 - Flujo de recuperación de contraseña vulnerable (host header poisoning + URL insegura + fuga de token)
+
+**Severidad:** CRÍTICA
+**Evidencia técnica:**
+
+- `backend/src/routes/auth.js:212` construye host desde `x-forwarded-host`/`host` (controlable por atacante).
+- `backend/src/routes/auth.js:217` fuerza URL `http://` (sin TLS).
+- `backend/src/routes/auth.js:275` en modo desarrollo devuelve `resetToken` y `resetUrl` por API.
+- `docker-compose.yml:40` fija `NODE_ENV: development` en despliegue estándar.
+
+**Impacto:**
+
+- Toma de cuenta por manipulación de link de reset.
+- Exposición del token de reset en respuesta API cuando falla SMTP.
+- Intercepción del token por transporte sin HTTPS.
+
+**Cómo lo arreglaría:**
+
+1. Eliminar uso de `Host` de request y usar solo `FRONTEND_URL` fijo en entorno.
+2. Exigir HTTPS para links de recuperación.
+3. Nunca devolver `resetToken` en respuestas HTTP (ni en desarrollo).
+4. Agregar rate limit específico para `/forgot-password` y `/reset-password`.
+5. Invalidar sesiones activas al completar reset de contraseña.
+
+---
+
+### 🔴 SEC-CRIT-003 - Renovación indefinida de JWT expirados
+
+**Severidad:** CRÍTICA
+**Evidencia técnica:**
+
+- `backend/src/routes/auth.js:154` endpoint `/auth/refresh` sin sesión de refresh separada.
+- `backend/src/routes/auth.js:162` usa `jwt.verify(..., { ignoreExpiration: true })`.
+
+**Impacto:**
+
+- Un token robado, aunque expire, puede renovarse indefinidamente.
+- Persistencia de sesión comprometida y difícil revocación.
+
+**Cómo lo arreglaría:**
+
+1. Implementar refresh token rotatorio (almacenado hasheado en DB, con `jti`).
+2. No aceptar access tokens expirados para refresh.
+3. Agregar revocación por usuario/dispositivo y expiración absoluta de sesión.
+4. Invalidar refresh tokens en cambio de contraseña, logout y desactivación de usuario.
+
+---
+
+### 🔴 SEC-CRIT-004 - RBAC incompleto: usuarios `guest` pueden ejecutar acciones de escritura
+
+**Severidad:** CRÍTICA
+**Evidencia técnica:**
+
+- `backend/src/models/User.js:7` documenta guest como solo lectura.
+- `backend/src/middleware/auth.js:78` existe middleware `notGuest` pero no se usa.
+- `backend/src/routes/entries.js:34` (`POST /api/entries`) solo exige `authenticate`.
+- `backend/src/routes/entries.js:257` (`PUT /api/entries/:id`) solo exige `authenticate`.
+- `backend/src/routes/entries.js:332` (`DELETE /api/entries/:id`) solo exige `authenticate`.
+- `backend/src/routes/checklist.js:442` (`POST /api/checklist/check`) solo exige `authenticate`.
+
+**Impacto:**
+
+- Escalada de privilegios funcional: invitados pueden alterar datos operativos.
+- Riesgo de integridad en bitácora y reportes SOC.
+
+**Cómo lo arreglaría:**
+
+1. Aplicar `notGuest` en todos los endpoints de escritura.
+2. Definir matriz RBAC centralizada por endpoint/rol.
+3. Agregar tests automáticos de autorización por rol (`admin/user/auditor/guest`).
+
+---
+
+### 🔴 SEC-CRIT-005 - Protección anti brute-force desactivada en despliegue actual
+
+**Severidad:** CRÍTICA
+**Evidencia técnica:**
+
+- `backend/src/middleware/rate-limiter.js:32` y `backend/src/middleware/rate-limiter.js:42` deshabilitan límites fuera de producción.
+- `backend/src/middleware/rate-limiter.js:25` define `loginLimiter` pero no se aplica en rutas.
+- `docker-compose.yml:40` ejecuta backend con `NODE_ENV: development`.
+
+**Impacto:**
+
+- Login expuesto a fuerza bruta/credential stuffing en entorno desplegado.
+- Mayor probabilidad de acceso no autorizado por contraseñas débiles/reutilizadas.
+
+**Cómo lo arreglaría:**
+
+1. Cambiar despliegue a `NODE_ENV=production`.
+2. Aplicar `loginLimiter` explícitamente en `POST /api/auth/login`.
+3. Añadir bloqueo progresivo por usuario + IP (backoff/lockout temporal).
+4. Monitorear y alertar intentos fallidos anómalos.
+
+---
+
+### 🟠 SEC-HIGH-006 - Credenciales por defecto débiles en bootstrap y scripts
+
+**Severidad:** ALTA
+**Evidencia técnica:**
+
+- `docker-compose.yml:47` usa fallback `ADMIN_PASSWORD:-Admin123!`.
+- `backend/src/scripts/seed.js:11` fallback `Admin123!`.
+- `backend/scripts/create-users.js:25` y `backend/scripts/create-users.js:32` usan `bitacora123`.
+- `backend/scripts/create-users.js:16` incluye URI con credenciales por defecto.
+
+**Impacto:**
+
+- Compromiso rápido por ataques de password spraying.
+- Riesgo alto en instalaciones nuevas o mal configuradas.
+
+**Cómo lo arreglaría:**
+
+1. Eliminar todos los fallbacks de contraseña por defecto.
+2. Fallar el arranque si faltan credenciales fuertes.
+3. Forzar cambio de contraseña en primer login de bootstrap.
+4. Retirar scripts con credenciales hardcodeadas del flujo normal.
+
+---
+
+### 🟠 SEC-HIGH-007 - Riesgo de robo de JWT por cadena XSS (sin CSP + token en localStorage)
+
+**Severidad:** ALTA
+**Evidencia técnica:**
+
+- `backend/src/server.js:56` desactiva CSP (`contentSecurityPolicy: false`).
+- `frontend/src/app/services/auth.service.ts:116` guarda JWT en `localStorage`.
+- `frontend/src/app/pages/main/report-generator/report-generator.component.ts:302` usa `container.innerHTML = html` con contenido no escapado.
+
+**Impacto:**
+
+- Si se ejecuta XSS en cliente, el atacante puede extraer JWT y secuestrar sesión.
+
+**Cómo lo arreglaría:**
+
+1. Migrar autenticación a cookie `HttpOnly + Secure + SameSite=Strict`.
+2. Habilitar CSP estricta en backend (sin `unsafe-inline`).
+3. Eliminar asignaciones directas a `innerHTML` o sanitizar con allowlist robusta.
+4. Revisar componentes que generan HTML dinámico y escapar contenido de usuario.
+
+---
+
+### 🟠 SEC-HIGH-008 - Posible Path Traversal en manejo de backups
+
+**Severidad:** ALTA
+**Evidencia técnica:**
+
+- `backend/src/routes/backup.js:299` usa `path.join(backupDir, filename)` sin sanitización.
+- `backend/src/routes/backup.js:462` usa `path.join(backupDir, id)` sin sanitización.
+
+**Impacto:**
+
+- Lectura/borrado de archivos fuera de `backups/` si se inyecta `../`.
+- Facilita exfiltración de secretos del host tras comprometer cuenta admin.
+
+**Cómo lo arreglaría:**
+
+1. Aceptar solo nombres con regex estricta (`^backup-[a-zA-Z0-9._-]+\\.json$`).
+2. Resolver ruta con `path.resolve` y validar prefijo obligatorio de `backupDir`.
+3. Rechazar cualquier entrada con separadores de ruta o `..`.
+
+---
+
+## 🔴 BUG CRÍTICO DETALLE: Emails no llegan (B-CRÍTICO-001)
+
+### Síntoma
+
+Usuario: "ningun correo llego ahora y antes si llegaban"
+
+- Cierre checklist se registra exitosamente en BD
+- Email NO llega a la bandeja (usuario.demo@example.com)
+- No hay error en frontend, parece exitoso
+- Backend logs muestran: `❌ ERROR: SMTP configuration missing: Please configure email settings in Settings > Configuración SMTP`
+- **PERO: Usuario confirmó desde el inicio: "la config existe en Settings, está conectada, dice 'Conectado'"**
+  - El usuario tenía razón todo el tiempo
+  - El problema NO era falta de config
+  - El problema era que el backend LEÍA config del lugar equivocado
+
+### Root Cause Identificado
+
+**Mismatch de fuentes de configuración SMTP:**
+
+⚠️ **NOTA IMPORTANTE DE DIAGNÓSTICO:**
+El usuario reportó correctamente desde el inicio: "la config SMTP está en Settings, dice 'Conectado'". El error de diagnóstico fue asumir que la config faltaba en base de datos. La realidad:
+
+- ✅ Config SMTP SÍ existe en AppConfig.smtpConfig
+- ✅ El status en UI SÍ muestra "Conectado"
+- ❌ Backend buscaba en lugar equivocado (modelo SmtpConfig)
+- **Conclusión:** El usuario tenía razón, el código estaba roto
+
+1. **Frontend Settings** (UI): Guarda config SMTP en `AppConfig.smtpConfig`
+
+   ```javascript
+   // backend/src/routes/config.js línea 277
+   const config = await AppConfig.findOne().select('emailReportConfig smtpConfig').lean();
+   // Retorna: { smtpConfig: { host, port, secure, user, pass, from } }
+   ```
+
+2. **Backend email.js** (antes del fix): Intentaba leer de `SmtpConfig` (colección separada)
+
+   ```javascript
+   // backend/src/utils/email.js línea 28 (VIEJO - ROTO)
+   const smtpConfig = await SmtpConfig.findOne().lean();
+   // Retornaba null porque esa colección NO existe / NO se usa
+   ```
+
+3. **Resultado**:
+   - `getSMTPConfig()` retorna `null` a pesar de que config EXISTE
+   - `sendEmail()` falla con error "SMTP configuration missing"
+   - Email NO se envía
+   - **Pero el checklist SÍ se registra** (email es asincrónico, no bloquea)
+
+### Timeline del Bug
+
+1. **Fase 1:** User configuró SMTP en UI Settings (Office 365: usuario.demo@example.com)
+   - Guardó en `AppConfig.smtpConfig` ✅
+   - Emails funcionaban cuando se activó sendChecklistEmail() en POST checklist
+
+2. **Fase 2:** Se cambió arquitectura de emails
+   - Se agregó `sendShiftReport()` para enviar UN email al cierre (no múltiples)
+   - Se leyó código viejo que buscaba en modelo `SmtpConfig` ❌
+   - Se comentó `sendChecklistEmail()` para no duplicar emails
+
+3. **Fase 3:** Email automation se rompió
+   - Código nuevo buscaba en `SmtpConfig` (no existe)
+   - Config real está en `AppConfig.smtpConfig`
+   - Resultado: "no hay config" → no envía → email no llega
+   - Bug no fue evidente porque:
+     - Frontend muestra "ok" en checklist
+     - Email falla en backend (asincrónico)
+     - Usuario solo se da cuenta después de esperar al email
+
+### Diagnóstico Realizado
+
+```bash
+# Backend logs muestran claramente:
+[2026-02-04 00:50:36.259 -0300] WARN: Error reading SMTP config from DB:
+[2026-02-04 00:50:36.260 -0300] WARN: No SMTP configuration found in DB or environment
+[2026-02-04 00:50:36.260 -0300] ERROR: SMTP configuration missing: Please configure email settings...
+```
+
+**Investigación:**
+
+- Config SMTP guardada en `AppConfig.smtpConfig` ✅ (verificado en UI)
+- Model `SmtpConfig` existe pero NO se usa ❌
+- Routes en `config.js` usan `AppConfig.smtpConfig` ✅
+- Routes en `smtp.js` usan `SmtpConfig` (legacy, no usado) ❌
+
+### Fix Aplicado
+
+**Cambio en `backend/src/utils/email.js` línea 1-50:**
+
+```diff
+- const SmtpConfig = require('../models/SmtpConfig');
++ const AppConfig = require('../models/AppConfig');
+
+  async function getSMTPConfig() {
+    try {
+-     const smtpConfig = await SmtpConfig.findOne().lean();
++     const appConfig = await AppConfig.findOne().select('smtpConfig').lean();
++     const smtpConfig = appConfig?.smtpConfig;
+
+      if (smtpConfig) {
++       logger.info('📧 SMTP config found in AppConfig', { user: smtpConfig.user });
+        const config = {
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure === true,
+-         user: smtpConfig.username,
+-         pass: decrypt(smtpConfig.password),
+-         from: smtpConfig.senderEmail
++         user: smtpConfig.user,
++         pass: smtpConfig.pass,
++         from: smtpConfig.from || smtpConfig.user
+        };
+```
+
+**Cambios:**
+
+1. ✅ Cambiar import: `SmtpConfig` → `AppConfig`
+2. ✅ Cambiar query: `SmtpConfig.findOne()` → `AppConfig.findOne().select('smtpConfig')`
+3. ✅ Acceder campo correcto: `appConfig.smtpConfig`
+4. ✅ Usar nombres de campo correctos: `user`/`pass` (no `username`/`password`)
+5. ✅ NO desencriptar (config en AppConfig está en texto plano desde UI)
+6. ✅ Agregar logging con emoji 📧 para debugear
+
+### ✅ Actualizaciones posteriores (formato + contenido del correo)
+
+**Problemas reportados:**
+
+- Correo con letras blancas/fondo blanco (Outlook).
+- Checklist mostraba "No completado" aunque estaba completado.
+- Entradas incluían TODO el día y salían "Sin descripción".
+- Se truncaba el texto de entradas largas.
+
+**Cambios aplicados (2026-02-04):**
+
+1. ✅ `backend/src/utils/shift-report.js` usa **services + createdAt** reales de ShiftCheck.
+2. ✅ Entradas filtradas **solo entre inicio y cierre** (no todo el día).
+3. ✅ Contenido de entradas ahora usa `entry.content` completo (sin truncado).
+4. ✅ HTML del correo convertido a **tablas + estilos inline** (mejor soporte Outlook).
+5. ✅ Forzado de color negro absoluto + `mso-*` + `-webkit-text-fill-color`.
+6. ✅ Se agrega **versión text/plain completa** como fallback.
+7. ✅ Badge OK/ERROR con fondo verde/rojo (no solo texto).
+8. ✅ Contenedor más ancho (max-width: 1100px).
+
+**Resultado validado:** En Outlook ya se ve correctamente el texto (no blanco).
+
+### Validación del Fix
+
+**Requisitos para validar:**
+
+1. ✅ **SMTP configurado en UI Settings** - VERIFICADO
+   - **URL:** http://localhost:4200/main/settings → pestaña "📧 Reenvío de Información"
+   - **Estado en UI:** "✅ Conectado"
+   - **Provider:** Office 365
+   - **Host:** smtp.office365.com
+   - **Port:** 587
+   - **User:** usuario.demo@example.com
+   - **Pass:** (guardado y encriptado en BD)
+   - **From:** usuario.demo@example.com
+   - **Verificación:** Usuario confirmó "está ahi mierda y sale conectado" → Config EXISTE en BD ✅
+   - **Ubicación en BD:** `db.appconfigs.findOne()` → campo `smtpConfig` contiene:
+
+     ```json
+     {
+       "host": "smtp.office365.com",
+       "port": 587,
+       "secure": false,
+       "user": "usuario.demo@example.com",
+       "pass": "(valor encriptado)",
+       "from": "usuario.demo@example.com"
+     }
+     ```
+
+2. Backend debe encontrar config:
+
+   ```bash
+   docker logs bitacora-backend --tail 50 | grep "📧"
+   # Buscar: "📧 SMTP config found in AppConfig"
+   # Buscar: "📧 Sending mail with SMTP"
+   ```
+
+3. Cierre checklist debe enviar email:
+   - UI: http://localhost:4200/main/shifts
+   - Click en turno → Checklist → Registrar "cierre"
+   - Esperar 3-5 segundos
+   - Logs deben mostrar: "✅ EMAIL SENT SUCCESSFULLY"
+
+4. Email debe llegar a bandeja:
+   - usuario.demo@example.com debe recibir email
+   - Asunto: "Reporte SOC [fecha] [turno]"
+   - Body: Checklist inicio + cierre + entradas
+
+### Testing Post-Fix
+
+```bash
+# 1. Restart backend
+docker-compose restart backend
+
+# 2. Esperar 5 segundos
+sleep 5
+
+# 3. Ver logs de startup
+docker logs bitacora-backend --tail 20
+
+# 4. IR a UI y registrar cierre checklist
+
+# 5. Ver logs nuevamente
+docker logs bitacora-backend --tail 100 | Select-String "📧|✅|❌|email"
+```
+
+**Marcadores esperados:**
+
+- `📧 Reading SMTP config FROM DATABASE (AppConfig.smtpConfig)...`
+- `📧 SMTP config found in AppConfig`
+- `📧 SMTP config LOADED FROM DB`
+- `📧 [sendEmail] Starting email send process`
+- `✅ EMAIL SENT SUCCESSFULLY` ← ÉXITO
+
+**Si NO aparecen estos marcadores:**
+
+- Config SMTP no guardada en UI Settings
+- O guardar config está fallando
+- Revisar `backend/src/routes/config.js` PUT endpoint
+
+### Archivos Modificados
+
+- ✅ `backend/src/utils/email.js` - Cambiar fuente de config
+- ✅ `ISSUES.md` - Documentar bug y fix (este documento)
+- ⏳ Pendiente: Validación manual en vivo
+
+### Impacto
+
+- **Antes del fix**: Emails NO llegan → Feature crítica rota
+- **Después del fix**: Emails deben llegar → Feature restaurada
+- **Si falla la validación**: Significa que hay otro problema (ej: SMTP config no guardada correctamente en UI)
+
+### Lecciones Aprendidas
+
+1. **Consistencia de fuentes**: Backend debe leer de mismo lugar que frontend escribe
+2. **Falta de tests**: Sin tests, este bug hubiera sido detectado automáticamente
+3. **Logging insuficiente**: Agregar emoji markers para fácil identificación en prod
+4. **Cambios asincronicos**: Errores en tasks background no alertan al usuario
+5. **Migración de modelos**: Cuando se cambian modelos, actualizar TODOS los lugares que los usan
+
+Pendientes manuales post-fix:
+
+- [ ] Usuario valida que emails llegan post-fix
+- [ ] Agregar tests automatizados para email sending
+- [ ] Documentar en SETUP.md el flujo de configuración SMTP
+- [ ] Agregar health check endpoint que valide SMTP está configurado
 
 ## **P1** **Prioridad #1: Estrategia Detallada de Actualización a Angular 20**
 
@@ -319,16 +705,20 @@ docker logs bitacora-backend --tail 100 | Select-String "📧|✅|❌|email"
 La actualización se realizará de forma incremental, versión por versión, para minimizar riesgos y facilitar la depuración de "breaking changes" en cada etapa.
 
 #### Fase 0: Preparación
+
 1.  **F0-1** **Crear Rama Aislada:** Crear una nueva rama en Git dedicada exclusivamente a la actualización (ej. `feature/angular-20-upgrade`).
 2.  **F0-2** **Limpieza del Entorno:** Eliminar `node_modules` y `package-lock.json` para asegurar un entorno de dependencias limpio. Ejecutar `npm install` para verificar que el proyecto base está estable.
 3.  **F0-3** **Verificar Pruebas (si existen):** Ejecutar `ng test` para asegurar que el estado actual es conocido y funcional.
 
 #### Fase 1: Actualización a Angular 18
+
 1.  **F1-1** **Ejecutar Comandos de Actualización:**
+
     ```bash
     ng update @angular/core@18 @angular/cli@18
     ng update @angular/material@18
     ```
+
 2.  **F1-2** **Análisis y Migración:**
     - Revisar la salida de la terminal en busca de advertencias y errores.
     - `ng update` aplicará migraciones automáticas. Es crucial revisar los cambios realizados.
@@ -352,11 +742,12 @@ Angular 19.2.x con el nuevo builder `@angular/build:application` tenía un bug d
 Se utilizó el schematic oficial de Angular para migrar automáticamente:
 ```bash
 npx ng generate @angular/core:standalone --mode=convert-to-standalone
-npx ng generate @angular/core:standalone --mode=prune-ng-modules  
+npx ng generate @angular/core:standalone --mode=prune-ng-modules
 npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 ```
 
 **Resultado:**
+
 - ✅ 20+ componentes migrados a `standalone: true`
 - ✅ Eliminado `shared-components.module.ts`
 - ✅ Actualizado `main.ts` a `bootstrapApplication`
@@ -365,20 +756,22 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - ✅ Path desbloqueado para Angular 20
 
 **Referencias:**
+
 - https://angular.dev/tools/cli/build-system-migration
 - https://github.com/angular/angular-cli/issues (tracking del bug)
 
 ---
 
 1.  **F2-1** **Ejecutar Comandos de Actualización:**
+
     ```bash
     ng update @angular/core@19 @angular/cli@19
     ng update @angular/material@19
     ```
-    **Estado:** ✅ Ejecutado exitosamente  
-    **Resultado:** ❌ Bug detectado en compilación  
+    **Estado:** ✅ Ejecutado exitosamente
+    **Resultado:** ❌ Bug detectado en compilación
     **Revertido:** ✅ Proyecto vuelto a Angular 18.2.x
-    
+
 2.  **F2-2** **Análisis y Migración:**
     - ❌ Bloqueado por bug del compilador
     - Migraciones automáticas se aplicaron pero el build falla
@@ -392,54 +785,67 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 #### Fase 3: Actualización a Angular 20 (Versión Final) ✅ **COMPLETADO**
 
 1.  **F3-1** **Ejecutar Comandos de Actualización:**
+
     ```bash
     ng update @angular/core@20 @angular/cli@20
     ng update @angular/material@20
     ```
     **Estado:** ✅ Ejecutado exitosamente
+
     - Angular Core: 20.3.16
     - Angular CLI: 20.3.15
     - Material/CDK: 20.2.14
     - TypeScript: 5.9.3
-    
+
 2.  **F3-2** **Análisis y Migración:**
+
     ✅ Migraciones automáticas aplicadas:
+
     - Workspace generation defaults actualizados
     - Imports de server rendering verificados (sin cambios)
     - moduleResolution verificado (ya en 'bundler')
-    
+
 3.  **F3-3** **Revisión Manual de Breaking Changes:**
+
     ✅ Revisado:
+
     - Signal-based features: No requieren cambios inmediatos
     - afterRender API: Funciona correctamente con Material 20
     - TypeScript 5.9.3: Compatible con el código actual
-    
+
 4.  **F3-4** **Verificación Final:**
+
     ✅ Build exitoso
     ⚠️ Solo 1 advertencia menor: EntryDetailDialogComponent no usado en template (no afecta funcionamiento)
     Bundle size: Similar a versión anterior (~1.28 MB)
-    
-5.  **F3-5** **Commit:** 
+
+5.  **F3-5** **Commit:**
     - Commit c102e7d: Angular 20.3.16
     - Commit fa45c38: Material 20.2.14
 
 #### Fase 4: Post-Actualización ✅ **COMPLETADO**
 
 1.  **F4-1** **Revisión de Dependencias Externas:**
+
     ✅ Verificado:
+
     - `animejs@3.2.2`: Funcionando correctamente
     - `@types/animejs@3.1.12`: Tipos OK
     - Todas las dependencias externas compatibles
-    
-2.  **F4-2** **Limpieza de Código:** 
+
+2.  **F4-2** **Limpieza de Código:**
+
     ✅ Realizado:
+
     - Código standalone limpio
-    - NgModules innecesarios eliminados  
+    - NgModules innecesarios eliminados
     - Solo 1 advertencia menor pendiente (no crítica)
     - Sin código temporal o soluciones parche
-    
-3.  **F4-3** **Merge:** 
+
+3.  **F4-3** **Merge:**
+
     ⏳ Pendiente de decisión del equipo
+
     - Rama `feature/angular-20-upgrade` estable y lista
     - Todos los commits documentados
     - Build verificado
@@ -450,19 +856,17 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 
 ### ✅ Upgrade Completado Exitosamente
 
-**Versión Inicial:** Angular 17.0.0  
-**Versión Final:** Angular 20.3.16  
+**Versión Inicial:** Angular 17.0.0
+**Versión Final:** Angular 20.3.16
 
 ### 📊 Versiones Actualizadas
 
-| Paquete | Antes | Después | Estado |
-|---------|-------|---------|--------|
-| @angular/core | 17.0.0 | 20.3.16 | ✅ |
-| @angular/cli | 17.x | 20.3.15 | ✅ |
-| @angular/material | 17.x | 20.2.14 | ✅ |
-| @angular/cdk | 17.x | 20.2.14 | ✅ |
-| TypeScript | 5.2.x | 5.9.3 | ✅ |
-| zone.js | 0.14.x | 0.15.1 | ✅ |
+- @angular/core: 17.0.0 -> 20.3.16 ✅
+- @angular/cli: 17.x -> 20.3.15 ✅
+- @angular/material: 17.x -> 20.2.14 ✅
+- @angular/cdk: 17.x -> 20.2.14 ✅
+- TypeScript: 5.2.x -> 5.9.3 ✅
+- zone.js: 0.14.x -> 0.15.1 ✅
 
 ### 🔧 Cambios Arquitectónicos Mayores
 
@@ -470,11 +874,11 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
    - Convertidos 20+ componentes a arquitectura standalone
    - Eliminados NgModules innecesarios
    - Actualizado bootstrap a `bootstrapApplication`
-   
+
 2. **Nuevo Build System**
    - Migrado a `@angular/build:application` builder
    - Output path actualizado a `dist/bitacora-soc`
-   
+
 3. **Dependencias**
    - animejs: Funciona correctamente
    - Material Components: Todos funcionando
@@ -508,6 +912,7 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 ### 1. Problemas y Depuración (Bugs)
 
 #### **B1a** ✅ **COMPLETADO - Problemas de visibilidad en el tema oscuro (Dark Mode)**
+
 - **Descripción Original:** Al activar el tema oscuro, varios textos se volvían ilegibles debido a un bajo contraste. Esto afectaba elementos generales de la interfaz y era particularmente notorio en el menú desplegable para seleccionar el tema.
 - **Solución Aplicada (Commit d3112bd + da9e5d1):**
   - Primera ronda: Corregidos mat-mdc-menu-item y mat-mdc-option con colores específicos para dark mode
@@ -526,11 +931,13 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
 - **Estado:** Todos los problemas de contraste identificados en screenshots ahora resueltos
 
 #### **B1b** ✅ **COMPLETADO - Las notas se guardan correctamente**
+
 - **Reporte Original:** El contenido introducido en las notas no se guardaba.
 - **Verificación:** Código de autoguardado funcionando correctamente (commit d3112bd).
 - **Estado:** Confirmado funcionando. Autoguardado cada 3 segundos operando sin errores.
 
 #### **B1c** **Versión no se muestra en sidebar**
+
 - **Problema:** El placeholder `__APP_VERSION__` en `frontend/src/environments/environment.prod.ts` no se reemplaza durante el build Docker, quedando como texto literal en lugar de mostrar la versión real.
 - **Síntomas:** En la barra de herramientas del sidebar izquierdo dice "Bitácora SOC VDEV" pero debería mostrar "Bitácora SOC 1.1.0" (o la versión correspondiente).
 - **Causa:** El script de build en `frontend/Dockerfile` usa `sed` para reemplazar `__APP_VERSION__`, pero el patrón no coincide porque:
@@ -551,6 +958,7 @@ npx ng generate @angular/core:standalone --mode=standalone-bootstrap
   - Después: "Bitácora SOC 1.1.0" (en prod) o "Bitácora SOC dev" (en dev)
 
 #### **B2p** **Configuración TLS/SSL en backend (sin reconstruir imagen)**
+
 - **Objetivo:** Permitir que el admin pueda cargar certificados SSL/TLS en tiempo de ejecución (sin rebuild de Docker) para habilitar HTTPS en el backend. Similar a Portainer.
 - **Casos de uso:**
   - Desarrollo local: carga de certificados autofirmados (self-signed)
@@ -619,7 +1027,7 @@ let server = null;
 
 const initializeServer = async () => {
   const tlsConfig = await TlsConfig.findOne();
-  
+
   if (tlsConfig?.enabled && tlsConfig?.certificatePem && tlsConfig?.privateKeyPem) {
     try {
       const { decrypt } = require('./utils/encryption');
@@ -627,10 +1035,10 @@ const initializeServer = async () => {
         cert: decrypt(tlsConfig.certificatePem),
         key: decrypt(tlsConfig.privateKeyPem)
       };
-      
+
       server = https.createServer(httpsOptions, app);
       const httpsPort = tlsConfig.httpsPort || 8443;
-      
+
       server.listen(httpsPort, HOST, () => {
         console.log(`✅ HTTPS activado en puerto ${httpsPort}`);
       });
@@ -663,19 +1071,19 @@ const { X509Certificate } = require('crypto');
 const validateCertificates = (certPem, keyPem) => {
   try {
     // Validar formato PEM
-    if (!certPem.includes('-----BEGIN CERTIFICATE-----') || 
+    if (!certPem.includes('-----BEGIN CERTIFICATE-----') ||
         !keyPem.includes('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('Formato PEM inválido');
     }
-    
+
     // Parsear certificado
     const cert = new X509Certificate(certPem);
-    
+
     // Extraer datos
     const now = new Date();
     const validFrom = new Date(cert.validFrom);
     const validUntil = new Date(cert.validTo);
-    
+
     // Validar fechas
     if (now < validFrom) {
       throw new Error('Certificado aún no es válido');
@@ -683,13 +1091,13 @@ const validateCertificates = (certPem, keyPem) => {
     if (now > validUntil) {
       throw new Error('Certificado expirado');
     }
-    
+
     // Validar que falten menos de 30 días (warning)
     const daysLeft = Math.ceil((validUntil - now) / (1000 * 60 * 60 * 24));
     if (daysLeft < 30) {
       console.warn(`⚠️ Certificado expirará en ${daysLeft} días`);
     }
-    
+
     return {
       valid: true,
       issuer: cert.issuer,
@@ -716,38 +1124,38 @@ const TlsConfig = require('../models/TlsConfig');
 const { validateCertificates } = require('../utils/certificateValidator');
 const { encrypt, decrypt } = require('../utils/encryption');
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 1024 * 1024 } // 1MB max
 });
 
 // POST /api/config/tls - Subir y validar certificados
-router.post('/tls', 
-  authenticate, 
-  authorize('admin'), 
+router.post('/tls',
+  authenticate,
+  authorize('admin'),
   upload.fields([{ name: 'certificate' }, { name: 'privateKey' }]),
   async (req, res) => {
     try {
       const certFile = req.files.certificate?.[0];
       const keyFile = req.files.privateKey?.[0];
-      
+
       if (!certFile || !keyFile) {
         return res.status(400).json({ message: 'Debes subir certificado y private key' });
       }
-      
+
       const certPem = certFile.buffer.toString('utf-8');
       const keyPem = keyFile.buffer.toString('utf-8');
-      
+
       // Validar certificados
       const validation = validateCertificates(certPem, keyPem);
       if (!validation.valid) {
         return res.status(400).json({ message: validation.error });
       }
-      
+
       // Guardar encriptado
       let tlsConfig = await TlsConfig.findOne();
       if (!tlsConfig) tlsConfig = new TlsConfig();
-      
+
       tlsConfig.certificatePem = encrypt(certPem);
       tlsConfig.privateKeyPem = encrypt(keyPem);
       tlsConfig.certificateValidFrom = validation.validFrom;
@@ -756,9 +1164,9 @@ router.post('/tls',
       tlsConfig.certificateSubject = validation.subject;
       tlsConfig.certificateError = null;
       tlsConfig.lastUpdatedBy = req.user._id;
-      
+
       await tlsConfig.save();
-      
+
       res.json({
         message: 'Certificados subidos exitosamente',
         validUntil: validation.validUntil,
@@ -778,13 +1186,13 @@ router.post('/tls/enable', authenticate, authorize('admin'), async (req, res) =>
     if (!tlsConfig || !tlsConfig.certificatePem) {
       return res.status(400).json({ message: 'No hay certificados cargados' });
     }
-    
+
     tlsConfig.enabled = true;
     await tlsConfig.save();
-    
+
     // Aquí se reiniciaría el servidor Express
     // (podría ser vía signal, API call, etc.)
-    
+
     res.json({ message: 'HTTPS activado. El servidor se reiniciará en 5s' });
   } catch (error) {
     res.status(500).json({ message: 'Error activando HTTPS' });
@@ -803,7 +1211,7 @@ router.get('/tls', authenticate, authorize('admin'), async (req, res) => {
         message: 'Sin certificados cargados'
       });
     }
-    
+
     res.json({
       enabled: tlsConfig.enabled,
       protocol: tlsConfig.enabled ? 'https' : 'http',
@@ -837,32 +1245,32 @@ router.get('/tls', authenticate, authorize('admin'), async (req, res) => {
           ⚠️ Certificado expirará pronto. Por favor renovar.
         </div>
       </div>
-      
+
       <mat-divider></mat-divider>
-      
+
       <h3>Cargar Certificados</h3>
       <div class="upload-section">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Certificado (.crt o .pem)</mat-label>
-          <input matInput type="file" 
+          <input matInput type="file"
                  #certInput accept=".crt,.pem" (change)="onCertificateSelected($event)">
           {{ certificateFile?.name || 'Sin seleccionar' }}
         </mat-form-field>
-        
+
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Private Key (.key o .pem)</mat-label>
-          <input matInput type="file" 
+          <input matInput type="file"
                  #keyInput accept=".key,.pem" (change)="onPrivateKeySelected($event)">
           {{ privateKeyFile?.name || 'Sin seleccionar' }}
         </mat-form-field>
-        
+
         <button mat-raised-button color="primary" (click)="uploadCertificates()">
           <mat-icon>upload</mat-icon> Subir Certificados
         </button>
       </div>
-      
+
       <mat-divider></mat-divider>
-      
+
       <div *ngIf="tlsStatus?.enabled">
         <button mat-raised-button color="warn" (click)="disableHttps()">
           <mat-icon>security_off</mat-icon> Desactivar HTTPS
@@ -903,6 +1311,7 @@ backend:
 ### 2. Propuestas de Mejora y Nuevas Funcionalidades
 
 #### **B2a** ✅ **COMPLETADO - Reordenar y Clarificar Menú Lateral**
+
 - **Cambios aplicados:**
     - Checklist (Admin) movido al bloque de Configuración (Admin).
     - Texto "Escalación" ya corregido.
@@ -910,6 +1319,7 @@ backend:
     - `frontend/src/app/pages/main/main-layout.component.ts`
 
 #### **B2b** **Visualizador de Logs de Auditoría**
+
 - **Descripción:** El backend registra la actividad de los usuarios (`AuditLog`), pero no hay una interfaz para que un administrador/auditor pueda consultar esta información. La trazabilidad es fundamental.
 - **Propuesta:**
     - Crear una nueva sección en el área de administración llamada "Logs de Auditoría" o "Trazabilidad".
@@ -919,6 +1329,7 @@ backend:
     - estos log no seran las entradas  que va agregando el n1  todos los dias, pero si podre ver que el user agrego una nueva entrada mas no su conetanido ya que eos esta en otro sector, tambien  si realizo el checklist mas no su contenido  ya que tambein eso se puede ver en otra seccion del desarrollo
 
 #### **B2c** **Funcionalidad de "Purgar Datos" Segura**
+
 - **Descripción:** No existe una forma de eliminar todos los datos de la aplicación de forma masiva.
 - **Propuesta:**
     - Añadir un botón en "Backup y Exportación" llamado "Purgar Todos los Datos".
@@ -926,6 +1337,7 @@ backend:
     - ✅ Implementado: tarjeta en Backup con confirmación "PURGAR TODO" y endpoint admin `/api/backup/purge`.
 
 #### **B2d** ✅ **COMPLETADO - Gestión de Tags: Ver Entradas por Tag**
+
 - **Solución aplicada:**
     - En la tabla de "Tags", el contador de uso ahora es clickeable.
     - Navega a "Todas las Entradas" con filtro `?tag=...`.
@@ -937,6 +1349,7 @@ backend:
     - `frontend/src/app/pages/main/all-entries/all-entries.component.ts`
 
 #### **B2e** ✅ **COMPLETADO - "Mis Entradas" y "Ver Todas": Mejorar Visualización de Contenido**
+
 - **Solución aplicada:**
     - Se agregó botón "Ver" (`visibility`) en "Mis Entradas".
     - Reutiliza el diálogo `EntryDetailDialogComponent` ya usado en "Ver Todas".
@@ -945,15 +1358,17 @@ backend:
     - `frontend/src/app/pages/main/my-entries/my-entries.component.html`
 
 #### **B2f** **Reportes y Estadísticas: Añadir Gráficos**
+
 - **Problema:** La sección de "Reportes y Estadísticas" necesita ser más visual.
 - **Propuesta:**
     - Añadir un gráfico de líneas que muestre la tendencia de entradas creadas por día (últimos 7/15/30 o custom días).
     - **Implementación:** Usar una librería como **NGX-Charts** y consumir los datos del endpoint `GET /api/reports/overview` (campo `entriesTrend`).
     - Poder ver los  incidentes  tambien graficamente
-    - Graficas  por tag  qu tiene el sistema  asi ver  que tag por tendencia (líneas múltiples) comparar 3–5 tags (seleccionables) y ver su curva. 
+    - Graficas  por tag  qu tiene el sistema  asi ver  que tag por tendencia (líneas múltiples) comparar 3–5 tags (seleccionables) y ver su curva.
     - Un mapa de calor día vs hora para ver: horas muertas, picos reales  de entradas
 
 #### **B2g** ✅ **COMPLETADO - Módulo de Recuperación de Contraseña**
+
 - **Solución implementada:**
     - Backend: Endpoints `/api/auth/forgot-password` y `/api/auth/reset-password` con tokens SHA256 de 1 hora
     - Modelo User: Campos `resetPasswordToken` y `resetPasswordExpires`
@@ -972,6 +1387,7 @@ backend:
     - Navegación corregida: todos los botones usan `/login` (no `/auth/login`)
 
 #### **B2g-smtp** ✅ **COMPLETADO - Configuración SMTP con Destinatarios Opcionales**
+
 - **Problema:** No se podía guardar la configuración SMTP sin destinatarios
 - **Solución implementada:**
     - Backend: Validación de `recipients` cambiada a `.optional()`
@@ -991,6 +1407,7 @@ backend:
     - Compatible con Office365 y otros proveedores SMTP estándar
 
 #### **B2h** ✅ **COMPLETADO - Reorganización de la Página de Configuración**
+
 - **Cambios aplicados:**
     - "Cooldown Checklist" movido a "Checklist (Admin)".
     - Texto de SMTP clarificado: "Enviar correo solo si hay servicios en rojo (si no, envía siempre)".
@@ -1003,6 +1420,7 @@ backend:
     - `frontend/src/app/pages/main/checklist-admin/checklist-admin.component.scss`
 
 #### **B2i** **Selector de Cliente en “Nueva Entrada” + Cliente en búsqueda y resultados (sin depender de tags)**
+
 - **Contexto:** En la pantalla **Nueva Entrada** hay espacio libre en el panel derecho para mostrar los **clientes (Log Sources)**. Los clientes se gestionan en **Catalog Admin → 🖥️ Log Sources / Clientes**.
 - **Objetivo:** Seleccionar cliente al crear entrada, guardar `clientId` como campo estructurado, autoinyectar tag del cliente y permitir filtro/columna por cliente sin depender solo de tags.
 - **Alcance funcional:**
@@ -1028,6 +1446,7 @@ backend:
 - **Nota técnica:** hoy los tags se extraen del `content`; para el tag cliente se puede (a) insertar `#tag` en el texto en UI o (b) permitir `clientTag` en backend y mergear con `extractHashtags`.
 
 #### **B2j** **Tabla RACI por cliente en Escalamiento**
+
 - **Contexto:** En `/main/escalation/view` se usa `frontend/src/app/pages/escalation/escalation-simple/escalation-simple.component.ts` con un combo de cliente y una tabla de contactos. Se requiere agregar una tabla RACI debajo, reutilizando el mismo selector de cliente.
 - **Objetivo:** Mostrar la matriz RACI de cada cliente (y opcionalmente por servicio) con un formato similar a la tabla de contactos de escalamiento.
 - **UI propuesta:**
@@ -1043,13 +1462,14 @@ backend:
 - **Preguntas abiertas:** ¿RACI debe referenciar contactos (IDs) o texto libre? ¿Es por cliente completo o por servicio? ¿Se necesitan emails/teléfonos visibles en la tabla?
 
 #### **B2k** **Checklist: borrado admin + ocultar iconos + rehacer checklist diario**
+
 - Solo admins pueden borrar un checklist.
 - Usuarios normales no ven iconos/acciones de borrado.
 - Si se borra el checklist del día, se puede crear nuevamente para ese mismo día.
 - ✅ Implementado: botón de borrar en historial solo para admin + endpoint `/api/checklist/check/:id` + cooldown solo aplica mismo día.
 
-
 #### **B2l** **Integracion API generica / Webhooks (GLPI y otros)**
+
 - **Objetivo:** Permitir integrar la Bitacora con servicios externos via API para enviar entradas, checklists o resumenes automaticos.
 - **Requisitos clave:**
     - Soportar distintos tipos de API (REST/HTTP) con metodo, URL, headers y body configurables.
@@ -1071,6 +1491,7 @@ backend:
 - **Archivos relevantes para implementar:** `backend/src/routes/entries.js`, `backend/src/routes/checklist.js`, `backend/src/utils/logForwarder.js`, `backend/src/routes/smtp.js`.
 
 #### **B2o** **Envío automático de entradas a GLPI al cierre de turno (depende de B2l)**
+
 - **Objetivo:** Configurar una integración específica con GLPI para que, al hacer cierre de turno, se envíen automáticamente todas las entradas del día como un ticket.
 - **Flujo propuesto:**
     1. Admin configura conector GLPI en "Integraciones" (URL, API token, etc.) - reutiliza B2l.
@@ -1125,17 +1546,17 @@ const integrationConfigSchema = new mongoose.Schema({
 if (type === 'cierre') {
   try {
     const IntegrationConfig = require('../models/IntegrationConfig');
-    const glpiConfig = await IntegrationConfig.findOne({ 
-      name: 'GLPI', 
+    const glpiConfig = await IntegrationConfig.findOne({
+      name: 'GLPI',
       active: true,
-      autoOnShiftClose: true 
+      autoOnShiftClose: true
     });
 
     if (glpiConfig) {
       // Obtener entradas del día
       const startOfDay = new Date(new Date().setHours(0, 0, 0, 0));
       const endOfDay = new Date(new Date().setHours(23, 59, 59, 999));
-      
+
       const entries = await Entry.find({
         createdBy: userId,
         createdAt: { $gte: startOfDay, $lte: endOfDay }
@@ -1172,7 +1593,7 @@ if (type === 'cierre') {
 - Servicios con problemas: ${normalizedServices.filter(s => s.status === 'rojo').map(s => s.serviceTitle).join(', ') || 'Ninguno'}
 
 **Detalles:**
-${glpiConfig.includeEntryDetails ? entries.map(e => 
+${glpiConfig.includeEntryDetails ? entries.map(e =>
   `- [${e.entryType}] ${e.entryDate} ${e.entryTime}: ${e.content.substring(0, 100)}...`
 ).join('\n') : 'Detalles omitidos'}
           `,
@@ -1243,16 +1664,16 @@ router.get('/integrations', authenticate, authorize('admin'), async (req, res) =
 router.post('/integrations', authenticate, authorize('admin'), async (req, res) => {
   const { name, provider, url, authType, apiKey, autoOnShiftClose, includeEntryDetails, templateTitle, active } = req.body;
   let config = await IntegrationConfig.findOne({ name });
-  
+
   if (!config) {
     config = new IntegrationConfig({ name, provider });
   }
-  
+
   Object.assign(config, {
     url, authType, autoOnShiftClose, includeEntryDetails, templateTitle, active,
     apiKey: encrypt(apiKey) // Encriptar
   });
-  
+
   await config.save();
   res.json(config);
 });
@@ -1264,7 +1685,7 @@ router.get('/integrations/deliveries', authenticate, authorize('admin'), async (
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(parseInt(limit));
-  
+
   res.json(deliveries);
 });
 ```
@@ -1309,6 +1730,7 @@ module.exports = { sendViaIntegration };
 ```
 
 **Flujo de uso:**
+
 1. Admin crea integración GLPI: URL, API token, categoría, grupo.
 2. Admin activa "Auto-enviar al cierre de turno".
 3. Analista hace cierre: endpoint POST /api/checklist/check con `type=cierre`.
@@ -1319,6 +1741,7 @@ module.exports = { sendViaIntegration };
 8. Admin puede ver historial en "Integraciones → Historial de Envíos".
 
 #### **B2m** **Estado de turno + cierre automatico (envio via integracion)**
+
 - **Objetivo:** Registrar el estado del turno y, al hacer "cierre de turno", enviar automaticamente checklist + entradas del periodo a una integracion (ej: GLPI).
 - **Flujo propuesto:**
     1. Al registrar `POST /api/checklist/check` con `type = cierre`, construir resumen del turno.
@@ -1337,9 +1760,11 @@ module.exports = { sendViaIntegration };
     - Servicio `shiftClosureService` que arma el payload y dispara `integrationDispatcher`.
     - Guardar un registro `ShiftClosure` para evitar doble envio.
 - **Archivos relevantes:** `frontend/src/app/pages/main/checklist/checklist.component.ts`, `frontend/src/app/pages/main/checklist/checklist.component.html`, `backend/src/routes/checklist.js`, `backend/src/models/ShiftCheck.js`, `backend/src/models/Entry.js`.
+
 ---
 
 #### **B2n** **Exportacion de metricas/uso para BI (Metabase, PowerBI, etc.)**
+
 - **Objetivo:** Exponer metricas de uso (entradas por cliente/tag, checklists, incidentes, actividad por usuario/turno) de forma simple y consumible por herramientas BI.
 - **Alcance propuesto:**
     - Dataset agregado: entradas por dia/cliente/tag, checklists por estado, incidentes por severidad/estado, actividad por usuario/turno.
@@ -1361,12 +1786,14 @@ module.exports = { sendViaIntegration };
 ### 3. Propuestas Arquitectónicas
 
 #### **B3a** **Etiquetas de Cargo + Rol Auditor (sobre roles existentes)**
+
 - **Contexto:** Ya existen los roles base (`user` y `admin`); no es necesario rehacer RBAC completo.
 - **Propuesta:**
     1.  **Etiquetas de cargo:** Crear/editar etiquetas como "N1", "N2", "N3", "Custom", etc. Deben estar conectadas a los roles existentes.
     2.  **Reglas de combinacion:** Un usuario con etiqueta "N1" nunca puede ser `admin`. Las etiquetas "N2" y "N3" si pueden ser `admin` solo si un admin lo habilita.
     3.  **Rol/Usuario Auditor:** Usuario con etiqueta/rol "Auditor" con acceso de solo lectura a todo lo que ve un admin, sin modificar nada.
     4.  **UI de administracion:** El admin puede crear/editar etiquetas y asignarlas a los usuarios.
+
 ---
 
 ### 4. Observaciones Técnicas Adicionales
@@ -1379,7 +1806,7 @@ module.exports = { sendViaIntegration };
     - **Nota:** No hacer renombre masivo. Definir alcance (ej: solo `backend/src/routes` o una carpeta específica) y actualizar imports manualmente.
     - **Motivo:** Cambio masivo rompe rutas/imports y requiere mucha verificación.
 -   **B4-5** ✅ **COMPLETADO - Error Tipográfico:** Corregir el texto "titulo escalamiento en el lateral esta mal escrito hay que reparar eso" (Commit d3112bd).
--   **B4-6** ✅ **COMPLETADO - Login con correo como con nombre de usuario:** 
+-   **B4-6** ✅ **COMPLETADO - Login con correo como con nombre de usuario:**
     - **Solución implementada:**
       - Backend: Modificado `POST /api/auth/login` para buscar usuario con `$or: [{ username }, { email: username }]`
       - Frontend: Actualizado label "Usuario o Email" y mensaje de error
@@ -1389,10 +1816,10 @@ module.exports = { sendViaIntegration };
     - **Beneficio:** Usuarios pueden iniciar sesión con username o email indistintamente
 -   **B4-7** **Aviso analistas de checklist:**  (depende de B3a): Avisar al analista de turno (etiqueta N1_NO_HABIL) y a usuarios con etiqueta N2 cuando el checklist no se realiza antes de 09:30 (el horario se puede cambiar, solo admins pueden hacerlo). En Administracion de Escalaciones, los turnos se definen con etiquetas de cargo (B3a) y se respeta la regla: N1 nunca es admin; N2/N3 pueden ser admin si el admin lo habilita. esto evita enviar correos a admins que no sean N2.
 
-
 ### 5. Revisiones de seguridad y auditoria
 
 #### **C1-1** **Analisis de seguridad general (revision + reparacion segura)**
+
 - **Objetivo:** revisar backend + frontend y aplicar hardening sin romper flujos (evitar CSP/CORS tan restrictivos que dejen el sistema inutilizable).
 - **Hallazgos concretos en el codigo (sugerencias puntuales):**
     - **Rate limit de login no aplicado:** existe `loginLimiter` en `backend/src/middleware/rateLimiter.js`, pero no se usa en `backend/src/routes/auth.js`. Agregarlo en `POST /api/auth/login` y un limiter suave en `POST /api/auth/refresh` para evitar abuso sin bloquear usuarios reales.
@@ -1413,10 +1840,10 @@ module.exports = { sendViaIntegration };
     - Documentar rollback rapido (ej: volver a CSP deshabilitado si algo critico falla).
 - **Validacion minima:** smoke tests de login/logout, carga de logo, reportes, backups/restore y creacion de entradas; revisar logs de CSP y CORS antes de endurecer.
 
-
 ### 6. Complementos
 
 #### **D1-1** **Modulo de complementos (plugins)**
+
 - **Objetivo:** habilitar herramientas "extra" (no core) sin incrustarlas en el codigo principal, con activacion/desactivacion rapida por admin y sin romper dependencias del sistema.
 - **Casos de uso:** migrar planillas Excel con macros a micro-apps web (ej: generador de consultas AQL, plantillas de analisis, validadores, calculadoras SOC).
 - **Principios de diseno:**
@@ -1437,7 +1864,9 @@ module.exports = { sendViaIntegration };
     - **Generador AQL:** plantillas guardadas, editor con validacion basica, ejemplos por escenario, y export a texto/clipboard.
     - Esto es solo un ejemplo: **Base de ejemplos AQL:** consultas curadas y documentadas por el admin, versionadas por fecha/autor y separadas del core.
     - Evitar ejecucion directa en prod; si se permite, usar modo read-only o ambiente controlado.
+
 **Nota:** AQL es un ejemplo ilustrativo; el modulo sirve para cualquier complemento futuro.
+
 - **Plan de implementacion seguro:**
     1. Definir modelo `Complement` (enabled, config, allowedRoles, updatedBy).
     2. Implementar loader backend con allowlist y feature flag global.
@@ -1451,10 +1880,11 @@ module.exports = { sendViaIntegration };
 
 ### B5 - CRÍTICO: Acceso a rutas sin autenticación
 
-**Descripción:**  
+**Descripción:**
 Se identificó una vulnerabilidad crítica donde es posible ingresar al sistema y modificar datos sin estar autenticado, conociendo directamente las direcciones/rutas de API.
 
 **Root Cause (investigación):**
+
 - Las rutas de admin (`/api/admin/catalog/*`) aplican `authenticate` + `requireAdmin` middleware correctamente
 - Las rutas protegidas (`/api/entries`, `/api/notes`, `/api/checklist`, etc.) requieren JWT válido
 - **Sin embargo**, el middleware de autenticación solo valida la presencia del token pero hay casos donde:
@@ -1465,6 +1895,7 @@ Se identificó una vulnerabilidad crítica donde es posible ingresar al sistema 
 **Impacto:** CRÍTICO - Modificación de datos sin autenticación, acceso a información sensible
 
 **Solución recomendada:**
+
 1. Auditar todas las rutas para asegurar que `authenticate` middleware está aplicado
 2. Implementar validación de JWT más estricta (verificar expiración, revocación)
 3. Agregar rate limiting por IP para endpoints de recuperación de contraseña
@@ -1477,14 +1908,16 @@ Se identificó una vulnerabilidad crítica donde es posible ingresar al sistema 
 
 ### B6 - Dark Mode: Contraste y legibilidad deficientes
 
-**Descripción:**  
+**Descripción:**
 El tema oscuro tiene múltiples problemas de legibilidad:
+
 - Cajas de texto blancas con letras blancas (texto invisible)
 - Botones ilegibles por falta de contraste
 - Líneas/bordes no visibles en componentes
 - Información que se pierde por cambio de color a oscuro
 
 **Root Cause (investigación):**
+
 - En `frontend/src/styles.scss` hay variables CSS para tema dark: `--text-primary: #f7f9ff`, `--surface-color: #1a1d27`
 - Las reglas de Material Design no se aplican correctamente para inputs y campos
 - Los estilos `!important` fuerzan colores pero no tienen suficiente contraste
@@ -1493,6 +1926,7 @@ El tema oscuro tiene múltiples problemas de legibilidad:
 **Impacto:** ALTO - Imposibilidad de usar la aplicación en modo dark, experiencia de usuario pésima
 
 **Solución recomendada:**
+
 1. Revisar todas las combinaciones color/fondo en dark mode
 2. Validar contraste mínimo WCAG AA (4.5:1 para texto, 3:1 para componentes)
 3. Ajustar variables CSS para asegurar legibilidad
@@ -1506,20 +1940,24 @@ El tema oscuro tiene múltiples problemas de legibilidad:
 
 ### C5 - Mejora: Token de recuperación de contraseña - Reducir duración
 
-**Descripción:**  
+**Descripción:**
 El token de recuperación de contraseña (`resetPasswordToken`) tiene una duración de **1 hora**, lo cual es demasiado tiempo. Debería reducirse a **5 minutos** por seguridad.
 
 **Root Cause (investigación):**
+
 - En `backend/src/routes/auth.js` línea ~206:
+
   ```javascript
   user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
   ```
+
 - No hay validación de intentos fallidos o rate limiting específico para este endpoint
 - El token se almacena en BD sin encriptación adicional (solo hash SHA256)
 
 **Impacto:** MEDIO - Riesgo de seguridad (ventana de ataque de 60 min vs 5 min)
 
 **Solución recomendada:**
+
 1. Cambiar duración de 1 hora a 5 minutos: `5 * 60 * 1000`
 2. Agregar rate limiting al endpoint `/api/auth/forgot-password` (máx 3 intentos/15 min)
 3. Implementar rate limiting al endpoint `/api/auth/reset-password` (máx 5 intentos/token)
@@ -1532,14 +1970,17 @@ El token de recuperación de contraseña (`resetPasswordToken`) tiene una duraci
 
 ### C6 - Mejora: Duración de sesión (JWT) muy larga
 
-**Descripción:**  
+**Descripción:**
 Los tokens JWT tienen una duración de **24 horas**, lo cual es muy largo. Para una aplicación SOC, debería reducirse a un tiempo más seguro (ej: 1-2 horas).
 
 **Root Cause (investigación):**
+
 - En `backend/src/routes/auth.js` línea ~30:
+
   ```javascript
   const expiresIn = role === 'guest' ? '2h' : (process.env.JWT_EXPIRES_IN || '24h');
   ```
+
 - Los tokens de admin/user duran 24 horas (rol 'guest' dura solo 2h)
 - No hay refresh token rotation o revocación centralizada
 - Las sesiones no se validan contra una lista negra
@@ -1547,6 +1988,7 @@ Los tokens JWT tienen una duración de **24 horas**, lo cual es muy largo. Para 
 **Impacto:** MEDIO - Si un token se roba, el atacante tiene 24 horas de acceso
 
 **Solución recomendada:**
+
 1. Reducir duración de JWT a **2 horas** (o 1 hora para admin)
 2. Implementar **refresh tokens** con duración mayor (7 días) rotados en cada refresh
 3. Agregar endpoint de revocación de tokens (`/api/auth/logout`)
@@ -1562,10 +2004,11 @@ Los tokens JWT tienen una duración de **24 horas**, lo cual es muy largo. Para 
 
 ### M7 - Agregar tema Cyberpunk/Neon
 
-**Descripción:**  
+**Descripción:**
 Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos de brillo, y estética futurista. Similar a interfaces hacker en películas.
 
 **Características deseadas:**
+
 - Colores neón (cian, magenta, verde, amarillo)
 - Textos con glow/sombra
 - Efectos de hover con animaciones
@@ -1574,6 +2017,7 @@ Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos 
 - NO replicar los problemas de contraste del dark mode
 
 **Recomendaciones técnicas (pre-investigación):**
+
 1. Agregar nuevo tema en `frontend/src/styles.scss` (ej: `[data-theme="cyberpunk"]`)
 2. Variables CSS necesarias:
    - `--primary-color: #0ff` (cian)
@@ -1593,10 +2037,11 @@ Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos 
 
 ### B8 - Mejora: Edición masiva/individual de entradas (Admin)
 
-**Descripción:**  
+**Descripción:**
 Los administradores necesitan poder editar entradas de otros usuarios (de forma individual o masiva) para correcciones y ajustes, pero sin poder alterar la integridad de los datos originales (contenido, hora, fecha, autor).
 
 **Casos de uso:**
+
 - Admin ajusta tipo de entrada (operativa → incidente) de múltiples registros
 - Admin reclasifica entradas con tags correctos
 - Admin cambia LogSource/Cliente asociado
@@ -1604,12 +2049,14 @@ Los administradores necesitan poder editar entradas de otros usuarios (de forma 
 - Auditoría: autor/fecha/hora/contenido permanecen intactos (trazabilidad)
 
 **Campos que Admin PUEDE modificar:**
+
 - ✅ `entryType` (operativa/incidente)
 - ✅ `tags` (agregar/remover)
 - ✅ `clientId` (cambiar Log Source/Cliente)
 - ✅ Otros metadatos que se agreguen
 
 **Campos que Admin NO PUEDE modificar (inmutables):**
+
 - ❌ `content` (contenido original)
 - ❌ `entryTime` (hora del evento)
 - ❌ `entryDate` (fecha del evento)
@@ -1617,6 +2064,7 @@ Los administradores necesitan poder editar entradas de otros usuarios (de forma 
 - ❌ `createdAt` / `updatedAt` (timestamps)
 
 **Root Cause (análisis):**
+
 - Actualmente, los usuarios solo pueden editar sus propias entradas
 - No existe interfaz de admin para editar/reclasificar entradas de otros
 - No existe funcionalidad de edición en lote (bulk edit)
@@ -1656,5 +2104,3 @@ Los administradores necesitan poder editar entradas de otros usuarios (de forma 
 **Prioridad:** 🟠 MEDIO - Mejora operacional importante
 
 ---
-
-
