@@ -29,6 +29,7 @@
 | B18 | Pendiente | Integraciones | Integración API genérica / Webhooks / SIEM | Framework de conectores salientes con reintentos/cola, formatos JSON/RFC3164/RFC5424/CEF/LEEF y soporte Syslog/API. |
 | B19 | Pendiente | Integraciones | Envío automático a GLPI al cierre de turno | Automatizar creación de ticket al cierre con resumen de entradas y estado de checklist, sin bloquear operación si falla integración. |
 | B20 | Pendiente | UI/UX | Tema Cyberpunk/Neon | Nuevo tema visual opcional, cuidando contraste y sin repetir problemas del dark mode actual. |
+| B21 | Pendiente | Backup/Operación | Backups automáticos programables + destino externo + retención configurable | Permitir programar respaldo automático cada N días, enviar a destino configurable (nube/NFS/Samba) y definir expiración local de respaldos. |
 
 ---
 
@@ -230,6 +231,7 @@ Mayor trazabilidad operativa y capacidad de investigación/auditoría ante incid
 20. `B18`: Desplegar módulo de integraciones genéricas con plantillas, auth flexible y test/historial.
 21. `B19`: Automatizar GLPI al cierre de turno con payload trazable y tolerancia a fallos.
 22. `B20`: Crear tema Cyberpunk/Neon opcional garantizando legibilidad y consistencia visual.
+23. `B21`: Implementar backups automáticos con periodicidad configurable, destino externo y retención local con caducidad.
 
 ---
 
@@ -2347,6 +2349,53 @@ Agregar un nuevo tema visual estilo "cyberpunk/neon" con colores neón, efectos 
 7. Testear en componentes principales: inputs, buttons, cards, modals
 
 **Prioridad:** 🟢 BAJA - Feature nice-to-have, no crítica
+
+---
+
+### B21 - Backups automáticos programables + destino externo + retención configurable
+
+**Descripción:**
+Actualmente los backups no son automáticos. Se requiere una configuración para ejecutar respaldos programados, definir cada cuántos días se ejecutan, enviarlos a un destino externo y controlar su tiempo de vida en almacenamiento local.
+
+**Requisitos funcionales:**
+
+- Programación automática de backups (scheduler) habilitable/deshabilitable.
+- Frecuencia configurable en días (`cada N días`).
+- Soporte de destino configurable:
+  - almacenamiento en nube (ej. S3 compatible u otro proveedor),
+  - recurso compartido NFS,
+  - recurso compartido SMB/Samba.
+- Retención local configurable (caducidad): borrar automáticamente respaldos locales vencidos según política definida.
+- Configuración administrable desde panel (o por variables/archivo si aplica), sin hardcode.
+
+**Recomendaciones técnicas (pre-investigación):**
+
+1. Definir modelo de configuración de backup (ej: `BackupPolicy`) con:
+   - `enabled`,
+   - `intervalDays`,
+   - `destinationType`,
+   - `destinationConfig` (credenciales/ruta/host),
+   - `localRetentionDays`.
+2. Implementar scheduler confiable en backend (cron interno o job runner) con registro en auditoría.
+3. Agregar pipeline post-backup:
+   - crear respaldo local,
+   - transferir al destino remoto configurado,
+   - registrar estado (`ok/fail`) y motivo si falla.
+4. Implementar tarea de limpieza por retención local:
+   - identificar backups con `createdAt + localRetentionDays < now`,
+   - eliminar en forma segura y auditable.
+5. Agregar cifrado/protección de credenciales de destino (reusar utilidades de cifrado existentes).
+6. Exponer endpoints admin para ver/editar configuración y ejecutar “prueba de destino” sin bloquear operación.
+
+**Criterios de aceptación:**
+
+1. Admin puede activar backup automático y elegir periodicidad en días.
+2. Admin puede seleccionar destino (nube/NFS/Samba) y validar conectividad.
+3. El sistema ejecuta respaldo automático según configuración y deja trazabilidad.
+4. Los respaldos locales vencidos se purgan automáticamente según retención configurada.
+5. Si falla destino remoto, el backup local queda disponible y el error queda auditado.
+
+**Prioridad:** 🟠 MEDIA - Mejora operacional relevante para continuidad y cumplimiento
 
 ---
 
